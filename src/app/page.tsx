@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
+import { createClient } from '@/lib/supabase'
 
 const DAILY_LIMIT = 5
 
@@ -106,22 +107,16 @@ function ExplanationRenderer({ text, esercizio }: { text: string; esercizio: str
                 <MD>{passo.corpo}</MD>
               </div>
             </div>
-
             {passo.domanda && (
               <div style={{ marginTop: 8, marginLeft: 12, border: '1px solid #F0EEFF', borderRadius: 10, overflow: 'hidden' }}>
                 <div style={{ background: '#6C5CE7', padding: '7px 12px', fontSize: 12, color: '#fff', fontWeight: 500 }}>
                   {passo.domanda}
                 </div>
                 <div style={{ padding: '10px 12px', fontSize: 13, color: '#2D3436', lineHeight: 1.7, background: '#FAFAFE' }}>
-                  {passo.loadingRisposta ? (
-                    <span style={{ color: '#A0A0A0' }}>Sto pensando...</span>
-                  ) : (
-                    <MD>{passo.risposta || ''}</MD>
-                  )}
+                  {passo.loadingRisposta ? <span style={{ color: '#A0A0A0' }}>Sto pensando...</span> : <MD>{passo.risposta || ''}</MD>}
                 </div>
               </div>
             )}
-
             {!passo.loadingRisposta && (
               <div style={{ marginTop: 8, marginLeft: 12 }}>
                 {passo.suggerimenti.length > 0 && !passo.domanda && (
@@ -135,14 +130,7 @@ function ExplanationRenderer({ text, esercizio }: { text: string; esercizio: str
                 )}
                 {openInput === i ? (
                   <div style={{ display: 'flex', gap: 6 }}>
-                    <input
-                      autoFocus
-                      value={inputs[i]}
-                      onChange={e => { const n = [...inputs]; n[i] = e.target.value; setInputs(n) }}
-                      onKeyDown={e => e.key === 'Enter' && chiedi(i, inputs[i].trim())}
-                      placeholder="Cosa non ti è chiaro?"
-                      style={{ flex: 1, border: '1px solid #D0C8FF', borderRadius: 20, padding: '7px 14px', fontSize: 13, outline: 'none', background: '#FAFAFE' }}
-                    />
+                    <input autoFocus value={inputs[i]} onChange={e => { const n = [...inputs]; n[i] = e.target.value; setInputs(n) }} onKeyDown={e => e.key === 'Enter' && chiedi(i, inputs[i].trim())} placeholder="Cosa non ti è chiaro?" style={{ flex: 1, border: '1px solid #D0C8FF', borderRadius: 20, padding: '7px 14px', fontSize: 13, outline: 'none', background: '#FAFAFE' }} />
                     <button onClick={() => chiedi(i, inputs[i].trim())} style={{ width: 34, height: 34, borderRadius: '50%', background: '#6C5CE7', border: 'none', cursor: 'pointer', color: '#fff', fontSize: 16, flexShrink: 0 }}>↑</button>
                     <button onClick={() => setOpenInput(null)} style={{ width: 34, height: 34, borderRadius: '50%', background: '#F0F0F0', border: 'none', cursor: 'pointer', color: '#636E72', fontSize: 14, flexShrink: 0 }}>✕</button>
                   </div>
@@ -156,13 +144,10 @@ function ExplanationRenderer({ text, esercizio }: { text: string; esercizio: str
           </div>
         </div>
       ))}
-
       {parsed.finale && (
         <div style={{ background: '#FFF0F6', border: '2px solid #E84393', borderRadius: 12, padding: '12px 16px', marginTop: 4 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: '#E84393', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Risposta finale</div>
-          <div style={{ fontSize: 15, fontWeight: 600, color: '#C0306A' }}>
-            <MD>{parsed.finale}</MD>
-          </div>
+          <div style={{ fontSize: 15, fontWeight: 600, color: '#C0306A' }}><MD>{parsed.finale}</MD></div>
         </div>
       )}
     </div>
@@ -179,11 +164,37 @@ export default function Home() {
   const [text, setText] = useState('')
   const [image, setImage] = useState<string | null>(null)
   const [imageBase64, setImageBase64] = useState<string | null>(null)
+  const [user, setUser] = useState<any>(null)
+  const [authLoading, setAuthLoading] = useState(true)
   const fileRef = useRef<HTMLInputElement>(null)
   const chatRef = useRef<HTMLDivElement>(null)
+  const supabase = createClient()
 
   const remaining = DAILY_LIMIT - usedToday
   const isLimited = remaining <= 0
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user)
+      setAuthLoading(false)
+    })
+    supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+  }, [])
+
+  async function loginConGoogle() {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin }
+    })
+  }
+
+  async function logout() {
+    await supabase.auth.signOut()
+    setUser(null)
+    setUsedToday(0)
+  }
 
   function handleFile(file: File) {
     if (!file || !file.type.startsWith('image/')) return
@@ -210,6 +221,12 @@ export default function Home() {
     setExplanation(data.explanation)
     setLoading(false)
   }
+
+  if (authLoading) return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'system-ui' }}>
+      <div style={{ color: '#636E72' }}>Caricamento...</div>
+    </div>
+  )
 
   if (screen === 'paywall') return (
     <div style={{ minHeight: '100vh', background: '#FAFAFA', fontFamily: 'system-ui' }}>
@@ -260,8 +277,20 @@ export default function Home() {
           <div style={{ fontSize: 20, fontWeight: 700, color: '#6C5CE7' }}>StudiAI</div>
           <div style={{ fontSize: 11, color: '#636E72' }}>il tuo tutor di matematica e fisica</div>
         </div>
-        <div onClick={() => setScreen('paywall')} style={{ background: '#F0EEFF', color: '#6C5CE7', fontSize: 12, fontWeight: 500, padding: '6px 14px', borderRadius: 20, cursor: 'pointer' }}>
-          {isLimited ? '⚡ Sblocca' : `${remaining} rimasti`}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {user ? (
+            <>
+              <div style={{ fontSize: 12, color: '#636E72' }}>{user.email?.split('@')[0]}</div>
+              <button onClick={logout} style={{ background: 'none', border: '1px solid #E8E8E8', borderRadius: 20, padding: '5px 12px', fontSize: 12, color: '#636E72', cursor: 'pointer' }}>Esci</button>
+            </>
+          ) : (
+            <button onClick={loginConGoogle} style={{ background: '#fff', border: '1px solid #E8E8E8', borderRadius: 20, padding: '6px 14px', fontSize: 12, color: '#2D3436', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+              <span>G</span> Accedi
+            </button>
+          )}
+          <div onClick={() => setScreen('paywall')} style={{ background: '#F0EEFF', color: '#6C5CE7', fontSize: 12, fontWeight: 500, padding: '6px 14px', borderRadius: 20, cursor: 'pointer' }}>
+            {isLimited ? '⚡ Sblocca' : `${remaining} rimasti`}
+          </div>
         </div>
       </div>
       <div style={{ padding: '24px 20px', maxWidth: 620, margin: '0 auto' }}>
