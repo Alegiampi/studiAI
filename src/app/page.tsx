@@ -8,6 +8,15 @@ import { createClient } from '@/lib/supabase'
 
 const DAILY_LIMIT = 5
 
+const FRASI_MOTIVAZIONALI = [
+  "Un problema alla volta, verso la soluzione...",
+  "Scaldando i motori della fisica...",
+  "La matematica non è un'opinione, ma stiamo calcolando la migliore per te!",
+  "Elaborando i dati, quasi pronto...",
+  "Ricorda: ogni errore è un passo verso la comprensione.",
+  "Mettendo in ordine i numeri..."
+]
+
 const MD = ({ children }: { children: string }) => (
   <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
     {children}
@@ -224,6 +233,8 @@ export default function Home() {
   const [user, setUser] = useState<any>(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [showAuth, setShowAuth] = useState(false)
+  const [quoteIndex, setQuoteIndex] = useState(0)
+  
   const fileRef = useRef<HTMLInputElement>(null)
   const chatRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
@@ -240,6 +251,18 @@ export default function Home() {
       setUser(session?.user ?? null)
     })
   }, [])
+
+  // Nuovo useEffect per far ruotare le frasi motivazionali
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (loading) {
+      setQuoteIndex(Math.floor(Math.random() * FRASI_MOTIVAZIONALI.length))
+      interval = setInterval(() => {
+        setQuoteIndex(prev => (prev + 1) % FRASI_MOTIVAZIONALI.length)
+      }, 3000)
+    }
+    return () => clearInterval(interval)
+  }, [loading])
 
   async function logout() {
     await supabase.auth.signOut()
@@ -309,8 +332,31 @@ export default function Home() {
       <div ref={chatRef} style={{ flex: 1, overflowY: 'auto', padding: '20px 20px 40px', maxWidth: 640, margin: '0 auto', width: '100%' }}>
         {exercise?.imagePreview && <img src={exercise.imagePreview} alt="esercizio" style={{ width: '100%', borderRadius: 12, marginBottom: 16 }} />}
         {exercise?.text && <div style={{ background: '#2A2A2A', border: '1px solid #3A3A3A', borderRadius: 12, padding: '12px 14px', marginBottom: 20, fontSize: 14, color: '#A0A0A0' }}>{exercise.text}</div>}
+        
+        {/* Nuovo blocco animazione di caricamento */}
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 40, color: '#888' }}>Sto analizzando l&apos;esercizio...</div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 20px', gap: 24 }}>
+            <style>
+              {`
+                @keyframes spin { 100% { transform: rotate(360deg); } }
+                @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+              `}
+            </style>
+            
+            <div style={{ position: 'relative', width: 56, height: 56 }}>
+              <div style={{ position: 'absolute', inset: 0, border: '4px solid #3A3A3A', borderRadius: '50%' }} />
+              <div style={{ position: 'absolute', inset: 0, border: '4px solid #FFD600', borderRadius: '50%', borderTopColor: 'transparent', animation: 'spin 1s linear infinite' }} />
+            </div>
+
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#FFD600', marginBottom: 12, animation: 'pulse 2s infinite' }}>
+                Sto analizzando l'esercizio...
+              </div>
+              <div style={{ fontSize: 14, color: '#888', fontStyle: 'italic', maxWidth: 280, margin: '0 auto', lineHeight: 1.5, transition: 'opacity 0.3s ease' }}>
+                &quot;{FRASI_MOTIVAZIONALI[quoteIndex]}&quot;
+              </div>
+            </div>
+          </div>
         ) : explanation ? (
           <ExplanationRenderer text={explanation} esercizio={exercise?.text || ''} />
         ) : null}
