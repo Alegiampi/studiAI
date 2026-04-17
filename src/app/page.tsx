@@ -11,7 +11,7 @@ const DAILY_LIMIT = 5
 const FRASI_MOTIVAZIONALI = [
   "Un problema alla volta, verso la soluzione...",
   "Scaldando i motori della fisica...",
-  "La matematica non è un'opinione, ma stiamo calcolando la migliore per te!",
+  "La matematica non mente, stiamo calcolando la migliore per te!",
   "Elaborando i dati, quasi pronto...",
   "Ricorda: ogni errore è un passo verso la comprensione.",
   "Mettendo in ordine i numeri..."
@@ -47,7 +47,7 @@ function parseExplanation(text: string): { titolo: string; passi: Passo[]; final
       if (currentPasso) passi.push(currentPasso)
       currentPasso = { titolo: trimmed.replace(/^PASSO \d+:/, '').trim(), corpo: '' }
     } else if (trimmed.startsWith('SUGGERIMENTI:')) {
-      // ignoriamo i suggerimenti
+      // ignoriamo
     } else if (trimmed.startsWith('RISPOSTA FINALE:')) {
       if (currentPasso) { passi.push(currentPasso); currentPasso = null }
       finale = trimmed.replace('RISPOSTA FINALE:', '').trim()
@@ -110,7 +110,6 @@ function ExplanationRenderer({ text, esercizio }: { text: string; esercizio: str
                 <MD>{passo.corpo}</MD>
               </div>
             </div>
-
             {passo.domanda && (
               <div style={{ marginTop: 8, marginLeft: 12, border: '1px solid #3A3A3A', borderRadius: 10, overflow: 'hidden' }}>
                 <div style={{ background: '#FFD600', padding: '7px 12px', fontSize: 12, color: '#1A1A1A', fontWeight: 600 }}>
@@ -121,7 +120,6 @@ function ExplanationRenderer({ text, esercizio }: { text: string; esercizio: str
                 </div>
               </div>
             )}
-
             {!passo.loadingRisposta && (
               <div style={{ marginTop: 8, marginLeft: 12 }}>
                 {openInput === i ? (
@@ -140,7 +138,6 @@ function ExplanationRenderer({ text, esercizio }: { text: string; esercizio: str
           </div>
         </div>
       ))}
-
       {parsed.finale && (
         <div style={{ background: '#2A2A2A', border: '2px solid #FFD600', borderRadius: 12, padding: '14px 18px', marginTop: 8 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: '#FFD600', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Risposta finale</div>
@@ -151,7 +148,8 @@ function ExplanationRenderer({ text, esercizio }: { text: string; esercizio: str
   )
 }
 
-function AuthModal({ onClose, supabase }: { onClose?: () => void; supabase: any }) {  const [mode, setMode] = useState<'login' | 'signup'>('login')
+function AuthModal({ onClose, supabase }: { onClose?: () => void; supabase: any }) {
+  const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -186,28 +184,22 @@ function AuthModal({ onClose, supabase }: { onClose?: () => void; supabase: any 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <div style={{ fontSize: 18, fontWeight: 700, color: '#FFD600' }}>{mode === 'login' ? 'Accedi' : 'Registrati'}</div>
           {onClose && <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#888', fontSize: 20, cursor: 'pointer' }}>✕</button>}
-                  </div>
-
+        </div>
         <button onClick={loginConGoogle} style={{ width: '100%', padding: '11px', background: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 20, color: '#1A1A1A' }}>
           <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
           Continua con Google
         </button>
-
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
           <div style={{ flex: 1, height: 1, background: '#3A3A3A' }} />
           <span style={{ fontSize: 12, color: '#888' }}>oppure</span>
           <div style={{ flex: 1, height: 1, background: '#3A3A3A' }} />
         </div>
-
         <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" type="email" style={{ width: '100%', padding: '11px 14px', background: '#1A1A1A', border: '1px solid #3A3A3A', borderRadius: 10, fontSize: 14, color: '#E0E0E0', outline: 'none', marginBottom: 10 }} />
         <input value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" type="password" onKeyDown={e => e.key === 'Enter' && handleEmail()} style={{ width: '100%', padding: '11px 14px', background: '#1A1A1A', border: '1px solid #3A3A3A', borderRadius: 10, fontSize: 14, color: '#E0E0E0', outline: 'none', marginBottom: 16 }} />
-
         {msg && <div style={{ fontSize: 13, color: msg.includes('email') ? '#4ADE80' : '#FF6B6B', marginBottom: 12 }}>{msg}</div>}
-
         <button onClick={handleEmail} disabled={loading} style={{ width: '100%', padding: 12, background: '#FFD600', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer', color: '#1A1A1A', marginBottom: 12 }}>
           {loading ? '...' : mode === 'login' ? 'Accedi' : 'Registrati'}
         </button>
-
         <div style={{ textAlign: 'center', fontSize: 13, color: '#888' }}>
           {mode === 'login' ? 'Non hai un account? ' : 'Hai già un account? '}
           <span onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setMsg('') }} style={{ color: '#FFD600', cursor: 'pointer', fontWeight: 500 }}>
@@ -271,8 +263,49 @@ function StoricoScreen({ onBack }: { onBack: () => void }) {
   )
 }
 
+function OnboardingScreen({ onDone }: { onDone: () => void }) {
+  const [step, setStep] = useState(0)
+
+  const steps = [
+    { emoji: '📸', title: 'Fotografa o scrivi', desc: 'Carica una foto del tuo esercizio di matematica o fisica, oppure scrivilo direttamente.' },
+    { emoji: '🧠', title: 'Spiegazione passo per passo', desc: 'StudiAI spiega ogni passaggio in italiano con formule chiare. Puoi chiedere chiarimenti su ogni passo.' },
+    { emoji: '⚡', title: '5 esercizi al giorno gratis', desc: 'Ogni giorno hai 5 spiegazioni gratuite. Sblocca tutto con il piano premium.' },
+  ]
+
+  function next() {
+    if (step < steps.length - 1) {
+      setStep(s => s + 1)
+    } else {
+      localStorage.setItem('onboarding_done', '1')
+      onDone()
+    }
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#1A1A1A', fontFamily: 'system-ui', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+      <div style={{ width: '100%', maxWidth: 380, textAlign: 'center' }}>
+        <div style={{ fontSize: 11, color: '#555', marginBottom: 40, letterSpacing: '0.1em' }}>{step + 1} / {steps.length}</div>
+        <div style={{ fontSize: 72, marginBottom: 24 }}>{steps[step].emoji}</div>
+        <div style={{ fontSize: 24, fontWeight: 800, color: '#FFD600', marginBottom: 16, letterSpacing: '-0.5px' }}>{steps[step].title}</div>
+        <div style={{ fontSize: 15, color: '#888', lineHeight: 1.7, marginBottom: 48 }}>{steps[step].desc}</div>
+        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginBottom: 32 }}>
+          {steps.map((_, i) => (
+            <div key={i} style={{ width: i === step ? 24 : 6, height: 6, borderRadius: 3, background: i === step ? '#FFD600' : '#3A3A3A', transition: 'all 0.3s' }} />
+          ))}
+        </div>
+        <button onClick={next} style={{ width: '100%', padding: 15, background: '#FFD600', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer', color: '#1A1A1A' }}>
+          {step < steps.length - 1 ? 'Continua →' : 'Inizia a studiare →'}
+        </button>
+        {step < steps.length - 1 && (
+          <button onClick={() => { localStorage.setItem('onboarding_done', '1'); onDone() }} style={{ background: 'none', border: 'none', color: '#555', fontSize: 13, cursor: 'pointer', marginTop: 16 }}>Salta</button>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function Home() {
-  const [screen, setScreen] = useState<'home' | 'explanation' | 'paywall' | 'storico'>('home')    
+  const [screen, setScreen] = useState<'home' | 'explanation' | 'paywall' | 'storico'>('home')
   const [exercise, setExercise] = useState<{ text: string; imageBase64?: string; imagePreview?: string } | null>(null)
   const [usedToday, setUsedToday] = useState(0)
   const [explanation, setExplanation] = useState('')
@@ -284,19 +317,21 @@ export default function Home() {
   const [user, setUser] = useState<any>(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [showAuth, setShowAuth] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(false)
   const [quoteIndex, setQuoteIndex] = useState(0)
-  
   const fileRef = useRef<HTMLInputElement>(null)
   const chatRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
-  //qui ci sono i profili gratis
   const admins = ['alegiampi@icloud.com', 'g79750797@gmail.com']
   const isAdmin = admins.includes(user?.email || '')
   const remaining = DAILY_LIMIT - usedToday
   const isLimited = !isAdmin && remaining <= 0
 
-useEffect(() => {
+  useEffect(() => {
+    if (!localStorage.getItem('onboarding_done')) {
+      setShowOnboarding(true)
+    }
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user)
       setAuthLoading(false)
@@ -314,9 +349,8 @@ useEffect(() => {
     })
   }, [])
 
-  // Nuovo useEffect per far ruotare le frasi motivazionali
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>
     if (loading) {
       setQuoteIndex(Math.floor(Math.random() * FRASI_MOTIVAZIONALI.length))
       interval = setInterval(() => {
@@ -357,21 +391,29 @@ useEffect(() => {
     const data = await res.json()
     setExplanation(data.explanation)
     if (user) {
-  fetch('/api/exercises', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question: text, explanation: data.explanation })
-  })
-}
+      fetch('/api/exercises', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: text, explanation: data.explanation })
+      })
+    }
     setLoading(false)
   }
+
+  if (authLoading) return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1A1A1A' }}>
+      <div style={{ color: '#888', fontFamily: 'system-ui' }}>Caricamento...</div>
+    </div>
+  )
+
+  if (showOnboarding) return <OnboardingScreen onDone={() => setShowOnboarding(false)} />
 
   if (!user) return (
     <div style={{ minHeight: '100vh', background: '#1A1A1A', fontFamily: 'system-ui', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ width: '100%', maxWidth: 380, textAlign: 'center' }}>
         <div style={{ fontSize: 32, fontWeight: 800, color: '#FFD600', marginBottom: 8, letterSpacing: '-1px' }}>StudiAI</div>
         <div style={{ fontSize: 14, color: '#666', marginBottom: 40 }}>il tuo tutor di matematica e fisica</div>
-        <AuthModal onClose={() => {}} supabase={supabase} />
+        <AuthModal supabase={supabase} />
       </div>
     </div>
   )
@@ -397,6 +439,8 @@ useEffect(() => {
     </div>
   )
 
+  if (screen === 'storico') return <StoricoScreen onBack={() => setScreen('home')} />
+
   if (screen === 'explanation') return (
     <div style={{ minHeight: '100vh', background: '#1A1A1A', fontFamily: 'system-ui', display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '16px 20px', background: '#222', borderBottom: '1px solid #3A3A3A', display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -406,27 +450,16 @@ useEffect(() => {
       <div ref={chatRef} style={{ flex: 1, overflowY: 'auto', padding: '20px 20px 40px', maxWidth: 640, margin: '0 auto', width: '100%' }}>
         {exercise?.imagePreview && <img src={exercise.imagePreview} alt="esercizio" style={{ width: '100%', borderRadius: 12, marginBottom: 16 }} />}
         {exercise?.text && <div style={{ background: '#2A2A2A', border: '1px solid #3A3A3A', borderRadius: 12, padding: '12px 14px', marginBottom: 20, fontSize: 14, color: '#A0A0A0' }}>{exercise.text}</div>}
-        
-        {/* Nuovo blocco animazione di caricamento */}
         {loading ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 20px', gap: 24 }}>
-            <style>
-              {`
-                @keyframes spin { 100% { transform: rotate(360deg); } }
-                @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-              `}
-            </style>
-            
+            <style>{`@keyframes spin { 100% { transform: rotate(360deg); } } @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }`}</style>
             <div style={{ position: 'relative', width: 56, height: 56 }}>
               <div style={{ position: 'absolute', inset: 0, border: '4px solid #3A3A3A', borderRadius: '50%' }} />
               <div style={{ position: 'absolute', inset: 0, border: '4px solid #FFD600', borderRadius: '50%', borderTopColor: 'transparent', animation: 'spin 1s linear infinite' }} />
             </div>
-
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 18, fontWeight: 700, color: '#FFD600', marginBottom: 12, animation: 'pulse 2s infinite' }}>
-                Sto analizzando l'esercizio...
-              </div>
-              <div style={{ fontSize: 14, color: '#888', fontStyle: 'italic', maxWidth: 280, margin: '0 auto', lineHeight: 1.5, transition: 'opacity 0.3s ease' }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#FFD600', marginBottom: 12, animation: 'pulse 2s infinite' }}>Sto analizzando l&apos;esercizio...</div>
+              <div style={{ fontSize: 13, color: '#888', fontStyle: 'italic', maxWidth: 280, margin: '0 auto', lineHeight: 1.5 }}>
                 &quot;{FRASI_MOTIVAZIONALI[quoteIndex]}&quot;
               </div>
             </div>
@@ -440,11 +473,10 @@ useEffect(() => {
       </div>
     </div>
   )
-  if (screen === 'storico') return <StoricoScreen onBack={() => setScreen('home')} />
+
   return (
     <div style={{ minHeight: '100vh', background: '#1A1A1A', fontFamily: 'system-ui' }}>
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} supabase={supabase} />}
-
       <div style={{ padding: '18px 24px', background: '#222', borderBottom: '1px solid #3A3A3A', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <div style={{ fontSize: 20, fontWeight: 800, color: '#FFD600', letterSpacing: '-0.5px' }}>StudiAI</div>
@@ -455,18 +487,16 @@ useEffect(() => {
             <>
               <div style={{ fontSize: 12, color: '#888' }}>{user.email?.split('@')[0]}</div>
               <button onClick={() => setScreen('storico')} style={{ background: 'none', border: '1px solid #3A3A3A', borderRadius: 20, padding: '5px 12px', fontSize: 12, color: '#FFD600', cursor: 'pointer' }}>Storico</button>
-              <button onClick={logout} style={{ background: 'none', border: '1px solid #3A3A3A', borderRadius: 20, padding: '5px 12px', fontSize: 12, color: '#888', cursor: 'pointer' }}>Esci</button>            </>
+              <button onClick={logout} style={{ background: 'none', border: '1px solid #3A3A3A', borderRadius: 20, padding: '5px 12px', fontSize: 12, color: '#888', cursor: 'pointer' }}>Esci</button>
+            </>
           ) : (
-            <button onClick={() => setShowAuth(true)} style={{ background: '#2A2A2A', border: '1px solid #3A3A3A', borderRadius: 20, padding: '6px 14px', fontSize: 12, color: '#E0E0E0', cursor: 'pointer', fontWeight: 500 }}>
-              Accedi
-            </button>
+            <button onClick={() => setShowAuth(true)} style={{ background: '#2A2A2A', border: '1px solid #3A3A3A', borderRadius: 20, padding: '6px 14px', fontSize: 12, color: '#E0E0E0', cursor: 'pointer', fontWeight: 500 }}>Accedi</button>
           )}
           <div onClick={() => setScreen('paywall')} style={{ background: '#FFD600', color: '#1A1A1A', fontSize: 12, fontWeight: 700, padding: '6px 14px', borderRadius: 20, cursor: 'pointer' }}>
             {isLimited ? '⚡ Sblocca' : `${remaining} rimasti`}
           </div>
         </div>
       </div>
-
       <div style={{ padding: '32px 20px', maxWidth: 640, margin: '0 auto' }}>
         <div
           onClick={() => !image && fileRef.current?.click()}
@@ -489,19 +519,15 @@ useEffect(() => {
           )}
         </div>
         <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files && handleFile(e.target.files[0])} />
-
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
           <div style={{ flex: 1, height: 1, background: '#3A3A3A' }} />
           <span style={{ fontSize: 12, color: '#555' }}>oppure scrivi</span>
           <div style={{ flex: 1, height: 1, background: '#3A3A3A' }} />
         </div>
-
         <textarea value={text} onChange={e => setText(e.target.value)} placeholder="Es: Calcola la derivata di f(x) = x² · sin(x)..." rows={3} style={{ width: '100%', border: '1px solid #3A3A3A', borderRadius: 12, padding: '12px 14px', fontSize: 14, fontFamily: 'system-ui', resize: 'none', outline: 'none', marginBottom: 16, background: '#222', color: '#E0E0E0' }} />
-
         <button onClick={handleSubmit} disabled={!text.trim() && !image} style={{ width: '100%', padding: 15, background: (!text.trim() && !image) ? '#2A2A2A' : '#FFD600', color: (!text.trim() && !image) ? '#555' : '#1A1A1A', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: (!text.trim() && !image) ? 'default' : 'pointer', transition: 'all 0.2s' }}>
           {isLimited ? '⚡ Sblocca per continuare' : 'Spiega questo esercizio →'}
         </button>
-
         {!isLimited && (
           <div style={{ marginTop: 16, background: '#222', border: '1px solid #3A3A3A', borderRadius: 12, padding: '10px 14px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
