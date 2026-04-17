@@ -242,13 +242,21 @@ export default function Home() {
   const remaining = DAILY_LIMIT - usedToday
   const isLimited = remaining <= 0
 
-  useEffect(() => {
+useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user)
       setAuthLoading(false)
+      if (data.user) {
+        fetch('/api/usage').then(r => r.json()).then(d => setUsedToday(d.count))
+      }
     })
     supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
+      if (session?.user) {
+        fetch('/api/usage').then(r => r.json()).then(d => setUsedToday(d.count))
+      } else {
+        setUsedToday(0)
+      }
     })
   }, [])
 
@@ -282,6 +290,7 @@ export default function Home() {
     if (isLimited) { setScreen('paywall'); return }
     if (!text.trim() && !image) return
     setUsedToday(u => u + 1)
+    if (user) fetch('/api/usage', { method: 'POST' })
     setExercise({ text, imageBase64: imageBase64 || undefined, imagePreview: image || undefined })
     setScreen('explanation')
     setLoading(true)
