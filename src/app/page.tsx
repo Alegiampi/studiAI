@@ -238,8 +238,10 @@ export default function Home() {
   const chatRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
+  const admins = ['alegiampi@icloud.com', 'g79750797@gmail.com']
+  const isAdmin = admins.includes(user?.email || '')
   const remaining = DAILY_LIMIT - usedToday
-  const isLimited = remaining <= 0
+  const isLimited = !isAdmin && remaining <= 0
 
 useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
