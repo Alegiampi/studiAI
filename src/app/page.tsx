@@ -219,8 +219,60 @@ function AuthModal({ onClose, supabase }: { onClose?: () => void; supabase: any 
   )
 }
 
+function StoricoScreen({ onBack }: { onBack: () => void }) {
+  const [exercises, setExercises] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selected, setSelected] = useState<any | null>(null)
+
+  useEffect(() => {
+    fetch('/api/exercises').then(r => r.json()).then(data => {
+      setExercises(data)
+      setLoading(false)
+    })
+  }, [])
+
+  if (selected) return (
+    <div style={{ minHeight: '100vh', background: '#1A1A1A', fontFamily: 'system-ui', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '16px 20px', background: '#222', borderBottom: '1px solid #3A3A3A', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: '#888' }}>‹</button>
+        <div style={{ fontSize: 15, fontWeight: 600, color: '#E0E0E0' }}>Esercizio</div>
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '20px', maxWidth: 640, margin: '0 auto', width: '100%' }}>
+        <div style={{ background: '#2A2A2A', border: '1px solid #3A3A3A', borderRadius: 12, padding: '12px 14px', marginBottom: 20, fontSize: 14, color: '#A0A0A0' }}>{selected.question}</div>
+        <ExplanationRenderer text={selected.explanation} esercizio={selected.question} />
+      </div>
+    </div>
+  )
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#1A1A1A', fontFamily: 'system-ui', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '16px 20px', background: '#222', borderBottom: '1px solid #3A3A3A', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <button onClick={onBack} style={{ background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: '#888' }}>‹</button>
+        <div style={{ fontSize: 15, fontWeight: 600, color: '#E0E0E0' }}>I tuoi esercizi</div>
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '20px', maxWidth: 640, margin: '0 auto', width: '100%' }}>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: 40, color: '#888' }}>Caricamento...</div>
+        ) : exercises.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 40, color: '#888' }}>Nessun esercizio ancora. Inizia a studiare!</div>
+        ) : (
+          exercises.map((ex, i) => (
+            <div key={i} onClick={() => setSelected(ex)} style={{ background: '#222', border: '1px solid #3A3A3A', borderRadius: 12, padding: '14px 16px', marginBottom: 10, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: 14, color: '#E0E0E0', marginBottom: 4, fontWeight: 500 }}>{ex.question || 'Esercizio con foto'}</div>
+                <div style={{ fontSize: 12, color: '#666' }}>{new Date(ex.created_at).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</div>
+              </div>
+              <span style={{ color: '#FFD600', fontSize: 18 }}>›</span>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function Home() {
-  const [screen, setScreen] = useState<'home' | 'explanation' | 'paywall'>('home')
+  const [screen, setScreen] = useState<'home' | 'explanation' | 'paywall' | 'storico'>('home')    
   const [exercise, setExercise] = useState<{ text: string; imageBase64?: string; imagePreview?: string } | null>(null)
   const [usedToday, setUsedToday] = useState(0)
   const [explanation, setExplanation] = useState('')
@@ -238,6 +290,7 @@ export default function Home() {
   const chatRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
+  //qui ci sono i profili gratis
   const admins = ['alegiampi@icloud.com', 'g79750797@gmail.com']
   const isAdmin = admins.includes(user?.email || '')
   const remaining = DAILY_LIMIT - usedToday
@@ -303,6 +356,13 @@ useEffect(() => {
     })
     const data = await res.json()
     setExplanation(data.explanation)
+    if (user) {
+  fetch('/api/exercises', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question: text, explanation: data.explanation })
+  })
+}
     setLoading(false)
   }
 
@@ -380,7 +440,7 @@ useEffect(() => {
       </div>
     </div>
   )
-
+  if (screen === 'storico') return <StoricoScreen onBack={() => setScreen('home')} />
   return (
     <div style={{ minHeight: '100vh', background: '#1A1A1A', fontFamily: 'system-ui' }}>
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} supabase={supabase} />}
@@ -394,8 +454,8 @@ useEffect(() => {
           {user ? (
             <>
               <div style={{ fontSize: 12, color: '#888' }}>{user.email?.split('@')[0]}</div>
-              <button onClick={logout} style={{ background: 'none', border: '1px solid #3A3A3A', borderRadius: 20, padding: '5px 12px', fontSize: 12, color: '#888', cursor: 'pointer' }}>Esci</button>
-            </>
+              <button onClick={() => setScreen('storico')} style={{ background: 'none', border: '1px solid #3A3A3A', borderRadius: 20, padding: '5px 12px', fontSize: 12, color: '#FFD600', cursor: 'pointer' }}>Storico</button>
+              <button onClick={logout} style={{ background: 'none', border: '1px solid #3A3A3A', borderRadius: 20, padding: '5px 12px', fontSize: 12, color: '#888', cursor: 'pointer' }}>Esci</button>            </>
           ) : (
             <button onClick={() => setShowAuth(true)} style={{ background: '#2A2A2A', border: '1px solid #3A3A3A', borderRadius: 20, padding: '6px 14px', fontSize: 12, color: '#E0E0E0', cursor: 'pointer', fontWeight: 500 }}>
               Accedi
