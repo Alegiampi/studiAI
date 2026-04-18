@@ -330,33 +330,49 @@ export default function Home() {
   
   const fileRef = useRef<HTMLInputElement>(null)
   const chatRef = useRef<HTMLDivElement>(null)
-  const supabase = createClient()
+const supabase = createClient()
 
-  //qui ci sono i profili gratis
-  const admins = ['alegiampi@icloud.com', 'g79750797@gmail.com']
-  const isAdmin = admins.includes(user?.email || '')
-  const remaining = DAILY_LIMIT - usedToday
-  const isLimited = !isAdmin && remaining <= 0
+//qui ci sono i profili gratis
+const admins = ['alegiampi@icloud.com', 'g79750797@gmail.com']
+const isAdmin = admins.includes(user?.email || '')
+const remaining = DAILY_LIMIT - usedToday
+const isLimited = !isAdmin && remaining <= 0
 
 useEffect(() => {
   if (!localStorage.getItem('onboarding_done')) {
     setShowOnboarding(true)
   }
+
+  // Forza refresh sessione se arrivi dal callback Google
+  const params = new URLSearchParams(window.location.search)
+  if (params.get('loggedin')) {
+    supabase.auth.refreshSession().then(() => {
+      window.history.replaceState({}, '', '/')
+    })
+  }
+
+  supabase.auth.getUser().then(({ data }) => {
+    setUser(data.user)
+    setAuthLoading(false)
+  }).catch(() => {
+    setAuthLoading(false)
+  })
 }, [])
 
-  // Nuovo useEffect per far ruotare le frasi motivazionali
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (loading) {
-      setQuoteIndex(Math.floor(Math.random() * FRASI_MOTIVAZIONALI.length))
-      interval = setInterval(() => {
-        setQuoteIndex(prev => (prev + 1) % FRASI_MOTIVAZIONALI.length)
-      }, 3000)
-    }
-    return () => clearInterval(interval)
-  }, [loading])
+useEffect(() => {
+  let interval: NodeJS.Timeout | undefined
+  if (loading) {
+    setQuoteIndex(Math.floor(Math.random() * FRASI_MOTIVAZIONALI.length))
+    interval = setInterval(() => {
+      setQuoteIndex(prev => (prev + 1) % FRASI_MOTIVAZIONALI.length)
+    }, 3000)
+  }
+  return () => {
+    if (interval) clearInterval(interval)
+  }
+}, [loading])
 
-  async function logout() {
+async function logout() {
     await supabase.auth.signOut()
     setUser(null)
     setUsedToday(0)
