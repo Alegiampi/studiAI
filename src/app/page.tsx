@@ -247,7 +247,7 @@ function OnboardingScreen({ onDone }: { onDone: () => void }) {
 
   function next() {
     if (step < steps.length - 1) { setStep(s => s + 1) }
-    else { localStorage.setItem('onboarding_done', '1'); onDone() }
+    else { fetch('/api/profile', { method: 'POST' }).then(() => onDone()) }
   }
 
   return (
@@ -266,7 +266,7 @@ function OnboardingScreen({ onDone }: { onDone: () => void }) {
           {step < steps.length - 1 ? 'Continua →' : 'Inizia a studiare →'}
         </button>
         {step < steps.length - 1 && (
-          <button onClick={() => { localStorage.setItem('onboarding_done', '1'); onDone() }} style={{ background: 'none', border: 'none', color: '#555', fontSize: 13, cursor: 'pointer', marginTop: 16 }}>Salta</button>
+          <button onClick={() => { fetch('/api/profile', { method: 'POST' }).then(() => onDone()) }} style={{ background: 'none', border: 'none', color: '#555', fontSize: 13, cursor: 'pointer', marginTop: 16 }}>Salta</button>
         )}
       </div>
     </div>
@@ -311,9 +311,9 @@ export default function Home() {
       setAuthLoading(false)
       if (currentUser) {
         fetch('/api/usage').then(r => r.json()).then(d => setUsedToday(d.count))
-        if (!localStorage.getItem('onboarding_done')) {
-          setShowOnboarding(true)
-        }
+        fetch('/api/profile').then(r => r.json()).then(d => {
+          if (!d.onboarding_done) setShowOnboarding(true)
+        })
       } else {
         setUsedToday(0)
       }
@@ -325,9 +325,9 @@ export default function Home() {
       setAuthLoading(false)
       if (currentUser) {
         fetch('/api/usage').then(r => r.json()).then(d => setUsedToday(d.count))
-        if (!localStorage.getItem('onboarding_done')) {
-          setShowOnboarding(true)
-        }
+        fetch('/api/profile').then(r => r.json()).then(d => {
+        if (!d.onboarding_done) setShowOnboarding(true)
+        })
       }
     })
 
