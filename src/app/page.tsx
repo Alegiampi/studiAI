@@ -31,10 +31,11 @@ type Passo = {
   loadingRisposta?: boolean
 }
 
-function parseExplanation(text: string): { titolo: string; grafico?: { latex: string; color: string; label: string }[]; passi: Passo[]; finale: string } {
+type EspressioneGrafico = { fn: string; color: string; label: string }
+
+function parseExplanation(text: string): { titolo: string; passi: Passo[]; finale: string } {
   const lines = text.split('\n')
   let titolo = ''
-  let grafico: { latex: string; color: string; label: string }[] | undefined
   const passi: Passo[] = []
   let finale = ''
   let currentPasso: Passo | null = null
@@ -44,14 +45,6 @@ function parseExplanation(text: string): { titolo: string; grafico?: { latex: st
     if (!trimmed) continue
     if (trimmed.startsWith('TITOLO:')) {
       titolo = trimmed.replace('TITOLO:', '').trim()
-    } else if (trimmed.startsWith('GRAFICO:')) {
-      try {
-        const jsonStr = trimmed.replace('GRAFICO:', '').trim()
-        grafico = JSON.parse(jsonStr)
-        console.log('GRAFICO parsed:', grafico)
-      } catch (e) {
-        console.log('GRAFICO parse error:', trimmed, e)
-      }
     } else if (trimmed.match(/^PASSO \d+:/)) {
       if (currentPasso) passi.push(currentPasso)
       currentPasso = { titolo: trimmed.replace(/^PASSO \d+:/, '').trim(), corpo: '' }
@@ -65,90 +58,96 @@ function parseExplanation(text: string): { titolo: string; grafico?: { latex: st
     }
   }
   if (currentPasso) passi.push(currentPasso)
-  return { titolo, grafico, passi, finale }
+  return { titolo, passi, finale }
 }
 
-function Desmos({ expression }: { expression: string }) {
-  return (
-    <div style={{ marginBottom: 20 }}>
-      <div style={{ fontSize: 13, color: '#888', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Grafico</div>
-      <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 16, overflow: 'hidden', border: '1px solid #3A3A3A', background: '#000' }}>
-        <iframe
-          title="Grafico Desmos"
-          src={`https://www.desmos.com/calculator?lang=it&embed=true&expr=${encodeURIComponent(expression)}`}
-          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-          frameBorder="0"
-          allowFullScreen
-        />
-      </div>
-    </div>
-  )
-}
-
-function GraficoDesmos({ espressioni }: { espressioni: { latex: string; color: string; label: string }[] }) {
+function GraficoJSX({ espressioni }: { espressioni: EspressioneGrafico[] }) {
   const ref = useRef<HTMLDivElement>(null)
-  const calcRef = useRef<any>(null)
+  const boardRef = useRef<any>(null)
+  const idRef = useRef('jsx_' + Math.random().toString(36).substr(2, 9))
 
   useEffect(() => {
-    if (!ref.current) return
+    function init() {
+      if (!ref.current || !(window as any).JXG) return
+      const JXG = (window as any).JXG
 
-    const existingScript = document.getElementById('desmos-script')
-    
-    function initDesmos() {
-      if (!ref.current || !(window as any).Desmos) return
-      if (calcRef.current) calcRef.current.destroy()
-      
-      const calc = (window as any).Desmos.GraphingCalculator(ref.current, {
-        expressionsCollapsed: true,
-        settingsMenu: false,
-        zoomButtons: true,
-        border: false,
-        keypad: false,
-        expressions: false,
-        backgroundColor: '#1A1A1A',
-        textColor: '#E0E0E0',
-        axisColor: '#3A3A3A',
-        gridLineColor: '#2A2A2A',
+      if (boardRef.current) {
+        JXG.JSXGraph.freeBoard(boardRef.current)
+        boardRef.current = null
+      }
+
+      const board = JXG.JSXGraph.initBoard(idRef.current, {
+        boundingbox: [-5, 4, 5, -4],
+        axis: true,
+        showCopyright: false,
+        showNavigation: true,
+        pan: { enabled: true },
+        zoom: { enabled: true },
       })
 
-      espressioni.forEach((e, i) => {
-        calc.setExpression({ id: 'expr' + i, latex: e.latex, color: e.color, label: e.label, showLabel: true })
+      espressioni.forEach((e) => {
+        try {
+          const fn = new Function('x', `return ${e.fn}`)
+          board.create('functiongraph', [fn], {
+            strokeColor: e.color,
+            strokeWidth: 2.5,
+          })
+        } catch (err) {
+          console.error('Errore espressione:', e.fn, err)
+        }
       })
 
-      calcRef.current = calc
+      boardRef.current = board
     }
 
+    const existingLink = document.getElementById('jsxgraph-css')
+    if (!existingLink) {
+      const link = document.createElement('link')
+      link.id = 'jsxgraph-css'
+      link.rel = 'stylesheet'
+      link.href = 'https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraph.css'
+      document.head.appendChild(link)
+    }
+
+    const existingScript = document.getElementById('jsxgraph-script')
     if (existingScript) {
-      if ((window as any).Desmos) initDesmos()
-      else existingScript.addEventListener('load', initDesmos)
+      if ((window as any).JXG) init()
+      else existingScript.addEventListener('load', init)
     } else {
       const script = document.createElement('script')
-      script.id = 'desmos-script'
-      script.src = 'https://www.desmos.com/api/v1.9/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6'
+      script.id = 'jsxgraph-script'
+      script.src = 'https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraphcore.js'
       script.async = true
-      script.onload = initDesmos
+      script.onload = init
       document.head.appendChild(script)
     }
 
-    return () => { if (calcRef.current) { calcRef.current.destroy(); calcRef.current = null } }
-  }, [espressioni])
-
-  const colori = espressioni.map(e => ({ color: e.color, label: e.label }))
+    return () => {
+      if (boardRef.current && (window as any).JXG) {
+        (window as any).JXG.JSXGraph.freeBoard(boardRef.current)
+        boardRef.current = null
+      }
+    }
+  }, [JSON.stringify(espressioni)])
 
   return (
     <div style={{ marginBottom: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
         <div style={{ fontSize: 11, fontWeight: 600, color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Grafico</div>
         <div style={{ display: 'flex', gap: 12 }}>
-          {colori.map((c, i) => (
+          {espressioni.map((e, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: c.color }} />
-              <span style={{ fontSize: 11, color: '#888' }}>{c.label}</span>
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: e.color }} />
+              <span style={{ fontSize: 11, color: '#888' }}>{e.label}</span>
             </div>
           ))}
         </div>
       </div>
-      <div ref={ref} style={{ width: '100%', height: 320, borderRadius: 12, overflow: 'hidden', border: '1px solid #3A3A3A' }} />
+      <div
+        id={idRef.current}
+        ref={ref}
+        style={{ width: '100%', height: 320, borderRadius: 12, overflow: 'hidden', border: '1px solid #3A3A3A' }}
+      />
     </div>
   )
 }
@@ -177,7 +176,6 @@ function ExplanationRenderer({ text, esercizio }: { text: string; esercizio: str
   return (
     <div>
       {parsed.titolo && <div style={{ fontSize: 18, fontWeight: 700, color: '#FFD600', marginBottom: 24, lineHeight: 1.4 }}><MD>{parsed.titolo}</MD></div>}
-      {parsed.grafico && parsed.grafico.length > 0 && <GraficoDesmos espressioni={parsed.grafico} />}
       {passi.map((passo, i) => (
         <div key={i} style={{ marginBottom: 16, display: 'flex', gap: 10 }}>
           <div style={{ width: 3, background: '#FFD600', borderRadius: 4, flexShrink: 0, opacity: 0.4 }} />
@@ -393,7 +391,6 @@ function PersonalizzazioneScreen({ onDone }: { onDone: () => void }) {
   const scuole = ['Liceo Scientifico', 'Liceo Classico', 'Istituto Tecnico', 'Scuola Media', 'Altro']
   const classi = scuola === 'Scuola Media' ? ['1ª media', '2ª media', '3ª media'] : ['1ª', '2ª', '3ª', '4ª', '5ª']
   const materieList = ['Matematica', 'Fisica', 'Chimica', 'Informatica']
-
   const btnBase = { border: '1px solid #3A3A3A', borderRadius: 10, padding: '10px 14px', fontSize: 14, cursor: 'pointer', fontWeight: 500, transition: 'all 0.2s' }
   const btnActive = { ...btnBase, background: '#FFD600', color: '#1A1A1A', border: '1px solid #FFD600' }
   const btnInactive = { ...btnBase, background: '#2A2A2A', color: '#888' }
@@ -403,42 +400,27 @@ function PersonalizzazioneScreen({ onDone }: { onDone: () => void }) {
       <div style={{ width: '100%', maxWidth: 420 }}>
         <div style={{ fontSize: 24, fontWeight: 800, color: '#FFD600', marginBottom: 8, letterSpacing: '-0.5px' }}>Personalizziamo</div>
         <div style={{ fontSize: 14, color: '#666', marginBottom: 32 }}>Così le spiegazioni saranno calibrate su di te.</div>
-
         <div style={{ marginBottom: 24 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: '#888', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Che scuola frequenti?</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {scuole.map(s => (
-              <button key={s} onClick={() => setScuola(s)} style={scuola === s ? btnActive : btnInactive}>{s}</button>
-            ))}
+            {scuole.map(s => <button key={s} onClick={() => setScuola(s)} style={scuola === s ? btnActive : btnInactive}>{s}</button>)}
           </div>
         </div>
-
         <div style={{ marginBottom: 24 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: '#888', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Che classe sei?</div>
           <div style={{ display: 'flex', gap: 8 }}>
-            {classi.map(c => (
-              <button key={c} onClick={() => setClasse(c)} style={classe === c ? btnActive : btnInactive}>{c}</button>
-            ))}
+            {classi.map(c => <button key={c} onClick={() => setClasse(c)} style={classe === c ? btnActive : btnInactive}>{c}</button>)}
           </div>
         </div>
-
         <div style={{ marginBottom: 40 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: '#888', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Materie difficili?</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {materieList.map(m => (
-              <button key={m} onClick={() => toggleMateria(m)} style={materie.includes(m) ? btnActive : btnInactive}>{m}</button>
-            ))}
+            {materieList.map(m => <button key={m} onClick={() => toggleMateria(m)} style={materie.includes(m) ? btnActive : btnInactive}>{m}</button>)}
           </div>
         </div>
-
-        <button
-          onClick={salva}
-          disabled={!scuola || !classe || loading}
-          style={{ width: '100%', padding: 15, background: (!scuola || !classe) ? '#2A2A2A' : '#FFD600', color: (!scuola || !classe) ? '#555' : '#1A1A1A', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: (!scuola || !classe) ? 'default' : 'pointer' }}
-        >
+        <button onClick={salva} disabled={!scuola || !classe || loading} style={{ width: '100%', padding: 15, background: (!scuola || !classe) ? '#2A2A2A' : '#FFD600', color: (!scuola || !classe) ? '#555' : '#1A1A1A', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: (!scuola || !classe) ? 'default' : 'pointer' }}>
           {loading ? '...' : 'Inizia a studiare →'}
         </button>
-
         <button onClick={() => { fetch('/api/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ onboarding_done: true }) }); onDone() }} style={{ width: '100%', padding: 12, background: 'none', border: 'none', color: '#555', fontSize: 13, cursor: 'pointer', marginTop: 8 }}>
           Salta per ora
         </button>
@@ -474,7 +456,6 @@ function ProfiloScreen({ onBack, profiloAttuale, onSave }: { onBack: () => void;
   const scuole = ['Liceo Scientifico', 'Liceo Classico', 'Istituto Tecnico', 'Scuola Media', 'Altro']
   const classi = scuola === 'Scuola Media' ? ['1ª media', '2ª media', '3ª media'] : ['1ª', '2ª', '3ª', '4ª', '5ª']
   const materieList = ['Matematica', 'Fisica', 'Chimica', 'Informatica']
-
   const btnBase = { border: '1px solid #3A3A3A', borderRadius: 10, padding: '10px 14px', fontSize: 14, cursor: 'pointer', fontWeight: 500, transition: 'all 0.2s' }
   const btnActive = { ...btnBase, background: '#FFD600', color: '#1A1A1A', border: '1px solid #FFD600' }
   const btnInactive = { ...btnBase, background: '#2A2A2A', color: '#888' }
@@ -486,39 +467,25 @@ function ProfiloScreen({ onBack, profiloAttuale, onSave }: { onBack: () => void;
         <div style={{ fontSize: 15, fontWeight: 600, color: '#E0E0E0' }}>Il tuo profilo</div>
       </div>
       <div style={{ flex: 1, padding: '24px 20px', maxWidth: 480, margin: '0 auto', width: '100%' }}>
-
         <div style={{ marginBottom: 24 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: '#888', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Che scuola frequenti?</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {scuole.map(s => (
-              <button key={s} onClick={() => { setScuola(s); setClasse('') }} style={scuola === s ? btnActive : btnInactive}>{s}</button>
-            ))}
+            {scuole.map(s => <button key={s} onClick={() => { setScuola(s); setClasse('') }} style={scuola === s ? btnActive : btnInactive}>{s}</button>)}
           </div>
         </div>
-
         <div style={{ marginBottom: 24 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: '#888', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Che classe sei?</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {classi.map(c => (
-              <button key={c} onClick={() => setClasse(c)} style={classe === c ? btnActive : btnInactive}>{c}</button>
-            ))}
+            {classi.map(c => <button key={c} onClick={() => setClasse(c)} style={classe === c ? btnActive : btnInactive}>{c}</button>)}
           </div>
         </div>
-
         <div style={{ marginBottom: 40 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: '#888', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Materie difficili?</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {materieList.map(m => (
-              <button key={m} onClick={() => toggleMateria(m)} style={materie.includes(m) ? btnActive : btnInactive}>{m}</button>
-            ))}
+            {materieList.map(m => <button key={m} onClick={() => toggleMateria(m)} style={materie.includes(m) ? btnActive : btnInactive}>{m}</button>)}
           </div>
         </div>
-
-        <button
-          onClick={salva}
-          disabled={!scuola || !classe || loading}
-          style={{ width: '100%', padding: 15, background: (!scuola || !classe) ? '#2A2A2A' : '#FFD600', color: (!scuola || !classe) ? '#555' : '#1A1A1A', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: (!scuola || !classe) ? 'default' : 'pointer' }}
-        >
+        <button onClick={salva} disabled={!scuola || !classe || loading} style={{ width: '100%', padding: 15, background: (!scuola || !classe) ? '#2A2A2A' : '#FFD600', color: (!scuola || !classe) ? '#555' : '#1A1A1A', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: (!scuola || !classe) ? 'default' : 'pointer' }}>
           {loading ? '...' : saved ? '✓ Salvato!' : 'Salva modifiche'}
         </button>
       </div>
@@ -540,14 +507,16 @@ export default function Home() {
   const [authLoading, setAuthLoading] = useState(true)
   const [showAuth, setShowAuth] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
-  const [quoteIndex, setQuoteIndex] = useState(0)
-  const fileRef = useRef<HTMLInputElement>(null)
-  const chatRef = useRef<HTMLDivElement>(null)
-  const supabase = createClient()
   const [showPersonalizzazione, setShowPersonalizzazione] = useState(false)
   const [profilo, setProfilo] = useState<{ scuola?: string; classe?: string; materie?: string[] }>({})
   const [shareUrl, setShareUrl] = useState<string | null>(null)
   const [shareLoading, setShareLoading] = useState(false)
+  const [grafico, setGrafico] = useState<EspressioneGrafico[] | null>(null)
+  const [graficoLoading, setGraficoLoading] = useState(false)
+  const [quoteIndex, setQuoteIndex] = useState(0)
+  const fileRef = useRef<HTMLInputElement>(null)
+  const chatRef = useRef<HTMLDivElement>(null)
+  const supabase = createClient()
 
   const admins = ['alegiampi@icloud.com', 'g79750797@gmail.com']
   const isAdmin = admins.includes(user?.email || '')
@@ -557,9 +526,7 @@ export default function Home() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('loggedin')) {
-      supabase.auth.refreshSession().then(() => {
-        window.history.replaceState({}, '', '/')
-      })
+      supabase.auth.refreshSession().then(() => { window.history.replaceState({}, '', '/') })
     }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -571,7 +538,7 @@ export default function Home() {
         fetch('/api/profile').then(r => r.json()).then(d => {
           if (!d.onboarding_done) setShowOnboarding(true)
           else if (!d.scuola) setShowPersonalizzazione(true)
-        setProfilo({ scuola: d.scuola, classe: d.classe, materie: d.materie })
+          setProfilo({ scuola: d.scuola, classe: d.classe, materie: d.materie })
         })
       } else {
         setUsedToday(0)
@@ -587,7 +554,7 @@ export default function Home() {
         fetch('/api/profile').then(r => r.json()).then(d => {
           if (!d.onboarding_done) setShowOnboarding(true)
           else if (!d.scuola) setShowPersonalizzazione(true)
-        setProfilo({ scuola: d.scuola, classe: d.classe, materie: d.materie })
+          setProfilo({ scuola: d.scuola, classe: d.classe, materie: d.materie })
         })
       }
     })
@@ -629,6 +596,9 @@ export default function Home() {
     setScreen('explanation')
     setLoading(true)
     setExplanation('')
+    setGrafico(null)
+    setGraficoLoading(false)
+    setShareUrl(null)
     const res = await fetch('/api/explain', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -651,22 +621,29 @@ export default function Home() {
     const res = await fetch('/api/share', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        question: exercise?.text || '',
-        explanation,
-        scuola: profilo.scuola,
-        classe: profilo.classe
-      })
+      body: JSON.stringify({ question: exercise?.text || '', explanation, scuola: profilo.scuola, classe: profilo.classe })
     })
     const data = await res.json()
     const url = window.location.origin + '/s/' + data.id
     setShareUrl(url)
-    try {
-      await navigator.clipboard.writeText(url)
-    } catch {
-      // fallback silenzioso
-    }
+    try { await navigator.clipboard.writeText(url) } catch {}
     setShareLoading(false)
+  }
+
+  async function handleGrafico() {
+    setGraficoLoading(true)
+    const res = await fetch('/api/graph', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ esercizio: exercise?.text || '', spiegazione: explanation })
+    })
+    const data = await res.json()
+    if (data.espressioni) {
+      console.log('Grafico:', JSON.stringify(data.espressioni))
+      setGrafico(data.espressioni)
+    }
+    if (data.error) console.log('Grafico error:', data.error)
+    setGraficoLoading(false)
   }
 
   if (authLoading) return (
@@ -686,11 +663,8 @@ export default function Home() {
   )
 
   if (showOnboarding) return <OnboardingScreen onDone={() => setShowOnboarding(false)} />
-
   if (showPersonalizzazione) return <PersonalizzazioneScreen onDone={() => setShowPersonalizzazione(false)} />
-
   if (screen === 'storico') return <StoricoScreen onBack={() => setScreen('home')} />
-
   if (screen === 'profilo') return <ProfiloScreen onBack={() => setScreen('home')} profiloAttuale={profilo} onSave={(p) => { setProfilo(p); setScreen('home') }} />
 
   if (screen === 'paywall') return (
@@ -738,21 +712,26 @@ export default function Home() {
         ) : explanation ? (
           <ExplanationRenderer text={explanation} esercizio={exercise?.text || ''} />
         ) : null}
+
+        {explanation && !loading && (
+          <div style={{ marginTop: 16, marginBottom: 8 }}>
+            {grafico ? (
+              <GraficoJSX espressioni={grafico} />
+            ) : (
+              <button onClick={handleGrafico} disabled={graficoLoading} style={{ width: '100%', padding: 12, background: '#2A2A2A', border: '1px solid #3A3A3A', borderRadius: 12, color: graficoLoading ? '#666' : '#FFD600', fontSize: 14, fontWeight: 600, cursor: graficoLoading ? 'default' : 'pointer' }}>
+                {graficoLoading ? 'Generando grafico...' : '📊 Visualizza grafico'}
+              </button>
+            )}
+          </div>
+        )}
       </div>
       <div style={{ background: '#222', borderTop: '1px solid #3A3A3A', padding: '12px 20px 20px', display: 'flex', justifyContent: 'center', gap: 12 }}>
         {explanation && !loading && (
-          <div style={{ marginRight: 8 }}>
+          <div>
             {shareUrl ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <input 
-                  readOnly 
-                  value={shareUrl} 
-                  style={{ border: '1px solid #3A3A3A', borderRadius: 20, padding: '8px 14px', fontSize: 12, background: '#2A2A2A', color: '#E0E0E0', outline: 'none', width: 200 }}
-                  onClick={e => (e.target as HTMLInputElement).select()}
-                />
-                <button onClick={() => { try { navigator.clipboard.writeText(shareUrl) } catch {} }} style={{ height: 36, padding: '0 12px', borderRadius: 20, background: '#FFD600', border: 'none', color: '#1A1A1A', fontWeight: 700, cursor: 'pointer', fontSize: 12 }}>
-                  Copia
-                </button>
+                <input readOnly value={shareUrl} style={{ border: '1px solid #3A3A3A', borderRadius: 20, padding: '8px 14px', fontSize: 12, background: '#2A2A2A', color: '#E0E0E0', outline: 'none', width: 200 }} onClick={e => (e.target as HTMLInputElement).select()} />
+                <button onClick={() => { try { navigator.clipboard.writeText(shareUrl) } catch {} }} style={{ height: 36, padding: '0 12px', borderRadius: 20, background: '#FFD600', border: 'none', color: '#1A1A1A', fontWeight: 700, cursor: 'pointer', fontSize: 12 }}>Copia</button>
               </div>
             ) : (
               <button onClick={handleShare} disabled={shareLoading} style={{ height: 42, padding: '0 20px', borderRadius: 24, background: '#2A2A2A', border: '1px solid #3A3A3A', color: '#E0E0E0', fontWeight: 500, cursor: 'pointer', fontSize: 14 }}>

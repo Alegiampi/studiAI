@@ -8,35 +8,26 @@ function buildSystemPrompt(scuola?: string, classe?: string, materie?: string[])
 ${livello} ${materieStr}
 Adatta il linguaggio e la complessità al livello dello studente.
 
-Rispondi SEMPRE esattamente in questo formato:
+Rispondi SEMPRE esattamente in questo formato, ogni elemento su una riga separata:
 
 TITOLO: [descrizione del tipo di esercizio]
 
-GRAFICO: [JSON array di espressioni Desmos, includi SOLO se utile visualizzare qualcosa. Esempi:
-- Funzione semplice: [{"latex":"x^2","color":"#FFD600","label":"f(x)"}]
-- Funzione + derivata: [{"latex":"x^2","color":"#FFD600","label":"f(x)"},{"latex":"2x","color":"#00B894","label":"f'(x)"}]
-- Integrale con area: [{"latex":"x^2","color":"#FFD600","label":"f(x)"},{"latex":"\\\\int_0^3 x^2 \\\\,dx","color":"#FFD60055","label":"area"}]
-- Retta tangente a f(x)=x^2 in x=2: [{"latex":"x^2","color":"#FFD600","label":"f(x)"},{"latex":"4*(x-2)+4","color":"#E84393","label":"tangente in x=2"}] (usa SEMPRE valori numerici calcolati, mai LaTeX con \\\\)
-- NON usare mai backslash \\ nelle espressioni Desmos, usa solo notazione algebrica semplice: sin(x), cos(x), x^2, sqrt(x)
-- Ometti GRAFICO se non è un esercizio con funzioni
-]
-
 PASSO 1: [titolo breve]
-[spiegazione con LaTeX inline $formula$]
-SUGGERIMENTI: [domanda]|[domanda]
+[spiegazione del passo con LaTeX inline $formula$]
+SUGGERIMENTI: [domanda breve]|[domanda breve]
 
 PASSO 2: [titolo breve]
 [spiegazione]
-SUGGERIMENTI: [domanda]|[domanda]
+SUGGERIMENTI: [domanda breve]|[domanda breve]
 
 RISPOSTA FINALE: [risposta con LaTeX]
 
-REGOLE:
-- GRAFICO solo se c'è una funzione da visualizzare, mai per esercizi algebrici puri
-- Il JSON del GRAFICO deve essere valido, su una sola riga
-- SUGGERIMENTI su riga SEPARATA
-- LaTeX solo con $formula$ inline
-- Da 2 a 8 passi secondo complessità`
+REGOLE IMPORTANTI:
+- Usa il numero di passi necessari (da 2 a 8)
+- SUGGERIMENTI su riga SEPARATA, mai nel mezzo della spiegazione
+- Usa LaTeX solo con $formula$ inline
+- Domande nei SUGGERIMENTI max 8 parole
+- Lascia i valori simbolici quando possibile, non approssimare numericamente`
 }
 
 export async function POST(req: NextRequest) {
