@@ -645,9 +645,25 @@ export default function Home() {
       </div>
       <div style={{ background: '#222', borderTop: '1px solid #3A3A3A', padding: '12px 20px 20px', display: 'flex', justifyContent: 'center', gap: 12 }}>
         {explanation && !loading && (
-          <button onClick={handleShare} disabled={shareLoading} style={{ height: 42, padding: '0 20px', borderRadius: 24, background: '#2A2A2A', border: '1px solid #3A3A3A', color: shareUrl ? '#4ADE80' : '#E0E0E0', fontWeight: 500, cursor: 'pointer', fontSize: 14 }}>
-            {shareLoading ? '...' : shareUrl ? '✓ Link copiato!' : '🔗 Condividi'}
-          </button>
+          <div style={{ marginRight: 8 }}>
+            {shareUrl ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <input 
+                  readOnly 
+                  value={shareUrl} 
+                  style={{ border: '1px solid #3A3A3A', borderRadius: 20, padding: '8px 14px', fontSize: 12, background: '#2A2A2A', color: '#E0E0E0', outline: 'none', width: 200 }}
+                  onClick={e => (e.target as HTMLInputElement).select()}
+                />
+                <button onClick={() => { try { navigator.clipboard.writeText(shareUrl) } catch {} }} style={{ height: 36, padding: '0 12px', borderRadius: 20, background: '#FFD600', border: 'none', color: '#1A1A1A', fontWeight: 700, cursor: 'pointer', fontSize: 12 }}>
+                  Copia
+                </button>
+              </div>
+            ) : (
+              <button onClick={handleShare} disabled={shareLoading} style={{ height: 42, padding: '0 20px', borderRadius: 24, background: '#2A2A2A', border: '1px solid #3A3A3A', color: '#E0E0E0', fontWeight: 500, cursor: 'pointer', fontSize: 14 }}>
+                {shareLoading ? '...' : '🔗 Condividi'}
+              </button>
+            )}
+          </div>
         )}
         <button onClick={() => { setScreen('home'); setText(''); setImage(null); setImageBase64(null) }} style={{ height: 42, padding: '0 24px', borderRadius: 24, background: '#FFD600', border: 'none', color: '#1A1A1A', fontWeight: 700, cursor: 'pointer', fontSize: 14 }}>+ Nuovo esercizio</button>
       </div>
