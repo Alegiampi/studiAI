@@ -31,17 +31,27 @@ type Passo = {
   loadingRisposta?: boolean
 }
 
-function parseExplanation(text: string): { titolo: string; passi: Passo[]; finale: string } {
+function parseExplanation(text: string): { titolo: string; grafico?: { latex: string; color: string; label: string }[]; passi: Passo[]; finale: string } {
   const lines = text.split('\n')
   let titolo = ''
+  let grafico: { latex: string; color: string; label: string }[] | undefined
   const passi: Passo[] = []
   let finale = ''
   let currentPasso: Passo | null = null
+
   for (const line of lines) {
     const trimmed = line.trim()
     if (!trimmed) continue
     if (trimmed.startsWith('TITOLO:')) {
       titolo = trimmed.replace('TITOLO:', '').trim()
+    } else if (trimmed.startsWith('GRAFICO:')) {
+      try {
+        const jsonStr = trimmed.replace('GRAFICO:', '').trim()
+        grafico = JSON.parse(jsonStr)
+        console.log('GRAFICO parsed:', grafico)
+      } catch (e) {
+        console.log('GRAFICO parse error:', trimmed, e)
+      }
     } else if (trimmed.match(/^PASSO \d+:/)) {
       if (currentPasso) passi.push(currentPasso)
       currentPasso = { titolo: trimmed.replace(/^PASSO \d+:/, '').trim(), corpo: '' }
@@ -55,7 +65,92 @@ function parseExplanation(text: string): { titolo: string; passi: Passo[]; final
     }
   }
   if (currentPasso) passi.push(currentPasso)
-  return { titolo, passi, finale }
+  return { titolo, grafico, passi, finale }
+}
+
+function Desmos({ expression }: { expression: string }) {
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <div style={{ fontSize: 13, color: '#888', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Grafico</div>
+      <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 16, overflow: 'hidden', border: '1px solid #3A3A3A', background: '#000' }}>
+        <iframe
+          title="Grafico Desmos"
+          src={`https://www.desmos.com/calculator?lang=it&embed=true&expr=${encodeURIComponent(expression)}`}
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+          frameBorder="0"
+          allowFullScreen
+        />
+      </div>
+    </div>
+  )
+}
+
+function GraficoDesmos({ espressioni }: { espressioni: { latex: string; color: string; label: string }[] }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const calcRef = useRef<any>(null)
+
+  useEffect(() => {
+    if (!ref.current) return
+
+    const existingScript = document.getElementById('desmos-script')
+    
+    function initDesmos() {
+      if (!ref.current || !(window as any).Desmos) return
+      if (calcRef.current) calcRef.current.destroy()
+      
+      const calc = (window as any).Desmos.GraphingCalculator(ref.current, {
+        expressionsCollapsed: true,
+        settingsMenu: false,
+        zoomButtons: true,
+        border: false,
+        keypad: false,
+        expressions: false,
+        backgroundColor: '#1A1A1A',
+        textColor: '#E0E0E0',
+        axisColor: '#3A3A3A',
+        gridLineColor: '#2A2A2A',
+      })
+
+      espressioni.forEach((e, i) => {
+        calc.setExpression({ id: 'expr' + i, latex: e.latex, color: e.color, label: e.label, showLabel: true })
+      })
+
+      calcRef.current = calc
+    }
+
+    if (existingScript) {
+      if ((window as any).Desmos) initDesmos()
+      else existingScript.addEventListener('load', initDesmos)
+    } else {
+      const script = document.createElement('script')
+      script.id = 'desmos-script'
+      script.src = 'https://www.desmos.com/api/v1.9/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6'
+      script.async = true
+      script.onload = initDesmos
+      document.head.appendChild(script)
+    }
+
+    return () => { if (calcRef.current) { calcRef.current.destroy(); calcRef.current = null } }
+  }, [espressioni])
+
+  const colori = espressioni.map(e => ({ color: e.color, label: e.label }))
+
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Grafico</div>
+        <div style={{ display: 'flex', gap: 12 }}>
+          {colori.map((c, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: c.color }} />
+              <span style={{ fontSize: 11, color: '#888' }}>{c.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div ref={ref} style={{ width: '100%', height: 320, borderRadius: 12, overflow: 'hidden', border: '1px solid #3A3A3A' }} />
+    </div>
+  )
 }
 
 function ExplanationRenderer({ text, esercizio }: { text: string; esercizio: string }) {
@@ -82,6 +177,7 @@ function ExplanationRenderer({ text, esercizio }: { text: string; esercizio: str
   return (
     <div>
       {parsed.titolo && <div style={{ fontSize: 18, fontWeight: 700, color: '#FFD600', marginBottom: 24, lineHeight: 1.4 }}><MD>{parsed.titolo}</MD></div>}
+      {parsed.grafico && parsed.grafico.length > 0 && <GraficoDesmos espressioni={parsed.grafico} />}
       {passi.map((passo, i) => (
         <div key={i} style={{ marginBottom: 16, display: 'flex', gap: 10 }}>
           <div style={{ width: 3, background: '#FFD600', borderRadius: 4, flexShrink: 0, opacity: 0.4 }} />
