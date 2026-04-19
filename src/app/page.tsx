@@ -450,6 +450,8 @@ export default function Home() {
   const supabase = createClient()
   const [showPersonalizzazione, setShowPersonalizzazione] = useState(false)
   const [profilo, setProfilo] = useState<{ scuola?: string; classe?: string; materie?: string[] }>({})
+  const [shareUrl, setShareUrl] = useState<string | null>(null)
+  const [shareLoading, setShareLoading] = useState(false)
 
   const admins = ['alegiampi@icloud.com', 'g79750797@gmail.com']
   const isAdmin = admins.includes(user?.email || '')
@@ -548,6 +550,29 @@ export default function Home() {
     setLoading(false)
   }
 
+  async function handleShare() {
+    setShareLoading(true)
+    const res = await fetch('/api/share', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        question: exercise?.text || '',
+        explanation,
+        scuola: profilo.scuola,
+        classe: profilo.classe
+      })
+    })
+    const data = await res.json()
+    const url = window.location.origin + '/s/' + data.id
+    setShareUrl(url)
+    try {
+      await navigator.clipboard.writeText(url)
+    } catch {
+      // fallback silenzioso
+    }
+    setShareLoading(false)
+  }
+
   if (authLoading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1A1A1A' }}>
       <div style={{ color: '#888', fontFamily: 'system-ui' }}>Caricamento...</div>
@@ -618,7 +643,12 @@ export default function Home() {
           <ExplanationRenderer text={explanation} esercizio={exercise?.text || ''} />
         ) : null}
       </div>
-      <div style={{ background: '#222', borderTop: '1px solid #3A3A3A', padding: '12px 20px 20px', display: 'flex', justifyContent: 'center' }}>
+      <div style={{ background: '#222', borderTop: '1px solid #3A3A3A', padding: '12px 20px 20px', display: 'flex', justifyContent: 'center', gap: 12 }}>
+        {explanation && !loading && (
+          <button onClick={handleShare} disabled={shareLoading} style={{ height: 42, padding: '0 20px', borderRadius: 24, background: '#2A2A2A', border: '1px solid #3A3A3A', color: shareUrl ? '#4ADE80' : '#E0E0E0', fontWeight: 500, cursor: 'pointer', fontSize: 14 }}>
+            {shareLoading ? '...' : shareUrl ? '✓ Link copiato!' : '🔗 Condividi'}
+          </button>
+        )}
         <button onClick={() => { setScreen('home'); setText(''); setImage(null); setImageBase64(null) }} style={{ height: 42, padding: '0 24px', borderRadius: 24, background: '#FFD600', border: 'none', color: '#1A1A1A', fontWeight: 700, cursor: 'pointer', fontSize: 14 }}>+ Nuovo esercizio</button>
       </div>
     </div>
