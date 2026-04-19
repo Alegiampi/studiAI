@@ -351,8 +351,87 @@ function PersonalizzazioneScreen({ onDone }: { onDone: () => void }) {
   )
 }
 
+function ProfiloScreen({ onBack, profiloAttuale, onSave }: { onBack: () => void; profiloAttuale: { scuola?: string; classe?: string; materie?: string[] }; onSave: (p: any) => void }) {
+  const [scuola, setScuola] = useState(profiloAttuale.scuola || '')
+  const [classe, setClasse] = useState(profiloAttuale.classe || '')
+  const [materie, setMaterie] = useState<string[]>(profiloAttuale.materie || [])
+  const [loading, setLoading] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  function toggleMateria(m: string) {
+    setMaterie(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m])
+  }
+
+  async function salva() {
+    setLoading(true)
+    await fetch('/api/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scuola, classe, materie, onboarding_done: true })
+    })
+    onSave({ scuola, classe, materie })
+    setLoading(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
+  const scuole = ['Liceo Scientifico', 'Liceo Classico', 'Istituto Tecnico', 'Scuola Media', 'Altro']
+  const classi = scuola === 'Scuola Media' ? ['1ª media', '2ª media', '3ª media'] : ['1ª', '2ª', '3ª', '4ª', '5ª']
+  const materieList = ['Matematica', 'Fisica', 'Chimica', 'Informatica']
+
+  const btnBase = { border: '1px solid #3A3A3A', borderRadius: 10, padding: '10px 14px', fontSize: 14, cursor: 'pointer', fontWeight: 500, transition: 'all 0.2s' }
+  const btnActive = { ...btnBase, background: '#FFD600', color: '#1A1A1A', border: '1px solid #FFD600' }
+  const btnInactive = { ...btnBase, background: '#2A2A2A', color: '#888' }
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#1A1A1A', fontFamily: 'system-ui', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '16px 20px', background: '#222', borderBottom: '1px solid #3A3A3A', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <button onClick={onBack} style={{ background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: '#888' }}>‹</button>
+        <div style={{ fontSize: 15, fontWeight: 600, color: '#E0E0E0' }}>Il tuo profilo</div>
+      </div>
+      <div style={{ flex: 1, padding: '24px 20px', maxWidth: 480, margin: '0 auto', width: '100%' }}>
+
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#888', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Che scuola frequenti?</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {scuole.map(s => (
+              <button key={s} onClick={() => { setScuola(s); setClasse('') }} style={scuola === s ? btnActive : btnInactive}>{s}</button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#888', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Che classe sei?</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {classi.map(c => (
+              <button key={c} onClick={() => setClasse(c)} style={classe === c ? btnActive : btnInactive}>{c}</button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 40 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#888', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Materie difficili?</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {materieList.map(m => (
+              <button key={m} onClick={() => toggleMateria(m)} style={materie.includes(m) ? btnActive : btnInactive}>{m}</button>
+            ))}
+          </div>
+        </div>
+
+        <button
+          onClick={salva}
+          disabled={!scuola || !classe || loading}
+          style={{ width: '100%', padding: 15, background: (!scuola || !classe) ? '#2A2A2A' : '#FFD600', color: (!scuola || !classe) ? '#555' : '#1A1A1A', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: (!scuola || !classe) ? 'default' : 'pointer' }}
+        >
+          {loading ? '...' : saved ? '✓ Salvato!' : 'Salva modifiche'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function Home() {
-  const [screen, setScreen] = useState<'home' | 'explanation' | 'paywall' | 'storico'>('home')
+  const [screen, setScreen] = useState<'home' | 'explanation' | 'paywall' | 'storico' | 'profilo'>('home')
   const [exercise, setExercise] = useState<{ text: string; imageBase64?: string; imagePreview?: string } | null>(null)
   const [usedToday, setUsedToday] = useState(0)
   const [explanation, setExplanation] = useState('')
@@ -491,6 +570,8 @@ export default function Home() {
 
   if (screen === 'storico') return <StoricoScreen onBack={() => setScreen('home')} />
 
+  if (screen === 'profilo') return <ProfiloScreen onBack={() => setScreen('home')} profiloAttuale={profilo} onSave={(p) => { setProfilo(p); setScreen('home') }} />
+
   if (screen === 'paywall') return (
     <div style={{ minHeight: '100vh', background: '#1A1A1A', fontFamily: 'system-ui' }}>
       <div style={{ background: '#FFD600', padding: '48px 24px 32px', textAlign: 'center' }}>
@@ -556,6 +637,7 @@ export default function Home() {
             <>
               <div style={{ fontSize: 12, color: '#888' }}>{user.email?.split('@')[0]}</div>
               <button onClick={() => setScreen('storico')} style={{ background: 'none', border: '1px solid #3A3A3A', borderRadius: 20, padding: '5px 12px', fontSize: 12, color: '#FFD600', cursor: 'pointer' }}>Storico</button>
+              <button onClick={() => setScreen('profilo')} style={{ background: 'none', border: '1px solid #3A3A3A', borderRadius: 20, padding: '5px 12px', fontSize: 12, color: '#888', cursor: 'pointer' }}>Profilo</button>
               <button onClick={logout} style={{ background: 'none', border: '1px solid #3A3A3A', borderRadius: 20, padding: '5px 12px', fontSize: 12, color: '#888', cursor: 'pointer' }}>Esci</button>
             </>
           ) : (
