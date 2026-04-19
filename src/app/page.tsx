@@ -273,6 +273,84 @@ function OnboardingScreen({ onDone }: { onDone: () => void }) {
   )
 }
 
+function PersonalizzazioneScreen({ onDone }: { onDone: () => void }) {
+  const [scuola, setScuola] = useState('')
+  const [classe, setClasse] = useState('')
+  const [materie, setMaterie] = useState<string[]>([])
+  const [loading, setLoading] = useState(false)
+
+  function toggleMateria(m: string) {
+    setMaterie(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m])
+  }
+
+  async function salva() {
+    setLoading(true)
+    await fetch('/api/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scuola, classe, materie, onboarding_done: true })
+    })
+    setLoading(false)
+    onDone()
+  }
+
+  const scuole = ['Liceo Scientifico', 'Liceo Classico', 'Istituto Tecnico', 'Scuola Media', 'Altro']
+  const classi = scuola === 'Scuola Media' ? ['1ª media', '2ª media', '3ª media'] : ['1ª', '2ª', '3ª', '4ª', '5ª']
+  const materieList = ['Matematica', 'Fisica', 'Chimica', 'Informatica']
+
+  const btnBase = { border: '1px solid #3A3A3A', borderRadius: 10, padding: '10px 14px', fontSize: 14, cursor: 'pointer', fontWeight: 500, transition: 'all 0.2s' }
+  const btnActive = { ...btnBase, background: '#FFD600', color: '#1A1A1A', border: '1px solid #FFD600' }
+  const btnInactive = { ...btnBase, background: '#2A2A2A', color: '#888' }
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#1A1A1A', fontFamily: 'system-ui', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ width: '100%', maxWidth: 420 }}>
+        <div style={{ fontSize: 24, fontWeight: 800, color: '#FFD600', marginBottom: 8, letterSpacing: '-0.5px' }}>Personalizziamo</div>
+        <div style={{ fontSize: 14, color: '#666', marginBottom: 32 }}>Così le spiegazioni saranno calibrate su di te.</div>
+
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#888', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Che scuola frequenti?</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {scuole.map(s => (
+              <button key={s} onClick={() => setScuola(s)} style={scuola === s ? btnActive : btnInactive}>{s}</button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#888', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Che classe sei?</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {classi.map(c => (
+              <button key={c} onClick={() => setClasse(c)} style={classe === c ? btnActive : btnInactive}>{c}</button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 40 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#888', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Materie difficili?</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {materieList.map(m => (
+              <button key={m} onClick={() => toggleMateria(m)} style={materie.includes(m) ? btnActive : btnInactive}>{m}</button>
+            ))}
+          </div>
+        </div>
+
+        <button
+          onClick={salva}
+          disabled={!scuola || !classe || loading}
+          style={{ width: '100%', padding: 15, background: (!scuola || !classe) ? '#2A2A2A' : '#FFD600', color: (!scuola || !classe) ? '#555' : '#1A1A1A', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: (!scuola || !classe) ? 'default' : 'pointer' }}
+        >
+          {loading ? '...' : 'Inizia a studiare →'}
+        </button>
+
+        <button onClick={() => { fetch('/api/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ onboarding_done: true }) }); onDone() }} style={{ width: '100%', padding: 12, background: 'none', border: 'none', color: '#555', fontSize: 13, cursor: 'pointer', marginTop: 8 }}>
+          Salta per ora
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function Home() {
   const [screen, setScreen] = useState<'home' | 'explanation' | 'paywall' | 'storico'>('home')
   const [exercise, setExercise] = useState<{ text: string; imageBase64?: string; imagePreview?: string } | null>(null)
@@ -291,6 +369,8 @@ export default function Home() {
   const fileRef = useRef<HTMLInputElement>(null)
   const chatRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
+  const [showPersonalizzazione, setShowPersonalizzazione] = useState(false)
+  const [profilo, setProfilo] = useState<{ scuola?: string; classe?: string; materie?: string[] }>({})
 
   const admins = ['alegiampi@icloud.com', 'g79750797@gmail.com']
   const isAdmin = admins.includes(user?.email || '')
@@ -313,6 +393,8 @@ export default function Home() {
         fetch('/api/usage').then(r => r.json()).then(d => setUsedToday(d.count))
         fetch('/api/profile').then(r => r.json()).then(d => {
           if (!d.onboarding_done) setShowOnboarding(true)
+          else if (!d.scuola) setShowPersonalizzazione(true)
+        setProfilo({ scuola: d.scuola, classe: d.classe, materie: d.materie })
         })
       } else {
         setUsedToday(0)
@@ -326,7 +408,9 @@ export default function Home() {
       if (currentUser) {
         fetch('/api/usage').then(r => r.json()).then(d => setUsedToday(d.count))
         fetch('/api/profile').then(r => r.json()).then(d => {
-        if (!d.onboarding_done) setShowOnboarding(true)
+          if (!d.onboarding_done) setShowOnboarding(true)
+          else if (!d.scuola) setShowPersonalizzazione(true)
+        setProfilo({ scuola: d.scuola, classe: d.classe, materie: d.materie })
         })
       }
     })
@@ -371,7 +455,7 @@ export default function Home() {
     const res = await fetch('/api/explain', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, imageBase64, tipo: 'esercizio' })
+      body: JSON.stringify({ text, imageBase64, tipo: 'esercizio', scuola: profilo.scuola, classe: profilo.classe, materie: profilo.materie })
     })
     const data = await res.json()
     setExplanation(data.explanation)
@@ -402,6 +486,8 @@ export default function Home() {
   )
 
   if (showOnboarding) return <OnboardingScreen onDone={() => setShowOnboarding(false)} />
+
+  if (showPersonalizzazione) return <PersonalizzazioneScreen onDone={() => setShowPersonalizzazione(false)} />
 
   if (screen === 'storico') return <StoricoScreen onBack={() => setScreen('home')} />
 

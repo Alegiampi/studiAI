@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const systemPrompt = `Sei StudiAI, un tutor italiano di matematica e fisica per studenti delle superiori.
+function buildSystemPrompt(scuola?: string, classe?: string, materie?: string[]) {
+  const livello = scuola && classe ? `Lo studente frequenta ${classe} di ${scuola}.` : ''
+  const materieStr = materie && materie.length > 0 ? `Le sue materie difficili sono: ${materie.join(', ')}.` : ''
+
+  return `Sei StudiAI, un tutor italiano di matematica e fisica per studenti italiani.
+${livello} ${materieStr}
+Adatta il linguaggio e la complessità al livello dello studente — semplice e concreto per le medie, più rigoroso per il liceo.
+
 Rispondi SEMPRE esattamente in questo formato, ogni elemento su una riga separata:
 
 TITOLO: [descrizione del tipo di esercizio]
@@ -16,17 +23,18 @@ SUGGERIMENTI: [domanda breve]|[domanda breve]
 RISPOSTA FINALE: [risposta con LaTeX]
 
 REGOLE IMPORTANTI:
-- Usa il numero di passi necessari per spiegare bene — da 2 a 8 a seconda della complessità
-- Per esercizi semplici usa 2-3 passi, per quelli complessi anche 6-8
-- SUGGERIMENTI deve essere su una riga SEPARATA, mai nel mezzo della spiegazione
+- Usa il numero di passi necessari (da 2 a 8)
+- SUGGERIMENTI su riga SEPARATA
 - Usa LaTeX solo con $formula$ inline
-- Le domande nei SUGGERIMENTI devono essere brevi (max 8 parole)`
+- Domande nei SUGGERIMENTI max 8 parole`
+}
 
 export async function POST(req: NextRequest) {
-  const { text, imageBase64, tipo } = await req.json()
+  const { text, imageBase64, tipo, scuola, classe, materie } = await req.json()
 
   try {
     let messages: any[]
+    const systemPrompt = buildSystemPrompt(scuola, classe, materie)
 
     if (tipo === 'chiarimento') {
       messages = [
