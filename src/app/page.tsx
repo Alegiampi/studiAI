@@ -5,6 +5,10 @@ import ReactMarkdown from 'react-markdown'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import { createClient } from '@/lib/supabase'
+import AuthModal from '@/components/AuthModal'
+import ExplanationRenderer from '@/components/exercise/ExplanationRenderer'
+import GraficoJSX from '@/components/exercise/GraficoJSX'
+import HomeScreen from '@/components/screens/HomeScreen'
 
 const DAILY_LIMIT = 5
 
@@ -61,226 +65,6 @@ function parseExplanation(text: string): { titolo: string; passi: Passo[]; final
   return { titolo, passi, finale }
 }
 
-function GraficoJSX({ espressioni }: { espressioni: EspressioneGrafico[] }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const boardRef = useRef<any>(null)
-  const idRef = useRef('jsx_' + Math.random().toString(36).substr(2, 9))
-
-  useEffect(() => {
-    function init() {
-      if (!ref.current || !(window as any).JXG) return
-      const JXG = (window as any).JXG
-
-      if (boardRef.current) {
-        JXG.JSXGraph.freeBoard(boardRef.current)
-        boardRef.current = null
-      }
-
-      const board = JXG.JSXGraph.initBoard(idRef.current, {
-        boundingbox: [-5, 4, 5, -4],
-        axis: true,
-        showCopyright: false,
-        showNavigation: true,
-        pan: { enabled: true },
-        zoom: { enabled: true },
-      })
-
-      espressioni.forEach((e) => {
-        try {
-          const fn = new Function('x', `return ${e.fn}`)
-          board.create('functiongraph', [fn], {
-            strokeColor: e.color,
-            strokeWidth: 2.5,
-          })
-        } catch (err) {
-          console.error('Errore espressione:', e.fn, err)
-        }
-      })
-
-      boardRef.current = board
-    }
-
-    const existingLink = document.getElementById('jsxgraph-css')
-    if (!existingLink) {
-      const link = document.createElement('link')
-      link.id = 'jsxgraph-css'
-      link.rel = 'stylesheet'
-      link.href = 'https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraph.css'
-      document.head.appendChild(link)
-    }
-
-    const existingScript = document.getElementById('jsxgraph-script')
-    if (existingScript) {
-      if ((window as any).JXG) init()
-      else existingScript.addEventListener('load', init)
-    } else {
-      const script = document.createElement('script')
-      script.id = 'jsxgraph-script'
-      script.src = 'https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraphcore.js'
-      script.async = true
-      script.onload = init
-      document.head.appendChild(script)
-    }
-
-    return () => {
-      if (boardRef.current && (window as any).JXG) {
-        (window as any).JXG.JSXGraph.freeBoard(boardRef.current)
-        boardRef.current = null
-      }
-    }
-  }, [JSON.stringify(espressioni)])
-
-  return (
-    <div style={{ marginBottom: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <div style={{ fontSize: 11, fontWeight: 600, color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Grafico</div>
-        <div style={{ display: 'flex', gap: 12 }}>
-          {espressioni.map((e, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: e.color }} />
-              <span style={{ fontSize: 11, color: '#888' }}>{e.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div
-        id={idRef.current}
-        ref={ref}
-        style={{ width: '100%', height: 320, borderRadius: 12, overflow: 'hidden', border: '1px solid #3A3A3A' }}
-      />
-    </div>
-  )
-}
-
-function ExplanationRenderer({ text, esercizio }: { text: string; esercizio: string }) {
-  const parsed = parseExplanation(text)
-  const [passi, setPassi] = useState<Passo[]>(parsed.passi)
-  const [openInput, setOpenInput] = useState<number | null>(null)
-  const [inputs, setInputs] = useState<string[]>(parsed.passi.map(() => ''))
-
-  async function chiedi(i: number, domanda: string) {
-    const newPassi = [...passi]
-    newPassi[i] = { ...newPassi[i], domanda, loadingRisposta: true, risposta: undefined }
-    setPassi(newPassi)
-    setOpenInput(null)
-    const res = await fetch('/api/explain', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tipo: 'chiarimento', text: 'Esercizio: ' + esercizio + '. Passo "' + passi[i].titolo + '": ' + passi[i].corpo + '. Domanda: ' + domanda })
-    })
-    const data = await res.json()
-    setPassi(prev => { const updated = [...prev]; updated[i] = { ...updated[i], risposta: data.explanation, loadingRisposta: false }; return updated })
-    const newInputs = [...inputs]; newInputs[i] = ''; setInputs(newInputs)
-  }
-
-  return (
-    <div>
-      {parsed.titolo && <div style={{ fontSize: 18, fontWeight: 700, color: '#FFD600', marginBottom: 24, lineHeight: 1.4 }}><MD>{parsed.titolo}</MD></div>}
-      {passi.map((passo, i) => (
-        <div key={i} style={{ marginBottom: 16, display: 'flex', gap: 10 }}>
-          <div style={{ width: 3, background: '#FFD600', borderRadius: 4, flexShrink: 0, opacity: 0.4 }} />
-          <div style={{ flex: 1 }}>
-            <div style={{ border: '1px solid #3A3A3A', borderRadius: 12, overflow: 'hidden', background: '#2A2A2A' }}>
-              <div style={{ background: '#333', padding: '9px 14px', borderBottom: '1px solid #3A3A3A', fontWeight: 700, fontSize: 13, color: '#E0E0E0', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                <span style={{ color: '#888', fontWeight: 400 }}>Passo {i + 1}</span>
-                <span style={{ color: '#888' }}>—</span>
-                <MD>{passo.titolo}</MD>
-              </div>
-              <div style={{ padding: '12px 14px', fontSize: 14, color: '#D0D0D0', lineHeight: 1.8 }}><MD>{passo.corpo}</MD></div>
-            </div>
-            {passo.domanda && (
-              <div style={{ marginTop: 8, marginLeft: 12, border: '1px solid #3A3A3A', borderRadius: 10, overflow: 'hidden' }}>
-                <div style={{ background: '#FFD600', padding: '7px 12px', fontSize: 12, color: '#1A1A1A', fontWeight: 600 }}>{passo.domanda}</div>
-                <div style={{ padding: '10px 12px', fontSize: 13, color: '#D0D0D0', lineHeight: 1.7, background: '#2A2A2A' }}>
-                  {passo.loadingRisposta ? <span style={{ color: '#888' }}>Sto pensando...</span> : <MD>{passo.risposta || ''}</MD>}
-                </div>
-              </div>
-            )}
-            {!passo.loadingRisposta && (
-              <div style={{ marginTop: 8, marginLeft: 12 }}>
-                {openInput === i ? (
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <input autoFocus value={inputs[i]} onChange={e => { const n = [...inputs]; n[i] = e.target.value; setInputs(n) }} onKeyDown={e => e.key === 'Enter' && chiedi(i, inputs[i].trim())} placeholder="Cosa non ti è chiaro?" style={{ flex: 1, border: '1px solid #3A3A3A', borderRadius: 20, padding: '7px 14px', fontSize: 13, outline: 'none', background: '#2A2A2A', color: '#E0E0E0' }} />
-                    <button onClick={() => chiedi(i, inputs[i].trim())} style={{ width: 34, height: 34, borderRadius: '50%', background: '#FFD600', border: 'none', cursor: 'pointer', color: '#1A1A1A', fontSize: 16, flexShrink: 0, fontWeight: 700 }}>↑</button>
-                    <button onClick={() => setOpenInput(null)} style={{ width: 34, height: 34, borderRadius: '50%', background: '#333', border: 'none', cursor: 'pointer', color: '#888', fontSize: 14, flexShrink: 0 }}>✕</button>
-                  </div>
-                ) : (
-                  <button onClick={() => setOpenInput(i)} style={{ background: 'none', border: 'none', fontSize: 12, color: '#FFD600', cursor: 'pointer', padding: '2px 0', fontWeight: 500, opacity: 0.7 }}>+ Chiedimi di più su questo passo</button>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      ))}
-      {parsed.finale && (
-        <div style={{ background: '#2A2A2A', border: '2px solid #FFD600', borderRadius: 12, padding: '14px 18px', marginTop: 8 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#FFD600', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Risposta finale</div>
-          <div style={{ fontSize: 16, fontWeight: 600, color: '#FFD600' }}><MD>{parsed.finale}</MD></div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function AuthModal({ onClose, supabase }: { onClose?: () => void; supabase: any }) {
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [msg, setMsg] = useState('')
-
-  async function loginConGoogle() {
-    await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } })
-  }
-
-  async function handleEmail() {
-    if (!email || !password) return
-    setLoading(true)
-    setMsg('')
-    if (mode === 'login') {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) setMsg(error.message)
-      else if (onClose) onClose()
-    } else {
-      const { error } = await supabase.auth.signUp({ email, password })
-      if (error) setMsg(error.message)
-      else setMsg('Controlla la tua email per confermare la registrazione.')
-    }
-    setLoading(false)
-  }
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 20 }}>
-      <div style={{ background: '#2A2A2A', border: '1px solid #3A3A3A', borderRadius: 20, padding: '32px 28px', width: '100%', maxWidth: 380 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-          <div style={{ fontSize: 18, fontWeight: 700, color: '#FFD600' }}>{mode === 'login' ? 'Accedi' : 'Registrati'}</div>
-          {onClose && <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#888', fontSize: 20, cursor: 'pointer' }}>✕</button>}
-        </div>
-        <button onClick={loginConGoogle} style={{ width: '100%', padding: '11px', background: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 20, color: '#1A1A1A' }}>
-          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-          Continua con Google
-        </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-          <div style={{ flex: 1, height: 1, background: '#3A3A3A' }} />
-          <span style={{ fontSize: 12, color: '#888' }}>oppure</span>
-          <div style={{ flex: 1, height: 1, background: '#3A3A3A' }} />
-        </div>
-        <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" type="email" style={{ width: '100%', padding: '11px 14px', background: '#1A1A1A', border: '1px solid #3A3A3A', borderRadius: 10, fontSize: 14, color: '#E0E0E0', outline: 'none', marginBottom: 10 }} />
-        <input value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" type="password" onKeyDown={e => e.key === 'Enter' && handleEmail()} style={{ width: '100%', padding: '11px 14px', background: '#1A1A1A', border: '1px solid #3A3A3A', borderRadius: 10, fontSize: 14, color: '#E0E0E0', outline: 'none', marginBottom: 16 }} />
-        {msg && <div style={{ fontSize: 13, color: msg.includes('email') ? '#4ADE80' : '#FF6B6B', marginBottom: 12 }}>{msg}</div>}
-        <button onClick={handleEmail} disabled={loading} style={{ width: '100%', padding: 12, background: '#FFD600', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer', color: '#1A1A1A', marginBottom: 12 }}>
-          {loading ? '...' : mode === 'login' ? 'Accedi' : 'Registrati'}
-        </button>
-        <div style={{ textAlign: 'center', fontSize: 13, color: '#888' }}>
-          {mode === 'login' ? 'Non hai un account? ' : 'Hai già un account? '}
-          <span onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setMsg('') }} style={{ color: '#FFD600', cursor: 'pointer', fontWeight: 500 }}>
-            {mode === 'login' ? 'Registrati' : 'Accedi'}
-          </span>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function StoricoScreen({ onBack }: { onBack: () => void }) {
   const [exercises, setExercises] = useState<any[]>([])
@@ -645,6 +429,15 @@ export default function Home() {
     if (data.error) console.log('Grafico error:', data.error)
     setGraficoLoading(false)
   }
+async function handleCheckout(priceId: string) {
+  const res = await fetch('/api/stripe/checkout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ priceId })
+  })
+  const data = await res.json()
+  if (data.url) window.location.href = data.url
+}
 
   if (authLoading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1A1A1A' }}>
@@ -668,25 +461,49 @@ export default function Home() {
   if (screen === 'profilo') return <ProfiloScreen onBack={() => setScreen('home')} profiloAttuale={profilo} onSave={(p) => { setProfilo(p); setScreen('home') }} />
 
   if (screen === 'paywall') return (
-    <div style={{ minHeight: '100vh', background: '#1A1A1A', fontFamily: 'system-ui' }}>
-      <div style={{ background: '#FFD600', padding: '48px 24px 32px', textAlign: 'center' }}>
-        <div style={{ fontSize: 22, fontWeight: 700, color: '#1A1A1A', marginBottom: 8 }}>Hai finito gli esercizi</div>
-        <div style={{ fontSize: 14, color: '#333' }}>Sblocca spiegazioni illimitate</div>
+  <div style={{ minHeight: '100vh', background: '#1A1A1A', fontFamily: 'system-ui' }}>
+    <div style={{ background: '#FFD600', padding: '48px 24px 32px', textAlign: 'center' }}>
+      <div style={{ fontSize: 22, fontWeight: 700, color: '#1A1A1A', marginBottom: 8 }}>
+        {usedToday >= DAILY_LIMIT ? 'Hai finito gli esercizi' : 'Passa a Premium'}
       </div>
-      <div style={{ padding: 24, maxWidth: 480, margin: '0 auto' }}>
-        <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
-          {['9.99€/mese', '4.99€/mese (annuale)'].map((p, i) => (
-            <div key={i} style={{ flex: 1, border: i === 1 ? '2px solid #FFD600' : '1px solid #3A3A3A', borderRadius: 14, padding: 16, textAlign: 'center', background: '#2A2A2A' }}>
-              <div style={{ fontSize: 18, fontWeight: 600, color: '#E0E0E0' }}>{p}</div>
-              {i === 1 && <div style={{ fontSize: 12, color: '#FFD600', marginTop: 4 }}>Risparmi il 50%</div>}
-            </div>
-          ))}
+      <div style={{ fontSize: 14, color: '#333' }}>Sblocca spiegazioni illimitate e grafici</div>
+    </div>
+    <div style={{ padding: 24, maxWidth: 480, margin: '0 auto' }}>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
+        <div onClick={() => handleCheckout(process.env.NEXT_PUBLIC_STRIPE_PRICE_MENSILE!)} style={{ flex: 1, border: '1px solid #3A3A3A', borderRadius: 14, padding: 20, textAlign: 'center', background: '#2A2A2A', cursor: 'pointer' }}>
+          <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>Mensile</div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#E0E0E0' }}>3.99€</div>
+          <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>/mese</div>
         </div>
-        <button style={{ width: '100%', padding: 14, background: '#FFD600', color: '#1A1A1A', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer', marginBottom: 10 }}>Inizia ora</button>
-        <button onClick={() => setScreen('home')} style={{ width: '100%', padding: 12, background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}>Continua gratis (5 esercizi/giorno)</button>
+        <div onClick={() => handleCheckout(process.env.NEXT_PUBLIC_STRIPE_PRICE_ANNUALE!)} style={{ flex: 1, border: '2px solid #FFD600', borderRadius: 14, padding: 20, textAlign: 'center', background: '#2A2A2A', cursor: 'pointer', position: 'relative' }}>
+          <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: '#FFD600', color: '#1A1A1A', fontSize: 11, fontWeight: 700, padding: '3px 12px', borderRadius: 20, whiteSpace: 'nowrap' }}>PIÙ CONVENIENTE</div>
+          <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>Annuale</div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#FFD600' }}>29.99€</div>
+          <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>= 2.50€/mese</div>
+          <div style={{ fontSize: 11, color: '#00B894', marginTop: 4 }}>Risparmi il 37%</div>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        {['Esercizi illimitati ogni giorno', 'Grafici interattivi con JSXGraph', 'Foto degli esercizi con AI vision', 'Storico completo', 'Spiegazioni calibrate sul tuo livello'].map((f, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid #2A2A2A' }}>
+            <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#00B89420', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ color: '#00B894', fontSize: 11 }}>✓</span>
+            </div>
+            <span style={{ fontSize: 14, color: '#D0D0D0' }}>{f}</span>
+          </div>
+        ))}
+      </div>
+
+      <button onClick={() => setScreen('home')} style={{ width: '100%', padding: 12, background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: 13 }}>
+        Continua gratis (5 esercizi/giorno)
+      </button>
+      <div style={{ textAlign: 'center', fontSize: 11, color: '#555', marginTop: 8 }}>
+        Disdici quando vuoi · Pagamento sicuro con Stripe
       </div>
     </div>
-  )
+  </div>
+)
 
   if (screen === 'explanation') return (
     <div style={{ minHeight: '100vh', background: '#1A1A1A', fontFamily: 'system-ui', display: 'flex', flexDirection: 'column' }}>
@@ -746,72 +563,26 @@ export default function Home() {
   )
 
   return (
-    <div style={{ minHeight: '100vh', background: '#1A1A1A', fontFamily: 'system-ui' }}>
-      {showAuth && <AuthModal onClose={() => setShowAuth(false)} supabase={supabase} />}
-      <div style={{ padding: '18px 24px', background: '#222', borderBottom: '1px solid #3A3A3A', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: '#FFD600', letterSpacing: '-0.5px' }}>StudiAI</div>
-          <div style={{ fontSize: 11, color: '#666' }}>il tuo tutor di matematica e fisica</div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {user ? (
-            <>
-              <div style={{ fontSize: 12, color: '#888' }}>{user.email?.split('@')[0]}</div>
-              <button onClick={() => setScreen('storico')} style={{ background: 'none', border: '1px solid #3A3A3A', borderRadius: 20, padding: '5px 12px', fontSize: 12, color: '#FFD600', cursor: 'pointer' }}>Storico</button>
-              <button onClick={() => setScreen('profilo')} style={{ background: 'none', border: '1px solid #3A3A3A', borderRadius: 20, padding: '5px 12px', fontSize: 12, color: '#888', cursor: 'pointer' }}>Profilo</button>
-              <button onClick={logout} style={{ background: 'none', border: '1px solid #3A3A3A', borderRadius: 20, padding: '5px 12px', fontSize: 12, color: '#888', cursor: 'pointer' }}>Esci</button>
-            </>
-          ) : (
-            <button onClick={() => setShowAuth(true)} style={{ background: '#2A2A2A', border: '1px solid #3A3A3A', borderRadius: 20, padding: '6px 14px', fontSize: 12, color: '#E0E0E0', cursor: 'pointer', fontWeight: 500 }}>Accedi</button>
-          )}
-          <div onClick={() => setScreen('paywall')} style={{ background: '#FFD600', color: '#1A1A1A', fontSize: 12, fontWeight: 700, padding: '6px 14px', borderRadius: 20, cursor: 'pointer' }}>
-            {isLimited ? '⚡ Sblocca' : `${remaining} rimasti`}
-          </div>
-        </div>
-      </div>
-      <div style={{ padding: '32px 20px', maxWidth: 640, margin: '0 auto' }}>
-        <div
-          onClick={() => !image && fileRef.current?.click()}
-          onDragOver={e => { e.preventDefault(); setDragging(true) }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={e => { e.preventDefault(); setDragging(false); handleFile(e.dataTransfer.files[0]) }}
-          style={{ border: '2px dashed ' + (dragging ? '#FFD600' : '#3A3A3A'), borderRadius: 16, padding: image ? 0 : '36px 16px', textAlign: 'center', background: dragging ? '#2A2A1A' : '#222', cursor: image ? 'default' : 'pointer', marginBottom: 16, overflow: 'hidden', position: 'relative', transition: 'all 0.2s' }}
-        >
-          {image ? (
-            <>
-              <img src={image} alt="esercizio" style={{ width: '100%', maxHeight: 240, objectFit: 'contain' }} />
-              <button onClick={e => { e.stopPropagation(); setImage(null); setImageBase64(null) }} style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 28, height: 28, cursor: 'pointer' }}>✕</button>
-            </>
-          ) : (
-            <>
-              <div style={{ fontSize: 36, marginBottom: 10 }}>📸</div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#E0E0E0', marginBottom: 4 }}>Carica una foto dell&apos;esercizio</div>
-              <div style={{ fontSize: 12, color: '#666' }}>trascina qui o clicca per scegliere</div>
-            </>
-          )}
-        </div>
-        <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files && handleFile(e.target.files[0])} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-          <div style={{ flex: 1, height: 1, background: '#3A3A3A' }} />
-          <span style={{ fontSize: 12, color: '#555' }}>oppure scrivi</span>
-          <div style={{ flex: 1, height: 1, background: '#3A3A3A' }} />
-        </div>
-        <textarea value={text} onChange={e => setText(e.target.value)} placeholder="Es: Calcola la derivata di f(x) = x² · sin(x)..." rows={3} style={{ width: '100%', border: '1px solid #3A3A3A', borderRadius: 12, padding: '12px 14px', fontSize: 14, fontFamily: 'system-ui', resize: 'none', outline: 'none', marginBottom: 16, background: '#222', color: '#E0E0E0' }} />
-        <button onClick={handleSubmit} disabled={!text.trim() && !image} style={{ width: '100%', padding: 15, background: (!text.trim() && !image) ? '#2A2A2A' : '#FFD600', color: (!text.trim() && !image) ? '#555' : '#1A1A1A', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: (!text.trim() && !image) ? 'default' : 'pointer', transition: 'all 0.2s' }}>
-          {isLimited ? '⚡ Sblocca per continuare' : 'Spiega questo esercizio →'}
-        </button>
-        {!isLimited && (
-          <div style={{ marginTop: 16, background: '#222', border: '1px solid #3A3A3A', borderRadius: 12, padding: '10px 14px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: 12, color: '#666' }}>Esercizi oggi</span>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#FFD600' }}>{usedToday}/{DAILY_LIMIT}</span>
-            </div>
-            <div style={{ height: 4, background: '#3A3A3A', borderRadius: 4 }}>
-              <div style={{ height: '100%', width: (usedToday / DAILY_LIMIT * 100) + '%', background: '#FFD600', borderRadius: 4, transition: 'width 0.4s' }} />
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  )
+  <HomeScreen
+    user={user}
+    showAuth={showAuth}
+    setShowAuth={setShowAuth}
+    supabase={supabase}
+    setScreen={setScreen}
+    logout={logout}
+    isLimited={isLimited}
+    remaining={remaining}
+    image={image}
+    setImage={setImage}
+    setImageBase64={setImageBase64}
+    dragging={dragging}
+    setDragging={setDragging}
+    handleFile={handleFile}
+    text={text}
+    setText={setText}
+    handleSubmit={handleSubmit}
+    usedToday={usedToday}
+  />
+)
+
 }
