@@ -13,7 +13,6 @@ export function parseExplanation(text: string): {
 
   for (const line of lines) {
     const trimmed = line.trim()
-    if (!trimmed) continue
 
     if (trimmed.startsWith('TITOLO:')) {
       titolo = trimmed.replace('TITOLO:', '').trim()

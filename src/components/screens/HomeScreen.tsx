@@ -2,6 +2,8 @@
 
 import { useRef, useState, useEffect } from 'react'
 import AuthModal from '@/components/AuthModal'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Menu, X, BookOpen, User, LogOut, Camera, Crown, Sparkles, Zap } from 'lucide-react'
 
 const DAILY_LIMIT = 5
 
@@ -24,6 +26,7 @@ interface HomeScreenProps {
   setText: (v: string) => void
   handleSubmit: () => void
   usedToday: number
+  isPremium: boolean
 }
 
 function getUserDisplayName(user: any): string {
@@ -38,221 +41,265 @@ export default function HomeScreen({
   user, showAuth, setShowAuth, supabase, setScreen, logout,
   isLimited, remaining, image, setImage, setImageBase64,
   dragging, setDragging, handleFile, text, setText, handleSubmit, usedToday,
+  isPremium,
 }: HomeScreenProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [menuOpen, setMenuOpen] = useState(false)
 
   const displayName = getUserDisplayName(user)
 
-  // Blocca scroll body quando menu aperto
   useEffect(() => {
     document.body.style.overflow = menuOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [menuOpen])
 
   return (
-    <div style={{ minHeight: '100vh', background: '#1A1A1A', fontFamily: 'system-ui' }}>
-      {showAuth && <AuthModal onClose={() => setShowAuth(false)} supabase={supabase} />}
+    <div className="min-h-screen relative overflow-hidden">
+      <AnimatePresence>
+        {showAuth && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+          >
+            <AuthModal onClose={() => setShowAuth(false)} supabase={supabase} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* OVERLAY scuro quando menu aperto */}
-      {menuOpen && (
-        <div
-          onClick={() => setMenuOpen(false)}
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)',
-            zIndex: 300, backdropFilter: 'blur(2px)',
-          }}
-        />
-      )}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setMenuOpen(false)}
+            className="fixed inset-0 bg-black/50 z-[300] backdrop-blur-sm"
+          />
+        )}
+      </AnimatePresence>
 
       {/* SIDEBAR */}
-      <div style={{
-        position: 'fixed', top: 0, right: 0, bottom: 0, width: 260,
-        background: '#222', borderLeft: '1px solid #3A3A3A',
-        zIndex: 400, display: 'flex', flexDirection: 'column',
-        transform: menuOpen ? 'translateX(0)' : 'translateX(100%)',
-        transition: 'transform 0.25s cubic-bezier(0.4,0,0.2,1)',
-        boxShadow: menuOpen ? '-8px 0 32px rgba(0,0,0,0.4)' : 'none',
-      }}>
-        {/* Sidebar header con avatar */}
-        <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid #3A3A3A', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          {user ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#FFD600', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, color: '#1A1A1A', flexShrink: 0 }}>
-                {displayName[0].toUpperCase()}
-              </div>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#E0E0E0' }}>Ciao, {displayName}!</div>
-                <div style={{ fontSize: 11, color: '#666', marginTop: 1 }}>{user.email}</div>
-              </div>
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed top-0 right-0 bottom-0 w-[280px] bg-surface border-l border-surface-border z-[400] flex flex-col shadow-2xl"
+          >
+            <div className="p-5 border-b border-surface-border flex justify-between items-center bg-surface-hover/30">
+              {user ? (
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-background font-extrabold text-lg shadow-lg shadow-primary/20">
+                    {displayName[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="text-[15px] font-bold text-foreground">Ciao, {displayName}!</div>
+                    <div className="text-xs text-foreground-subtle mt-0.5 truncate max-w-[150px]">{user.email}</div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-lg font-bold text-primary flex items-center gap-2">
+                  <Sparkles size={20} /> StudiAI
+                </div>
+              )}
+              <button onClick={() => setMenuOpen(false)} className="text-foreground-muted hover:text-foreground transition-colors p-1 rounded-md hover:bg-surface-active">
+                <X size={24} />
+              </button>
             </div>
-          ) : (
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#FFD600' }}>StudiAI</div>
-          )}
-          <button
-            onClick={() => setMenuOpen(false)}
-            style={{ background: 'none', border: 'none', color: '#555', fontSize: 20, cursor: 'pointer', lineHeight: 1, padding: 4, flexShrink: 0 }}
-          >✕</button>
-        </div>
 
-        {/* Voci menu */}
-        <div style={{ flex: 1, padding: '8px 0' }}>
-          {user ? (
-            <>
-              {[
-                { icon: '📚', label: 'I miei esercizi', action: () => { setScreen('storico'); setMenuOpen(false) } },
-                { icon: '👤', label: 'Profilo', action: () => { setScreen('profilo'); setMenuOpen(false) } },
-              ].map((item, i) => (
-                <button
-                  key={i}
-                  onClick={item.action}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '13px 20px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, color: '#D0D0D0', textAlign: 'left' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#2A2A2A')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-                >
-                  <span style={{ fontSize: 18 }}>{item.icon}</span>
-                  {item.label}
-                </button>
-              ))}
+            <div className="flex-1 py-4 overflow-y-auto">
+              {user ? (
+                <div className="space-y-1 px-3">
+                  {[
+                    { icon: <BookOpen size={20} />, label: 'I miei esercizi', action: () => { setScreen('storico'); setMenuOpen(false) } },
+                    { icon: <User size={20} />, label: 'Profilo', action: () => { setScreen('profilo'); setMenuOpen(false) } },
+                  ].map((item, i) => (
+                    <button
+                      key={i}
+                      onClick={item.action}
+                      className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-colors hover:bg-surface-hover text-foreground-muted hover:text-foreground font-medium text-[15px]"
+                    >
+                      <span className="text-primary">{item.icon}</span>
+                      {item.label}
+                    </button>
+                  ))}
 
-              {/* Card Premium */}
-              <div style={{ margin: '12px 16px', background: '#2A2A1A', border: '1px solid #FFD60033', borderRadius: 12, padding: '14px 16px' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#FFD600', marginBottom: 4 }}>⚡ Passa a Premium</div>
-                <div style={{ fontSize: 12, color: '#888', marginBottom: 10, lineHeight: 1.5 }}>Esercizi illimitati, grafici interattivi e molto altro.</div>
+                  {!isPremium && (
+                    <motion.div 
+                      whileHover={{ scale: 1.02 }}
+                      className="mt-6 mx-2 bg-gradient-to-br from-surface-active to-surface border border-primary/20 rounded-2xl p-4 shadow-lg"
+                    >
+                      <div className="text-[14px] font-bold text-primary mb-1 flex items-center gap-2">
+                        <Zap size={16} fill="currentColor" /> Passa a Premium
+                      </div>
+                      <div className="text-xs text-foreground-muted mb-3 leading-relaxed">Esercizi illimitati, grafici interattivi e molto altro.</div>
+                      <button
+                        onClick={() => { setScreen('paywall'); setMenuOpen(false) }}
+                        className="w-full py-2.5 bg-primary hover:bg-primary-hover text-background border-none rounded-xl text-sm font-bold cursor-pointer transition-colors"
+                      >
+                        Scopri i piani →
+                      </button>
+                    </motion.div>
+                  )}
+                </div>
+              ) : (
+                <div className="px-3">
+                  <button
+                    onClick={() => { setShowAuth(true); setMenuOpen(false) }}
+                    className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary font-semibold transition-colors"
+                  >
+                    <User size={20} /> Accedi o Registrati
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {user && (
+              <div className="border-t border-surface-border p-3">
                 <button
-                  onClick={() => { setScreen('paywall'); setMenuOpen(false) }}
-                  style={{ width: '100%', padding: '8px 0', background: '#FFD600', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, color: '#1A1A1A', cursor: 'pointer' }}
+                  onClick={() => { logout(); setMenuOpen(false) }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors hover:bg-danger/10 text-foreground-subtle hover:text-danger font-medium text-[14px]"
                 >
-                  Scopri i piani →
+                  <LogOut size={20} /> Esci
                 </button>
               </div>
-            </>
-          ) : (
-            <button
-              onClick={() => { setShowAuth(true); setMenuOpen(false) }}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '13px 20px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, color: '#FFD600', textAlign: 'left', fontWeight: 600 }}
-            >
-              <span style={{ fontSize: 18 }}>🔑</span> Accedi o Registrati
-            </button>
-          )}
-        </div>
-
-        {/* Footer: Esci */}
-        {user && (
-          <div style={{ borderTop: '1px solid #3A3A3A', padding: '8px 0' }}>
-            <button
-              onClick={() => { logout(); setMenuOpen(false) }}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#666', textAlign: 'left' }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#2A2A2A')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-            >
-              <span style={{ fontSize: 16 }}>🚪</span> Esci
-            </button>
-          </div>
+            )}
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
 
       {/* HEADER */}
-      <div style={{ padding: '18px 24px', background: '#222', borderBottom: '1px solid #3A3A3A', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: '#FFD600', letterSpacing: '-0.5px' }}>StudiAI</div>
-          <div style={{ fontSize: 11, color: '#666' }}>il tuo tutor di matematica e fisica</div>
+      <header className="sticky top-0 z-40 bg-surface/80 backdrop-blur-xl border-b border-surface-border px-6 py-4 flex justify-between items-center shadow-sm">
+        <div className="flex flex-col">
+          <div className="text-[22px] font-extrabold text-primary tracking-tight flex items-center gap-1.5">
+            StudiAI <Sparkles size={18} className="text-primary/70" />
+          </div>
+          <div className="text-[11px] font-medium text-foreground-subtle tracking-wide uppercase">il tuo tutor smart</div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* Badge esercizi rimasti */}
-          <div
-            onClick={() => setScreen('paywall')}
-            style={{ background: isLimited ? '#FFD600' : '#2A2A2A', border: isLimited ? 'none' : '1px solid #3A3A3A', color: isLimited ? '#1A1A1A' : '#888', fontSize: 12, fontWeight: 600, padding: '6px 12px', borderRadius: 20, cursor: 'pointer', whiteSpace: 'nowrap' }}
-          >
-            {isLimited ? '⚡ Sblocca' : `${remaining} rimasti`}
-          </div>
+        <div className="flex items-center gap-3">
+          {isPremium ? (
+            <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/30 rounded-full px-3 py-1.5">
+              <Crown size={14} className="text-primary" fill="currentColor" />
+              <span className="text-xs font-bold text-primary">Premium</span>
+            </div>
+          ) : (
+            <motion.div
+              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+              onClick={() => setScreen('paywall')}
+              className={`text-xs font-bold px-3.5 py-1.5 rounded-full cursor-pointer whitespace-nowrap shadow-sm transition-colors ${
+                isLimited ? 'bg-primary text-background' : 'bg-surface-hover border border-surface-border text-foreground-muted hover:text-foreground'
+              }`}
+            >
+              {isLimited ? '⚡ Sblocca' : `${remaining} rimasti`}
+            </motion.div>
+          )}
 
-          {/* Hamburger ☰ */}
           <button
-            onClick={() => setMenuOpen(o => !o)}
-            style={{ background: '#2A2A2A', border: '1px solid #3A3A3A', borderRadius: 10, width: 38, height: 38, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5, flexShrink: 0 }}
+            onClick={() => setMenuOpen(true)}
+            className="bg-surface-hover border border-surface-border rounded-xl w-10 h-10 flex items-center justify-center text-foreground-muted hover:text-foreground transition-all hover:border-primary/50"
             aria-label="Apri menu"
           >
-            <div style={{ width: 16, height: 2, background: '#E0E0E0', borderRadius: 2 }} />
-            <div style={{ width: 16, height: 2, background: '#E0E0E0', borderRadius: 2 }} />
-            <div style={{ width: 16, height: 2, background: '#E0E0E0', borderRadius: 2 }} />
+            <Menu size={20} />
           </button>
         </div>
-      </div>
+      </header>
 
       {/* BODY */}
-      <div style={{ padding: '32px 20px', maxWidth: 640, margin: '0 auto' }}>
-
-        {/* Saluto */}
+      <main className="px-5 py-8 max-w-[640px] mx-auto w-full">
         {user && (
-          <div style={{ marginBottom: 28 }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: '#E0E0E0', letterSpacing: '-0.5px' }}>
-              Ciao, <span style={{ color: '#FFD600' }}>{displayName}</span>! 👋
-            </div>
-            <div style={{ fontSize: 13, color: '#666', marginTop: 4 }}>Cosa studiamo oggi?</div>
-          </div>
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+            <h1 className="text-3xl font-extrabold text-foreground tracking-tight">
+              Ciao, <span className="text-primary">{displayName}</span>! 👋
+            </h1>
+            <p className="text-sm font-medium text-foreground-subtle mt-1.5">Cosa studiamo di bello oggi?</p>
+          </motion.div>
         )}
 
-        {/* Upload box */}
-        <div
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           onClick={() => !image && fileRef.current?.click()}
           onDragOver={e => { e.preventDefault(); setDragging(true) }}
           onDragLeave={() => setDragging(false)}
           onDrop={e => { e.preventDefault(); setDragging(false); handleFile(e.dataTransfer.files[0]) }}
-          style={{ border: '2px dashed ' + (dragging ? '#FFD600' : '#3A3A3A'), borderRadius: 16, padding: image ? 0 : '36px 16px', textAlign: 'center', background: dragging ? '#2A2A1A' : '#222', cursor: image ? 'default' : 'pointer', marginBottom: 16, overflow: 'hidden', position: 'relative', transition: 'all 0.2s' }}
+          className={`relative overflow-hidden rounded-[24px] border-2 transition-all duration-300 ${
+            dragging ? 'border-primary bg-primary/5 scale-[1.02]' : 'border-surface-border bg-surface hover:border-primary/40'
+          } ${image ? 'p-0 border-transparent' : 'p-10 text-center cursor-pointer group'}`}
         >
           {image ? (
             <>
-              <img src={image} alt="esercizio" style={{ width: '100%', maxHeight: 240, objectFit: 'contain' }} />
-              <button onClick={e => { e.stopPropagation(); setImage(null); setImageBase64(null) }} style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: 28, height: 28, cursor: 'pointer' }}>✕</button>
+              <img src={image ?? undefined} alt="esercizio" className="w-full max-h-[280px] object-contain bg-black/20 backdrop-blur-md" />
+              <button 
+                onClick={e => { e.stopPropagation(); setImage(null); setImageBase64(null) }} 
+                className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white border-none rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-black/80 transition-colors"
+              >
+                <X size={16} />
+              </button>
             </>
           ) : (
-            <>
-              <div style={{ fontSize: 36, marginBottom: 10 }}>📸</div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#E0E0E0', marginBottom: 4 }}>Carica una foto dell&apos;esercizio</div>
-              <div style={{ fontSize: 12, color: '#666' }}>trascina qui o clicca per scegliere</div>
-            </>
+            <div className="flex flex-col items-center justify-center">
+              <div className="w-16 h-16 rounded-full bg-surface-active flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 group-hover:bg-primary/20 group-hover:text-primary text-foreground-muted">
+                <Camera size={28} />
+              </div>
+              <div className="text-[15px] font-bold text-foreground mb-1">Carica una foto dell'esercizio</div>
+              <div className="text-[13px] text-foreground-subtle">Trascina qui o clicca per esplorare</div>
+            </div>
           )}
-        </div>
+        </motion.div>
 
-        <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files && handleFile(e.target.files[0])} />
+        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files && handleFile(e.target.files[0])} />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-          <div style={{ flex: 1, height: 1, background: '#3A3A3A' }} />
-          <span style={{ fontSize: 12, color: '#555' }}>oppure scrivi</span>
-          <div style={{ flex: 1, height: 1, background: '#3A3A3A' }} />
-        </div>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="flex items-center gap-4 my-6">
+          <div className="flex-1 h-[1px] bg-surface-border" />
+          <span className="text-xs font-semibold text-foreground-subtle uppercase tracking-wider">oppure scrivi</span>
+          <div className="flex-1 h-[1px] bg-surface-border" />
+        </motion.div>
 
-        <textarea
+        <motion.textarea
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
           value={text}
           onChange={e => setText(e.target.value)}
           placeholder="Es: Calcola la derivata di f(x) = x² · sin(x)..."
           rows={3}
-          style={{ width: '100%', border: '1px solid #3A3A3A', borderRadius: 12, padding: '12px 14px', fontSize: 14, fontFamily: 'system-ui', resize: 'none', outline: 'none', marginBottom: 16, background: '#222', color: '#E0E0E0' }}
+          className="w-full border border-surface-border rounded-[20px] p-5 text-[15px] resize-none outline-none mb-6 bg-surface text-foreground placeholder:text-foreground-muted focus:border-primary focus:ring-1 focus:ring-primary transition-all shadow-sm"
         />
 
-        <button
+        <motion.button
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+          whileHover={(!text.trim() && !image) ? {} : { scale: 1.02 }}
+          whileTap={(!text.trim() && !image) ? {} : { scale: 0.98 }}
           onClick={handleSubmit}
           disabled={!text.trim() && !image}
-          style={{ width: '100%', padding: 15, background: (!text.trim() && !image) ? '#2A2A2A' : '#FFD600', color: (!text.trim() && !image) ? '#555' : '#1A1A1A', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: (!text.trim() && !image) ? 'default' : 'pointer', transition: 'all 0.2s' }}
+          className={`w-full p-4 rounded-[16px] text-[16px] font-extrabold flex justify-center items-center gap-2 transition-all shadow-lg ${
+            (!text.trim() && !image) 
+            ? 'bg-surface-active text-foreground-subtle shadow-none cursor-default' 
+            : 'bg-primary text-background hover:bg-primary-hover hover:shadow-primary/25 cursor-pointer'
+          }`}
         >
-          {isLimited ? '⚡ Sblocca per continuare' : 'Spiega questo esercizio →'}
-        </button>
+          {isLimited ? (
+            <><Zap size={20} fill="currentColor" /> Sblocca per continuare</>
+          ) : (
+            <>Spiega questo esercizio <Sparkles size={18} /></>
+          )}
+        </motion.button>
 
-        {/* Progress bar esercizi */}
-        {!isLimited && (
-          <div style={{ marginTop: 16, background: '#222', border: '1px solid #3A3A3A', borderRadius: 12, padding: '10px 14px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: 12, color: '#666' }}>Esercizi oggi</span>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#FFD600' }}>{usedToday}/{DAILY_LIMIT}</span>
+        {!isLimited && !isPremium && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-6 bg-surface border border-surface-border rounded-2xl p-4 shadow-sm">
+            <div className="flex justify-between items-center mb-2.5">
+              <span className="text-xs font-medium text-foreground-subtle">Esercizi usati oggi</span>
+              <span className="text-xs font-extrabold text-primary bg-primary/10 px-2 py-0.5 rounded-md">{usedToday} / {DAILY_LIMIT}</span>
             </div>
-            <div style={{ height: 4, background: '#3A3A3A', borderRadius: 4 }}>
-              <div style={{ height: '100%', width: (Math.min(usedToday, DAILY_LIMIT) / DAILY_LIMIT * 100) + '%', background: '#FFD600', borderRadius: 4, transition: 'width 0.4s' }} />
+            <div className="h-2 bg-surface-active rounded-full overflow-hidden">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.min(usedToday, DAILY_LIMIT) / DAILY_LIMIT * 100}%` }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="h-full bg-primary rounded-full relative"
+              >
+                <div className="absolute inset-0 bg-white/20" />
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
         )}
-      </div>
+      </main>
     </div>
   )
 }

@@ -15,16 +15,17 @@ export async function GET() {
 
   const { data } = await supabase
     .from('profiles')
-    .select('onboarding_done, scuola, classe, materie')
+    .select('onboarding_done, scuola, classe, materie, is_premium')
     .eq('id', user.id)
     .single()
 
   return NextResponse.json({
-    onboarding_done: data?.onboarding_done || false,
-    scuola: data?.scuola || null,
-    classe: data?.classe || null,
-    materie: data?.materie || []
-  })
+  onboarding_done: data?.onboarding_done || false,
+  scuola: data?.scuola || null,
+  classe: data?.classe || null,
+  materie: data?.materie || [],
+  is_premium: data?.is_premium || false  // ← aggiungi
+})
 }
 
 export async function POST(req: NextRequest) {

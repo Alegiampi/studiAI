@@ -4,6 +4,8 @@ import ReactMarkdown from 'react-markdown'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import 'katex/dist/katex.min.css'
+import { motion } from 'framer-motion'
+import { Sparkles, ChevronRight, BookOpen } from 'lucide-react'
 
 const MD = ({ children }: { children: string }) => (
   <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
@@ -22,7 +24,6 @@ function parseExplanation(text: string): { titolo: string; passi: Passo[]; final
 
   for (const line of lines) {
     const trimmed = line.trim()
-    if (!trimmed) continue
     if (trimmed.startsWith('TITOLO:')) {
       titolo = trimmed.replace('TITOLO:', '').trim()
     } else if (trimmed.match(/^PASSO \d+:/)) {
@@ -34,7 +35,7 @@ function parseExplanation(text: string): { titolo: string; passi: Passo[]; final
       if (currentPasso) { passi.push(currentPasso); currentPasso = null }
       finale = trimmed.replace('RISPOSTA FINALE:', '').trim()
     } else if (currentPasso) {
-      currentPasso.corpo += (currentPasso.corpo ? ' ' : '') + trimmed
+      currentPasso.corpo += (currentPasso.corpo ? '\n' : '') + trimmed
     }
   }
   if (currentPasso) passi.push(currentPasso)
@@ -45,65 +46,115 @@ export default function SharedExplanation({ data, id }: { data: any; id: string 
   const parsed = parseExplanation(data.explanation)
 
   return (
-    <div style={{ minHeight: '100vh', background: '#1A1A1A', fontFamily: 'system-ui' }}>
-      {/* Banner */}
-      <div style={{ background: '#FFD600', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: '#1A1A1A' }}>StudiAI</div>
-          <div style={{ fontSize: 11, color: '#333' }}>Spiegazioni AI per studenti italiani</div>
-        </div>
-        <a href="/" style={{ background: '#1A1A1A', color: '#FFD600', padding: '8px 16px', borderRadius: 20, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
-          Prova gratis →
-        </a>
-      </div>
-
-      <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 20px' }}>
-        {data.question && (
-          <div style={{ background: '#2A2A2A', border: '1px solid #3A3A3A', borderRadius: 12, padding: '12px 14px', marginBottom: 20, fontSize: 14, color: '#A0A0A0' }}>
-            {data.question}
+    <div className="min-h-screen bg-background font-sans relative overflow-hidden flex flex-col">
+      <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[50%] bg-primary/10 blur-[120px] rounded-full pointer-events-none" />
+      
+      <style>{`
+        .katex { color: var(--color-foreground) !important; font-size: 1.2em; font-weight: 500; }
+        .katex-display { 
+          margin: 1.5rem 0 !important; 
+          padding: 0.5rem 0; 
+          overflow-x: auto; 
+          text-align: center;
+        }
+        .katex-display .katex { color: var(--color-foreground) !important; }
+        .md-content { line-height: 1.8; }
+        .md-content p { margin-bottom: 1.2rem; }
+        .md-content p:last-child { margin-bottom: 0; }
+        .md-content ul, .md-content ol { padding-left: 1.5rem; margin-bottom: 1.2rem; }
+        .md-content ul { list-style-type: disc; }
+        .md-content ol { list-style-type: decimal; }
+        .md-content li { margin-bottom: 0.5rem; }
+        .md-content strong { color: var(--color-foreground); font-weight: 700; }
+      `}</style>
+      
+      {/* Banner Top */}
+      <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-primary px-5 py-3.5 flex justify-between items-center shadow-md relative z-20">
+        <div className="flex items-center gap-2">
+          <div className="bg-background/20 p-1.5 rounded-lg backdrop-blur-sm">
+            <Sparkles size={20} className="text-background" />
           </div>
+          <div>
+            <div className="text-[17px] font-extrabold text-background tracking-tight leading-tight">StudiAI</div>
+            <div className="text-[11px] font-semibold text-background/80 uppercase tracking-wider">Il tutor AI per studenti</div>
+          </div>
+        </div>
+        <a href="/" className="bg-background text-primary px-4 py-2 rounded-xl text-[13px] font-extrabold no-underline shadow-sm hover:scale-105 transition-transform flex items-center gap-1">
+          Prova gratis <ChevronRight size={14} />
+        </a>
+      </motion.div>
+
+      <main className="max-w-[680px] mx-auto w-full px-5 py-8 relative z-10 flex-1">
+        {data.question && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-surface border border-surface-border rounded-2xl p-5 mb-8 shadow-sm text-[15px] text-foreground-muted leading-relaxed font-medium">
+            {data.question}
+          </motion.div>
         )}
 
         {parsed.titolo && (
-          <div style={{ fontSize: 18, fontWeight: 700, color: '#FFD600', marginBottom: 24, lineHeight: 1.4 }}>
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-[20px] font-extrabold text-primary mb-8 leading-snug tracking-tight">
             <MD>{parsed.titolo}</MD>
-          </div>
+          </motion.div>
         )}
 
-        {parsed.passi.map((passo, i) => (
-          <div key={i} style={{ marginBottom: 16, display: 'flex', gap: 10 }}>
-            <div style={{ width: 3, background: '#FFD600', borderRadius: 4, flexShrink: 0, opacity: 0.4 }} />
-            <div style={{ flex: 1 }}>
-              <div style={{ border: '1px solid #3A3A3A', borderRadius: 12, overflow: 'hidden', background: '#2A2A2A' }}>
-                <div style={{ background: '#333', padding: '9px 14px', borderBottom: '1px solid #3A3A3A', fontWeight: 700, fontSize: 13, color: '#E0E0E0', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ color: '#888', fontWeight: 400 }}>Passo {i + 1}</span>
-                  <span style={{ color: '#888' }}>—</span>
+        <div className="space-y-6">
+          {parsed.passi.map((passo, i) => (
+            <motion.div 
+              key={i} 
+              initial={{ opacity: 0, y: 10 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              transition={{ delay: 0.15 + (i * 0.05) }}
+              className="flex gap-3"
+            >
+              <div className="w-1 bg-primary/30 rounded-full shrink-0" />
+              <div className="flex-1 bg-surface border border-surface-border rounded-[20px] overflow-hidden shadow-sm">
+                <div className="bg-surface-active px-4 py-3 border-b border-surface-border font-bold text-[14px] text-foreground flex items-center gap-2">
+                  <span className="text-foreground-subtle font-semibold uppercase tracking-wider text-[11px] bg-background/50 px-2 py-0.5 rounded-md">Passo {i + 1}</span>
+                  <span className="text-foreground-muted mx-1">•</span>
                   <MD>{passo.titolo}</MD>
                 </div>
-                <div style={{ padding: '12px 14px', fontSize: 14, color: '#D0D0D0', lineHeight: 1.8 }}>
+                <div className="md-content px-5 py-4 text-[15px] text-foreground-muted bg-surface/50">
                   <MD>{passo.corpo}</MD>
                 </div>
               </div>
-            </div>
-          </div>
-        ))}
+            </motion.div>
+          ))}
+        </div>
 
         {parsed.finale && (
-          <div style={{ background: '#2A2A2A', border: '2px solid #FFD600', borderRadius: 12, padding: '14px 18px', marginTop: 8, marginBottom: 32 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#FFD600', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Risposta finale</div>
-            <div style={{ fontSize: 16, fontWeight: 600, color: '#FFD600' }}><MD>{parsed.finale}</MD></div>
-          </div>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }} 
+            animate={{ opacity: 1, scale: 1 }} 
+            transition={{ delay: 0.4 }}
+            className="bg-primary/5 border-2 border-primary/40 rounded-[20px] p-5 mt-6 mb-12 shadow-[0_0_30px_rgba(255,214,0,0.1)]"
+          >
+            <div className="text-[12px] font-extrabold text-primary uppercase tracking-[0.1em] mb-2 flex items-center gap-2">
+              <Sparkles size={14} /> Risposta Finale
+            </div>
+            <div className="md-content text-[18px] font-bold text-primary">
+              <MD>{parsed.finale}</MD>
+            </div>
+          </motion.div>
         )}
 
-        {/* CTA bottom */}
-        <div style={{ background: '#2A2A2A', border: '1px solid #3A3A3A', borderRadius: 16, padding: '20px', textAlign: 'center' }}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: '#E0E0E0', marginBottom: 8 }}>Vuoi spiegazioni come questa?</div>
-          <div style={{ fontSize: 13, color: '#888', marginBottom: 16 }}>5 esercizi gratis al giorno. Nessuna carta richiesta.</div>
-          <a href="/" style={{ display: 'inline-block', background: '#FFD600', color: '#1A1A1A', padding: '12px 28px', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
-            Inizia gratis →
+        {/* CTA Bottom */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ delay: 0.5 }}
+          className="bg-surface border border-surface-border rounded-[24px] p-8 text-center shadow-lg relative overflow-hidden"
+        >
+          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-primary/0 via-primary to-primary/0 opacity-30" />
+          <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 text-primary">
+            <BookOpen size={28} />
+          </div>
+          <h3 className="text-[20px] font-extrabold text-foreground mb-2">Vuoi spiegazioni passo-passo?</h3>
+          <p className="text-[15px] text-foreground-muted font-medium mb-8 max-w-sm mx-auto">Ricevi 5 risoluzioni gratuite ogni giorno. Nessuna carta di credito richiesta.</p>
+          <a href="/" className="inline-flex items-center gap-2 bg-primary text-background px-8 py-3.5 rounded-[16px] text-[16px] font-extrabold no-underline shadow-lg shadow-primary/20 hover:scale-105 hover:bg-primary-hover transition-all">
+            Inizia a studiare gratis <ChevronRight size={18} />
           </a>
-        </div>
-      </div>
+        </motion.div>
+      </main>
     </div>
   )
 }

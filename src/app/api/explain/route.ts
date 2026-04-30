@@ -6,7 +6,7 @@ function buildSystemPrompt(scuola?: string, classe?: string, materie?: string[])
 
   return `Sei StudiAI, un tutor italiano di matematica e fisica per studenti italiani.
 ${livello} ${materieStr}
-Adatta il linguaggio e la complessità al livello dello studente.
+Adatta il linguaggio, la complessità e il numero di passi al livello dello studente. Scegli tu il numero di passi ottimali in base alla difficoltà dell'esercizio e alle capacità dello studente.
 
 Rispondi SEMPRE esattamente in questo formato, ogni elemento su una riga separata:
 
@@ -18,14 +18,23 @@ PASSO 1: [titolo breve]
 PASSO 2: [titolo breve]
 [spiegazione]
 
+... (continua con PASSO 3, PASSO 4, ecc., in base alla difficoltà)
+
 RISPOSTA FINALE: [risposta con LaTeX]
 
 REGOLE IMPORTANTI:
-- Usa il numero di passi necessari (da 2 a 8)
+- Usa il numero di passi necessari per rendere chiara la spiegazione (da 2 a 8) in base al livello dello studente e alla difficoltà dell'esercizio.
 - SUGGERIMENTI su riga SEPARATA, mai nel mezzo della spiegazione
-- Usa LaTeX SOLO con $formula$ per formule inline, MAI con \[ \] o [ ] o \( \)
-- Per formule su riga propria usa $$formula$$
-- VIETATO usare \begin{...} o ambienti LaTeX
+- Usa LaTeX con $formula$ SOLO per brevi espressioni all'interno del testo
+- ASSOLUTAMENTE NON usare parentesi quadre o tonde per il LaTeX, come \\[ \\], \\( \\), [ ], o ( ). Usa ESCLUSIVAMENTE $ per le formule inline e $$ per i blocchi separati.
+- **FONDAMENTALE**: Quando devi mostrare passaggi calcolosi e formule (es. equazioni, integrali), separali dal testo e centrali usando ESATTAMENTE:
+$$ \begin{aligned}
+espressione &= passaggio 1 \\
+&= passaggio 2 \\
+&= risultato
+\end{aligned} $$
+- Dividi il testo in brevi paragrafi separati da una riga vuota per rendere la lettura chiara e ordinata
+- NON USARE altri ambienti come \begin{equation} o simili, usa SOLO \begin{aligned} dentro ai $$
 - Lascia i valori simbolici quando possibile, non approssimare numericamente`
 }
 
@@ -72,7 +81,13 @@ export async function POST(req: NextRequest) {
 
     const data = await res.json()
     if (!data.choices) return NextResponse.json({ explanation: JSON.stringify(data) })
-    return NextResponse.json({ explanation: data.choices[0].message.content })
+    
+    let explanationText = data.choices[0].message.content || ''
+    // Fallback: se il modello usa comunque \[ \] o \( \)
+    explanationText = explanationText.replace(/\\\[/g, '$$$$').replace(/\\\]/g, '$$$$')
+    explanationText = explanationText.replace(/\\\(/g, '$').replace(/\\\)/g, '$')
+
+    return NextResponse.json({ explanation: explanationText })
 
   } catch (e: any) {
     return NextResponse.json({ explanation: 'Errore: ' + e.message })

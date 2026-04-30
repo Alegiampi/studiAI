@@ -1,26 +1,56 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  
+  /* Primary brand colors */
+  --color-primary: #FFD600;
+  --color-primary-hover: #E6C100;
+  --color-primary-active: #CCAB00;
+
+  /* Backgrounds */
+  --color-background: #121212;
+  --color-surface: #1E1E1E;
+  --color-surface-hover: #252525;
+  --color-surface-active: #2C2C2C;
+  --color-surface-border: #333333;
+
+  /* Text colors */
+  --color-foreground: #F5F5F5;
+  --color-foreground-muted: #A3A3A3;
+  --color-foreground-subtle: #737373;
+
+  /* Utility variants */
+  --color-danger: #EF4444;
+  --color-success: #22C55E;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  /* Aggiungiamo un leggero gradiente radiale allo sfondo per renderlo più "premium" */
+  background-image: radial-gradient(circle at 50% 0%, rgba(255, 214, 0, 0.03) 0%, transparent 60%);
+  background-attachment: fixed;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-surface-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-foreground-subtle);
 }
