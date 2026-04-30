@@ -278,6 +278,7 @@ function ProfiloScreen({ onBack, profiloAttuale, onSave }: { onBack: () => void;
 }
 
 export default function Home() {
+  const [graficoUtile, setGraficoUtile] = useState<boolean | null>(null)
   const [screen, setScreen] = useState<'home' | 'explanation' | 'paywall' | 'storico' | 'profilo'>('home')
   const [exercise, setExercise] = useState<{ text: string; imageBase64?: string; imagePreview?: string } | null>(null)
   const [usedToday, setUsedToday] = useState(0)
@@ -372,33 +373,51 @@ export default function Home() {
   }
 
   async function handleSubmit() {
-    if (isLimited) { setScreen('paywall'); return }
-    if (!text.trim() && !image) return
-    setUsedToday(u => u + 1)
-    if (user) fetch('/api/usage', { method: 'POST' })
-    setExercise({ text, imageBase64: imageBase64 || undefined, imagePreview: image || undefined })
-    setScreen('explanation')
-    setLoading(true)
-    setExplanation('')
-    setGrafico(null)
-    setGraficoLoading(false)
-    setShareUrl(null)
-    const res = await fetch('/api/explain', {
+  if (isLimited) { setScreen('paywall'); return }
+  if (!text.trim() && !image) return
+  setUsedToday(u => u + 1)
+  if (user) fetch('/api/usage', { method: 'POST' })
+  setExercise({ text, imageBase64: imageBase64 || undefined, imagePreview: image || undefined })
+  setScreen('explanation')
+  setLoading(true)
+  setExplanation('')
+  setGrafico(null)
+  setGraficoUtile(null)   // <-- nuovo stato, vedi sotto
+  setShareUrl(null)
+
+  // Le due chiamate partono in parallelo
+  const [explainRes, classifyRes] = await Promise.all([
+    fetch('/api/explain', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text, imageBase64, tipo: 'esercizio', scuola: profilo.scuola, classe: profilo.classe, materie: profilo.materie })
-    })
-    const data = await res.json()
-    setExplanation(data.explanation)
-    if (user) {
-      fetch('/api/exercises', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: text, explanation: data.explanation })
-      })
-    }
-    setLoading(false)
+    }),
+    text.trim() ? fetch('/api/classify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, scuola: profilo.scuola, classe: profilo.classe })
+    }) : Promise.resolve(null)
+  ])
+
+  const explainData = await explainRes.json()
+  setExplanation(explainData.explanation)
+
+  if (classifyRes) {
+    const classifyData = await classifyRes.json()
+    setGraficoUtile(classifyData.graficoUtile ?? false)
+  } else {
+    setGraficoUtile(false) // immagine senza testo: no grafico
   }
+
+  if (user) {
+    fetch('/api/exercises', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: text, explanation: explainData.explanation })
+    })
+  }
+  setLoading(false)
+}
 
   async function handleShare() {
     setShareLoading(true)
@@ -530,7 +549,7 @@ async function handleCheckout(priceId: string) {
           <ExplanationRenderer text={explanation} esercizio={exercise?.text || ''} />
         ) : null}
 
-        {explanation && !loading && (
+        {explanation && !loading && graficoUtile && (
           <div style={{ marginTop: 16, marginBottom: 8 }}>
             {grafico ? (
               <GraficoJSX espressioni={grafico} />
