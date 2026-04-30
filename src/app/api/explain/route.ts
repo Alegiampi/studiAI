@@ -14,11 +14,9 @@ TITOLO: [descrizione del tipo di esercizio]
 
 PASSO 1: [titolo breve]
 [spiegazione del passo con LaTeX inline $formula$]
-SUGGERIMENTI: [domanda breve]|[domanda breve]
 
 PASSO 2: [titolo breve]
 [spiegazione]
-SUGGERIMENTI: [domanda breve]|[domanda breve]
 
 RISPOSTA FINALE: [risposta con LaTeX]
 
