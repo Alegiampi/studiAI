@@ -38,8 +38,8 @@ function ExplanationRenderer({ text, esercizio }: { text: string; esercizio: str
   return (
     <div>
       <style>{`
-        .katex { color: #F5F5F5 !important; font-weight: 600 !important; }
-        .katex-display .katex { color: #F5F5F5 !important; font-weight: 600 !important; }
+        .katex { color: #F5F5F5 !important; }
+        .katex-display .katex { color: #F5F5F5 !important; }
       `}</style>
       {parsed.titolo && <div style={{ fontSize: 18, fontWeight: 700, color: '#FFD600', marginBottom: 24, lineHeight: 1.4 }}><MD>{parsed.titolo}</MD></div>}
       {passi.map((passo, i) => (
