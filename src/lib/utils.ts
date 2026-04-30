@@ -24,8 +24,7 @@ export function parseExplanation(text: string): {
       if (currentPasso) { passi.push(currentPasso); currentPasso = null }
       finale = trimmed.replace('RISPOSTA FINALE:', '').trim()
     } else if (currentPasso) {
-      currentPasso.corpo += (currentPasso.corpo ? ' ' : '') + trimmed
-    }
+      currentPasso.corpo += (currentPasso.corpo ? '\n' : '') + trimmed    }
   }
 
   if (currentPasso) passi.push(currentPasso)

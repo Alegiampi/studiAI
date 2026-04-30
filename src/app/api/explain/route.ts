@@ -23,8 +23,9 @@ RISPOSTA FINALE: [risposta con LaTeX]
 REGOLE IMPORTANTI:
 - Usa il numero di passi necessari (da 2 a 8)
 - SUGGERIMENTI su riga SEPARATA, mai nel mezzo della spiegazione
-- Usa LaTeX solo con $formula$ inline
-- Domande nei SUGGERIMENTI max 8 parole
+- Usa LaTeX SOLO con $formula$ per formule inline, MAI con \[ \] o [ ] o \( \)
+- Per formule su riga propria usa $$formula$$
+- VIETATO usare \begin{...} o ambienti LaTeX
 - Lascia i valori simbolici quando possibile, non approssimare numericamente`
 }
 
