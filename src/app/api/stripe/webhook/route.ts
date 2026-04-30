@@ -19,22 +19,46 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Webhook invalido' }, { status: 400 })
   }
 
+  // Pagamento iniziale completato → attiva premium
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
     const userId = session.metadata?.user_id
-
     if (userId) {
       await supabase.from('profiles').update({
         is_premium: true,
         stripe_customer_id: session.customer as string,
-        stripe_subscription_id: session.subscription as string
+        stripe_subscription_id: session.subscription as string,
       }).eq('id', userId)
     }
   }
 
+  // Rinnovo mensile/annuale → mantieni premium attivo
+  if (event.type === 'invoice.payment_succeeded') {
+    const invoice = event.data.object as Stripe.Invoice
+    const subscriptionId = (invoice as any).subscription as string
+    if (subscriptionId) {
+      await supabase.from('profiles')
+        .update({ is_premium: true })
+        .eq('stripe_subscription_id', subscriptionId)
+    }
+  }
+
+  // Pagamento fallito → rimuovi premium
+  if (event.type === 'invoice.payment_failed') {
+    const invoice = event.data.object as Stripe.Invoice
+    const subscriptionId = (invoice as any).subscription as string
+    if (subscriptionId) {
+      await supabase.from('profiles')
+        .update({ is_premium: false })
+        .eq('stripe_subscription_id', subscriptionId)
+    }
+  }
+
+  // Abbonamento cancellato → rimuovi premium
   if (event.type === 'customer.subscription.deleted') {
     const subscription = event.data.object as Stripe.Subscription
-    await supabase.from('profiles').update({ is_premium: false })
+    await supabase.from('profiles')
+      .update({ is_premium: false })
       .eq('stripe_subscription_id', subscription.id)
   }
 

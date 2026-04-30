@@ -302,11 +302,12 @@ export default function Home() {
   const fileRef = useRef<HTMLInputElement>(null)
   const chatRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
+  const [isPremium, setIsPremium] = useState(false)
 
   const admins = ['alegiampi@icloud.com', 'g79750797@gmail.com']
   const isAdmin = admins.includes(user?.email || '')
   const remaining = DAILY_LIMIT - usedToday
-  const isLimited = !isAdmin && remaining <= 0
+  const isLimited = !isAdmin && !isPremium && remaining <= 0
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -324,6 +325,7 @@ export default function Home() {
           if (!d.onboarding_done) setShowOnboarding(true)
           else if (!d.scuola) setShowPersonalizzazione(true)
           setProfilo({ scuola: d.scuola, classe: d.classe, materie: d.materie })
+          setIsPremium(d.is_premium ?? false)  
         })
       } else {
         setUsedToday(0)
