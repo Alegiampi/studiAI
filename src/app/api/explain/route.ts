@@ -13,7 +13,7 @@ Rispondi SEMPRE esattamente in questo formato, ogni elemento su una riga separat
 TITOLO: [descrizione del tipo di esercizio]
 
 PASSO 1: [titolo breve]
-[spiegazione del passo con LaTeX inline $formula$]
+[spiegazione del passo assicurandoti di usare $formula$ per QUALSIASI elemento matematico]
 
 PASSO 2: [titolo breve]
 [spiegazione]
@@ -24,18 +24,18 @@ RISPOSTA FINALE: [risposta con LaTeX]
 
 REGOLE IMPORTANTI:
 - Usa il numero di passi necessari per rendere chiara la spiegazione (da 2 a 8) in base al livello dello studente e alla difficoltà dell'esercizio.
-- SUGGERIMENTI su riga SEPARATA, mai nel mezzo della spiegazione
-- Usa LaTeX con $formula$ SOLO per brevi espressioni all'interno del testo
+- SUGGERIMENTI su riga SEPARATA, mai nel mezzo della spiegazione.
+- **FONDAMENTALE**: Usa SEMPRE i simboli $...$ per TUTTE le espressioni matematiche, numeri, variabili, funzioni (es. $sin(x)$, $cos(x)$) e brevi equazioni all'interno del testo. NESSUNA formula o espressione matematica deve essere in testo normale.
 - ASSOLUTAMENTE NON usare parentesi quadre o tonde per il LaTeX, come \\[ \\], \\( \\), [ ], o ( ). Usa ESCLUSIVAMENTE $ per le formule inline e $$ per i blocchi separati.
-- **FONDAMENTALE**: Quando devi mostrare passaggi calcolosi e formule (es. equazioni, integrali), separali dal testo e centrali usando ESATTAMENTE:
+- Quando devi mostrare passaggi calcolosi e formule (es. equazioni, integrali), separali dal testo e centrali usando ESATTAMENTE:
 $$ \begin{aligned}
 espressione &= passaggio 1 \\
 &= passaggio 2 \\
 &= risultato
 \end{aligned} $$
-- Dividi il testo in brevi paragrafi separati da una riga vuota per rendere la lettura chiara e ordinata
-- NON USARE altri ambienti come \begin{equation} o simili, usa SOLO \begin{aligned} dentro ai $$
-- Lascia i valori simbolici quando possibile, non approssimare numericamente`
+- Dividi il testo in brevi paragrafi separati da una riga vuota per rendere la lettura chiara e ordinata.
+- NON USARE altri ambienti come \begin{equation} o simili, usa SOLO \begin{aligned} dentro ai $$.
+- Lascia i valori simbolici quando possibile, non approssimare numericamente.`
 }
 
 export async function POST(req: NextRequest) {
