@@ -1,26 +1,131 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import ExplanationRenderer from '@/components/exercise/ExplanationRenderer'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, ChevronRight, BookOpen, Clock, AlertCircle } from 'lucide-react'
+import { ChevronLeft, ChevronRight, BookOpen, Clock, AlertCircle, Search, Star, Share2, Tag } from 'lucide-react'
 
 export default function StoricoScreen({ onBack }: { onBack: () => void }) {
   const [exercises, setExercises] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<any | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sharingId, setSharingId] = useState<number | null>(null)
 
   useEffect(() => {
     fetch('/api/exercises').then(r => r.json()).then(data => { setExercises(data); setLoading(false) })
   }, [])
 
+  const filteredExercises = useMemo(() => {
+    if (!searchQuery.trim()) return exercises
+    const query = searchQuery.toLowerCase()
+    return exercises.filter(ex => 
+      (ex.question || '').toLowerCase().includes(query) || 
+      (ex.subject || '').toLowerCase().includes(query)
+    )
+  }, [exercises, searchQuery])
+
+  const groupedExercises = useMemo(() => {
+    const groups: Record<string, any[]> = {}
+    
+    // Raggruppamento per materia
+    filteredExercises.forEach(ex => {
+      const subject = ex.subject && ex.subject !== 'Altro' ? 
+        ex.subject.charAt(0).toUpperCase() + ex.subject.slice(1) : 
+        'Generico'
+      
+      if (!groups[subject]) groups[subject] = []
+      groups[subject].push(ex)
+    })
+
+    // Ordina i gruppi: "Preferiti" logici sono già ordinati dal server, 
+    // ma qui raggruppiamo alfabeticamente per materia
+    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b))
+  }, [filteredExercises])
+
+  async function toggleFavorite(e: React.MouseEvent, id: number, currentFav: boolean) {
+    e.stopPropagation()
+    const newFav = !currentFav
+    
+    // Aggiornamento ottimistico
+    setExercises(prev => prev.map(ex => ex.id === id ? { ...ex, is_favorite: newFav } : ex))
+    
+    await fetch('/api/exercises', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, is_favorite: newFav })
+    })
+  }
+
+  async function handleShareExercise(e: React.MouseEvent, exercise: any) {
+    e.stopPropagation()
+    setSharingId(exercise.id)
+
+    let shareUrl = ''
+
+    if (exercise.shared_id) {
+      shareUrl = window.location.origin + '/s/' + exercise.shared_id
+    } else {
+      // Crea nuovo share
+      const res = await fetch('/api/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          question: exercise.question || '', 
+          explanation: exercise.explanation 
+        })
+      })
+      const data = await res.json()
+      
+      if (data.id) {
+        shareUrl = window.location.origin + '/s/' + data.id
+        // Salva l'id generato nel db
+        await fetch('/api/exercises', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: exercise.id, shared_id: data.id })
+        })
+        // Aggiorna lo stato locale
+        setExercises(prev => prev.map(ex => ex.id === exercise.id ? { ...ex, shared_id: data.id } : ex))
+      }
+    }
+
+    if (shareUrl) {
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: 'Spiegazione StudiAI',
+            text: 'Guarda questa spiegazione passo-passo su StudiAI!',
+            url: shareUrl
+          })
+        } catch (err) {
+          try { await navigator.clipboard.writeText(shareUrl) } catch {}
+          alert('Link copiato negli appunti!')
+        }
+      } else {
+        try { await navigator.clipboard.writeText(shareUrl) } catch {}
+        alert('Link copiato negli appunti!')
+      }
+    }
+    setSharingId(null)
+  }
+
   if (selected) return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="sticky top-0 z-10 px-4 py-4 bg-surface/80 backdrop-blur-xl border-b border-surface-border flex items-center gap-3">
-        <button onClick={() => setSelected(null)} className="p-2 -ml-2 rounded-xl bg-transparent border-none text-foreground-muted cursor-pointer hover:bg-surface-active hover:text-foreground transition-colors">
-          <ChevronLeft size={24} />
+      <header className="sticky top-0 z-10 px-4 py-4 bg-surface/80 backdrop-blur-xl border-b border-surface-border flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 overflow-hidden">
+          <button onClick={() => setSelected(null)} className="p-2 -ml-2 rounded-xl bg-transparent border-none text-foreground-muted cursor-pointer hover:bg-surface-active hover:text-foreground transition-colors flex-shrink-0">
+            <ChevronLeft size={24} />
+          </button>
+          <div className="text-[17px] font-bold text-foreground truncate">{selected.question || 'Esercizio'}</div>
+        </div>
+        <button 
+          onClick={(e) => handleShareExercise(e, selected)}
+          disabled={sharingId === selected.id}
+          className="p-2 rounded-xl bg-primary/10 text-primary cursor-pointer hover:bg-primary/20 transition-colors flex-shrink-0"
+        >
+          {sharingId === selected.id ? <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /> : <Share2 size={20} />}
         </button>
-        <div className="text-[17px] font-bold text-foreground truncate">{selected.question || 'Esercizio'}</div>
       </header>
       <main className="flex-1 overflow-y-auto p-5 max-w-[720px] mx-auto w-full">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-surface border border-surface-border rounded-[20px] p-5 mb-8 shadow-sm">
@@ -41,11 +146,23 @@ export default function StoricoScreen({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="sticky top-0 z-10 px-4 py-4 bg-surface/80 backdrop-blur-xl border-b border-surface-border flex items-center gap-3">
-        <button onClick={onBack} className="p-2 -ml-2 rounded-xl bg-transparent border-none text-foreground-muted cursor-pointer hover:bg-surface-active hover:text-foreground transition-colors">
-          <ChevronLeft size={24} />
-        </button>
-        <div className="text-[17px] font-bold text-foreground">I tuoi esercizi</div>
+      <header className="sticky top-0 z-10 px-4 py-4 bg-surface/80 backdrop-blur-xl border-b border-surface-border flex flex-col gap-4">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="p-2 -ml-2 rounded-xl bg-transparent border-none text-foreground-muted cursor-pointer hover:bg-surface-active hover:text-foreground transition-colors">
+            <ChevronLeft size={24} />
+          </button>
+          <div className="text-[17px] font-bold text-foreground">Il tuo Storico</div>
+        </div>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-muted" size={18} />
+          <input 
+            type="text" 
+            placeholder="Cerca per testo o materia..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-surface border border-surface-border rounded-xl pl-10 pr-4 py-2.5 text-[15px] text-foreground placeholder:text-foreground-subtle focus:outline-none focus:border-primary/50 transition-colors"
+          />
+        </div>
       </header>
 
       <main className="flex-1 overflow-y-auto p-5 max-w-[640px] mx-auto w-full">
@@ -55,39 +172,72 @@ export default function StoricoScreen({ onBack }: { onBack: () => void }) {
               <div className="w-8 h-8 border-4 border-surface-active border-t-primary rounded-full animate-spin mb-4" />
               <div className="text-[15px] font-medium">Caricamento...</div>
             </motion.div>
-          ) : exercises.length === 0 ? (
+          ) : filteredExercises.length === 0 ? (
             <motion.div key="empty" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center p-12 text-center">
               <div className="w-16 h-16 bg-surface-active rounded-full flex items-center justify-center text-foreground-subtle mb-4">
-                <AlertCircle size={32} />
+                {searchQuery ? <Search size={32} /> : <AlertCircle size={32} />}
               </div>
-              <div className="text-[16px] font-bold text-foreground mb-1">Nessun esercizio</div>
-              <div className="text-[14px] text-foreground-subtle">Non hai ancora risolto nessun esercizio. Torna alla home e inizia a studiare!</div>
+              <div className="text-[16px] font-bold text-foreground mb-1">
+                {searchQuery ? 'Nessun risultato' : 'Nessun esercizio'}
+              </div>
+              <div className="text-[14px] text-foreground-subtle">
+                {searchQuery ? 'Prova a usare termini diversi.' : 'Non hai ancora risolto nessun esercizio. Torna alla home e inizia a studiare!'}
+              </div>
             </motion.div>
           ) : (
             <motion.div key="list" initial="hidden" animate="visible" variants={{
               hidden: { opacity: 0 },
               visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
             }}>
-              {exercises.map((ex, i) => (
-                <motion.div 
-                  key={i} 
-                  variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
-                  onClick={() => setSelected(ex)} 
-                  className="bg-surface border border-surface-border rounded-2xl p-4 mb-3 cursor-pointer flex justify-between items-center group hover:border-primary/30 transition-all hover:shadow-md"
-                >
-                  <div className="flex-1 pr-4 overflow-hidden">
-                    <div className="text-[15px] text-foreground font-bold mb-1.5 truncate group-hover:text-primary transition-colors">
-                      {ex.question || 'Esercizio con foto'}
-                    </div>
-                    <div className="text-[12px] text-foreground-subtle flex items-center gap-1.5 font-medium">
-                      <Clock size={12} />
-                      {new Date(ex.created_at).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                    </div>
+              {groupedExercises.map(([subject, exs]) => (
+                <div key={subject} className="mb-8">
+                  <div className="flex items-center gap-2 text-foreground-muted font-bold text-[14px] uppercase tracking-wider mb-4 px-1">
+                    <Tag size={16} /> {subject}
                   </div>
-                  <div className="w-8 h-8 rounded-full bg-surface-active flex items-center justify-center text-foreground-muted group-hover:bg-primary/10 group-hover:text-primary transition-colors flex-shrink-0">
-                    <ChevronRight size={18} />
-                  </div>
-                </motion.div>
+                  {exs.map((ex, i) => (
+                    <motion.div 
+                      key={ex.id || i} 
+                      variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
+                      onClick={() => setSelected(ex)} 
+                      className="bg-surface border border-surface-border rounded-2xl p-4 mb-3 cursor-pointer flex flex-col group hover:border-primary/30 transition-all hover:shadow-md relative overflow-hidden"
+                    >
+                      {/* Preferiti evidenziazione sfondo leggera */}
+                      {ex.is_favorite && <div className="absolute inset-0 bg-primary/5 pointer-events-none" />}
+                      
+                      <div className="flex justify-between items-start mb-2 gap-3 z-10">
+                        <div className="flex-1 text-[15px] text-foreground font-bold line-clamp-2 group-hover:text-primary transition-colors leading-snug">
+                          {ex.question || 'Esercizio con foto'}
+                        </div>
+                        <button 
+                          onClick={(e) => toggleFavorite(e, ex.id, ex.is_favorite)}
+                          className={`p-1.5 rounded-lg transition-colors flex-shrink-0 ${ex.is_favorite ? 'text-primary bg-primary/10' : 'text-foreground-muted hover:bg-surface-active hover:text-foreground'}`}
+                        >
+                          <Star size={18} fill={ex.is_favorite ? "currentColor" : "none"} />
+                        </button>
+                      </div>
+                      
+                      <div className="flex justify-between items-center z-10">
+                        <div className="text-[12px] text-foreground-subtle flex items-center gap-1.5 font-medium">
+                          <Clock size={12} />
+                          {new Date(ex.created_at).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <button 
+                            onClick={(e) => handleShareExercise(e, ex)}
+                            className="p-1.5 text-foreground-muted hover:text-primary transition-colors rounded-lg hover:bg-primary/10"
+                            disabled={sharingId === ex.id}
+                          >
+                            {sharingId === ex.id ? <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /> : <Share2 size={16} />}
+                          </button>
+                          <div className="w-7 h-7 rounded-full bg-surface-active flex items-center justify-center text-foreground-muted group-hover:bg-primary/10 group-hover:text-primary transition-colors flex-shrink-0">
+                            <ChevronRight size={16} />
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
               ))}
             </motion.div>
           )}

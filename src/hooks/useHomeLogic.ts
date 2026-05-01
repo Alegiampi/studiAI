@@ -134,9 +134,12 @@ export function useHomeLogic() {
     const explainData = await explainRes.json()
     setExplanation(explainData.explanation)
 
+    let detectedTipo = 'Altro'
+
     if (classifyRes) {
       const classifyData = await classifyRes.json()
       setGraficoUtile(classifyData.graficoUtile ?? false)
+      if (classifyData.tipo) detectedTipo = classifyData.tipo
     } else {
       setGraficoUtile(false)
     }
@@ -145,7 +148,7 @@ export function useHomeLogic() {
       fetch('/api/exercises', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: text, explanation: explainData.explanation })
+        body: JSON.stringify({ question: text, explanation: explainData.explanation, subject: detectedTipo })
       })
     }
     setLoading(false)
