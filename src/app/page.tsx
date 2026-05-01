@@ -61,7 +61,16 @@ export default function Home() {
   if (state.showOnboarding) return <OnboardingScreen onDone={() => actions.setShowOnboarding(false)} />
   if (state.showPersonalizzazione) return <PersonalizzazioneScreen onDone={(p) => { actions.setProfilo(p); actions.setShowPersonalizzazione(false) }} user={state.user} />
   if (state.screen === 'storico') return <StoricoScreen onBack={() => actions.setScreen('home')} />
-  if (state.screen === 'profilo') return <ProfiloScreen onBack={() => actions.setScreen('home')} profiloAttuale={state.profilo} user={state.user} onSave={(p) => { actions.setProfilo(p); actions.setScreen('home') }} />
+  if (state.screen === 'profilo') return (
+    <ProfiloScreen 
+      onBack={() => actions.setScreen('home')} 
+      profiloAttuale={state.profilo} 
+      user={state.user} 
+      onSave={(p) => { actions.setProfilo(p); actions.setScreen('home') }} 
+      isPremium={state.isPremium}
+      onManageSubscription={actions.handlePortal}
+    />
+  )
 
   if (state.screen === 'paywall') return (
     <PaywallScreen 

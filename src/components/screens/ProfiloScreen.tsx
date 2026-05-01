@@ -3,15 +3,30 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, User, School, Book, CheckCircle2 } from 'lucide-react'
+import { ChevronLeft, User, School, Book, CheckCircle2, CreditCard, ExternalLink } from 'lucide-react'
 
-export default function ProfiloScreen({ onBack, profiloAttuale, onSave, user }: { onBack: () => void; profiloAttuale: { scuola?: string; classe?: string; materie?: string[] }; onSave: (p: any) => void; user?: any }) {
+export default function ProfiloScreen({ 
+  onBack, 
+  profiloAttuale, 
+  onSave, 
+  user, 
+  isPremium, 
+  onManageSubscription 
+}: { 
+  onBack: () => void; 
+  profiloAttuale: { scuola?: string; classe?: string; materie?: string[] }; 
+  onSave: (p: any) => void; 
+  user?: any;
+  isPremium?: boolean;
+  onManageSubscription?: () => void;
+}) {
   const [nome, setNome] = useState(user?.user_metadata?.full_name || user?.user_metadata?.name || '')
   const [scuola, setScuola] = useState(profiloAttuale.scuola || '')
   const [classe, setClasse] = useState(profiloAttuale.classe || '')
   const [materie, setMaterie] = useState<string[]>(profiloAttuale.materie || [])
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [portalLoading, setPortalLoading] = useState(false)
 
   function toggleMateria(m: string) {
     setMaterie(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m])
@@ -34,6 +49,12 @@ export default function ProfiloScreen({ onBack, profiloAttuale, onSave, user }: 
     setLoading(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
+  }
+
+  async function handlePortal() {
+    setPortalLoading(true)
+    if (onManageSubscription) await onManageSubscription()
+    setPortalLoading(false)
   }
 
   const scuole = ['Liceo Scientifico', 'Liceo Classico', 'Istituto Tecnico', 'Scuola Media', 'Altro']
@@ -112,6 +133,30 @@ export default function ProfiloScreen({ onBack, profiloAttuale, onSave, user }: 
               ))}
             </div>
           </div>
+
+          {isPremium && (
+            <div className="pt-4 border-t border-surface-border">
+              <div className="flex items-center gap-2 text-[13px] font-extrabold text-primary mb-3 uppercase tracking-wider">
+                <CreditCard size={16} /> Abbonamento
+              </div>
+              <button 
+                onClick={handlePortal}
+                disabled={portalLoading}
+                className="w-full bg-surface-active border border-surface-border rounded-xl px-4 py-4 text-[15px] text-foreground font-semibold flex items-center justify-between hover:bg-surface-hover transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 p-2 rounded-lg text-primary">
+                    <CheckCircle2 size={18} />
+                  </div>
+                  <div className="text-left">
+                    <div className="text-sm font-bold">Premium Attivo</div>
+                    <div className="text-[12px] text-foreground-subtle">Gestisci pagamenti e disdetta</div>
+                  </div>
+                </div>
+                <ExternalLink size={18} className="text-foreground-muted group-hover:text-primary transition-colors" />
+              </button>
+            </div>
+          )}
         </motion.div>
 
         <motion.button 

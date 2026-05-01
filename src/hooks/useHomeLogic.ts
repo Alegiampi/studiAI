@@ -220,6 +220,21 @@ export function useHomeLogic() {
     if (data.url) window.location.href = data.url
   }
 
+  async function handlePortal() {
+    try {
+      const res = await fetch('/api/stripe/portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch (err: any) {
+      console.error('Errore portale:', err)
+    }
+  }
+
   async function handleChatSubmit(messageText: string) {
     if (!messageText.trim() || chatLoading) return
     
@@ -258,7 +273,7 @@ export function useHomeLogic() {
     actions: {
       setScreen, setDragging, setText, setImage, setImageBase64, setShowAuth,
       setShowOnboarding, setShowPersonalizzazione, setProfilo,
-      logout, handleFile, handleSubmit, handleShare, handleGrafico, handleCheckout, handleChatSubmit
+      logout, handleFile, handleSubmit, handleShare, handleGrafico, handleCheckout, handlePortal, handleChatSubmit
     }
   }
 }
