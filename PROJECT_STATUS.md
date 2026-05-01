@@ -24,6 +24,13 @@ Il meccanismo di condivisione (`handleShare`) è stato modernizzato. Ora support
 ### 4. **Estrazione Componenti UI (Divide et Impera)**
 Il file `page.tsx` funge unicamente da "Router Visivo". Tutta la complessità è divisa tra `useHomeLogic.ts` (il "cervello") e le schermate in `src/components/screens/`.
 
+### 5. **Motore Grafico Avanzato (Mafs + mathjs)**
+Il precedente sistema di rendering dei grafici è stato sostituito da un'implementazione "Premium" e sicura.
+- **Mafs**: Sostituisce JSXGraph, introducendo grafici SVG React-native, bellissimi, interattivi e responsivi.
+- **Mathjs**: Esegue il parsing delle stringhe matematiche dell'IA per una valutazione del codice al 100% sicura e affidabile (zero `eval()`).
+- **Prompt Ottimizzato e Inquadratura**: L'IA ora restituisce il Bounding Box perfetto per centrare le funzioni, rispettando vincoli precisi per non sovraffollare lo schermo e calcolare con precisione i punti chiave.
+- **Integrazione nelle Condivisioni**: I grafici interattivi sono ora salvati nel database Supabase ed esportati dinamicamente all'interno dei link di condivisione pubblici (`/s/[id]`).
+
 ## Architettura Attuale
 
 L'architettura ora segue un perfetto principio di separazione:

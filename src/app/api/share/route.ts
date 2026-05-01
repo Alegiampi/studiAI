@@ -10,11 +10,11 @@ export async function POST(req: NextRequest) {
     { cookies: { getAll() { return cookieStore.getAll() }, setAll(c) { c.forEach(({ name, value, options }) => cookieStore.set(name, value, options)) } } }
   )
 
-  const { question, explanation, scuola, classe } = await req.json()
+  const { question, explanation, scuola, classe, grafico } = await req.json()
 
   const { data, error } = await supabase
     .from('shared_explanations')
-    .insert({ question, explanation, scuola, classe })
+    .insert({ question, explanation, scuola, classe, grafico })
     .select('id')
     .single()
 

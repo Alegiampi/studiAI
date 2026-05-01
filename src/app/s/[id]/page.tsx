@@ -15,7 +15,7 @@ export default async function SharedPage({ params }: Props) {
 
   const { data, error } = await supabase
     .from('shared_explanations')
-    .select('question, explanation, scuola, classe, created_at')
+    .select('question, explanation, scuola, classe, created_at, grafico')
     .eq('id', id)
     .single()
 

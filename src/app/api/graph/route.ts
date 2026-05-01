@@ -15,7 +15,7 @@ REGOLE ASSOLUTE:
     { "type": "point", "coords": [1, 2], "color": "#E84393", "label": "Punto critico" }
   ]
 }
-3. MASSIMO 3 elementi in "espressioni". Disegna SOLO ciò che è fondamentale (es. la funzione principale e un asintoto o un punto chiave). Non sovraffollare.
+3. MASSIMO 5-6 elementi in "espressioni". Disegna la funzione principale, le eventuali funzioni secondarie (es. derivata se richiesta) e TUTTI i punti chiave (es. TUTTI i punti critici, flessi o intersezioni calcolati nell'esercizio). Non omettere punti rilevanti.
 4. Per le funzioni, usa stringhe matematiche standard parsabili da mathjs. La variabile è sempre 'x'.
    - Moltiplicazione: '2*x' o 'sin(x)*cos(x)'
    - Potenze: 'x^2'

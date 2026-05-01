@@ -151,7 +151,7 @@ export function useHomeLogic() {
     const res = await fetch('/api/share', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question: exercise?.text || '', explanation, scuola: profilo.scuola, classe: profilo.classe })
+      body: JSON.stringify({ question: exercise?.text || '', explanation, scuola: profilo.scuola, classe: profilo.classe, grafico })
     })
     const data = await res.json()
     const url = window.location.origin + '/s/' + data.id

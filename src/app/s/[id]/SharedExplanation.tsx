@@ -6,6 +6,7 @@ import rehypeKatex from 'rehype-katex'
 import 'katex/dist/katex.min.css'
 import { motion } from 'framer-motion'
 import { Sparkles, ChevronRight, BookOpen } from 'lucide-react'
+import GraficoMafs from '@/components/exercise/GraficoMafs'
 
 const MD = ({ children }: { children: string }) => (
   <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
@@ -120,6 +121,17 @@ export default function SharedExplanation({ data, id }: { data: any; id: string 
             </motion.div>
           ))}
         </div>
+
+        {data.grafico && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ delay: 0.35 }} 
+            className="mt-8 mb-4"
+          >
+            <GraficoMafs data={data.grafico} />
+          </motion.div>
+        )}
 
         {parsed.finale && (
           <motion.div 
