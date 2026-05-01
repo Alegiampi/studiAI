@@ -22,7 +22,7 @@ export function useHomeLogic() {
   const [profilo, setProfilo] = useState<{ scuola?: string; classe?: string; materie?: string[] }>({})
   const [shareUrl, setShareUrl] = useState<string | null>(null)
   const [shareLoading, setShareLoading] = useState(false)
-  const [grafico, setGrafico] = useState<any[] | null>(null)
+  const [grafico, setGrafico] = useState<any>(null)
   const [graficoLoading, setGraficoLoading] = useState(false)
   const [quoteIndex, setQuoteIndex] = useState(0)
   
@@ -190,9 +190,9 @@ export function useHomeLogic() {
       body: JSON.stringify({ esercizio: exercise?.text || '', spiegazione: explanation })
     })
     const data = await res.json()
-    if (data.espressioni) {
-      console.log('Grafico:', JSON.stringify(data.espressioni))
-      setGrafico(data.espressioni)
+    if (data.data) {
+      console.log('Grafico:', JSON.stringify(data.data))
+      setGrafico(data.data)
     }
     if (data.error) console.log('Grafico error:', data.error)
     setGraficoLoading(false)

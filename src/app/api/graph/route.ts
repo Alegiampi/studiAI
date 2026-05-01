@@ -3,31 +3,32 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function POST(req: NextRequest) {
   const { esercizio, spiegazione } = await req.json()
 
-  const systemPrompt = `Sei un esperto di matematica. Il tuo unico compito è generare espressioni JavaScript per JSXGraph.
+  const systemPrompt = `Sei un esperto di matematica. Il tuo unico compito è generare i dati per plottare il grafico dell'esercizio usando 'mathjs'.
 
 REGOLE ASSOLUTE:
-1. Rispondi SOLO con un JSON array, zero testo aggiuntivo
-2. Ogni oggetto ha: fn (funzione JavaScript), color (hex), label (stringa)
-3. Usa SEMPRE Math.sin, Math.cos, Math.tan, Math.sqrt, Math.exp, Math.log
-4. La variabile è sempre x
-5. Usa * per moltiplicazione: Math.sin(x) * Math.cos(x)
-6. Per potenze: Math.pow(x, 2) oppure x*x, MAI x^2
-7. Per e^x usa Math.exp(x)
-8. Per ln(x) usa Math.log(x)
+1. Rispondi SOLO con un JSON, zero testo aggiuntivo. Nessun markdown \`\`\`json.
+2. Il JSON deve avere questa struttura esatta:
+{
+  "boundingBox": [-10, 10, -5, 5], // [xmin, xmax, ymin, ymax] calcolato per inquadrare in modo ottimale i punti di interesse
+  "espressioni": [
+    { "type": "function", "fn": "sin(x)*x^2", "color": "#FFD600", "label": "f(x)" },
+    { "type": "point", "coords": [1, 2], "color": "#E84393", "label": "Punto critico" }
+  ]
+}
+3. MASSIMO 3 elementi in "espressioni". Disegna SOLO ciò che è fondamentale (es. la funzione principale e un asintoto o un punto chiave). Non sovraffollare.
+4. Per le funzioni, usa stringhe matematiche standard parsabili da mathjs. La variabile è sempre 'x'.
+   - Moltiplicazione: '2*x' o 'sin(x)*cos(x)'
+   - Potenze: 'x^2'
+   - Esponenziale: 'e^x' o 'exp(x)'
+   - Logaritmi: 'log(x)' (naturale), 'log10(x)'
+5. COLORI PREDEFINITI DA USARE: #FFD600 (principale), #00B894 (secondario/derivata), #E84393 (tangente/punto), #A8B1FF (asintoti).`
 
-COLORI: #FFD600 per f(x), #00B894 per f'(x), #E84393 per tangente
-
-ESEMPI CORRETTI:
-- sin(x)*cos(x) con derivata: [{"fn":"Math.sin(x)*Math.cos(x)","color":"#FFD600","label":"f(x)"},{"fn":"Math.cos(2*x)","color":"#00B894","label":"f'(x)"}]
-- x^3 con derivata: [{"fn":"Math.pow(x,3)","color":"#FFD600","label":"f(x)"},{"fn":"3*Math.pow(x,2)","color":"#00B894","label":"f'(x)"}]
-- tangente a sin(x) in x=1: [{"fn":"Math.sin(x)","color":"#FFD600","label":"f(x)"},{"fn":"Math.cos(1)*(x-1)+Math.sin(1)","color":"#E84393","label":"tangente in x=1"}]`
-
-  const userPrompt = `Genera le espressioni JSXGraph per questo esercizio.
+  const userPrompt = `Genera il JSON per questo grafico.
 
 Esercizio: ${esercizio}
 Spiegazione: ${spiegazione}
 
-Rispondi SOLO con il JSON array. Nessun testo prima o dopo.`
+Rispondi SOLO con il JSON crudo.`
 
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -37,7 +38,7 @@ Rispondi SOLO con il JSON array. Nessun testo prima o dopo.`
     },
     body: JSON.stringify({
       model: 'llama-3.3-70b-versatile',
-      max_tokens: 500,
+      max_tokens: 800,
       temperature: 0.1,
       messages: [
         { role: 'system', content: systemPrompt },
@@ -52,8 +53,8 @@ Rispondi SOLO con il JSON array. Nessun testo prima o dopo.`
   try {
     const text = data.choices[0].message.content.trim()
     const clean = text.replace(/```json|```/g, '').trim()
-    const espressioni = JSON.parse(clean)
-    return NextResponse.json({ espressioni })
+    const graficoData = JSON.parse(clean)
+    return NextResponse.json({ data: graficoData })
   } catch (e) {
     console.error('Parse error:', data.choices[0].message.content)
     return NextResponse.json({ error: 'JSON non valido' })

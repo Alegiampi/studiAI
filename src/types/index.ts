@@ -6,8 +6,11 @@ export type Passo = {
   loadingRisposta?: boolean
 }
 
-export type EspressioneGrafico = {
-  fn: string
-  color: string
-  label: string
+export type ElementoGrafico = 
+  | { type: 'function'; fn: string; color: string; label: string }
+  | { type: 'point'; coords: [number, number]; color: string; label: string }
+
+export type GraficoData = {
+  boundingBox: [number, number, number, number]
+  espressioni: ElementoGrafico[]
 }

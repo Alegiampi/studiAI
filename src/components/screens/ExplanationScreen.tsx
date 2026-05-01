@@ -2,7 +2,7 @@
 
 import { useRef } from 'react'
 import ExplanationRenderer from '@/components/exercise/ExplanationRenderer'
-import GraficoJSX from '@/components/exercise/GraficoJSX'
+import GraficoMafs from '@/components/exercise/GraficoMafs'
 import { motion } from 'framer-motion'
 import { ChevronLeft, Share2, Copy, Plus, BarChart2, Loader2, CheckCircle2 } from 'lucide-react'
 
@@ -98,7 +98,7 @@ export default function ExplanationScreen({
         {explanation && !loading && graficoUtile && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-8 mb-4">
             {grafico ? (
-              <GraficoJSX espressioni={grafico} />
+              <GraficoMafs data={grafico} />
             ) : (
               <button 
                 onClick={handleGrafico} 
