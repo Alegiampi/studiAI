@@ -30,6 +30,13 @@ Il precedente sistema di rendering dei grafici è stato sostituito da un'impleme
 - **Mathjs**: Esegue il parsing delle stringhe matematiche dell'IA per una valutazione del codice al 100% sicura e affidabile (zero `eval()`).
 - **Prompt Ottimizzato e Inquadratura**: L'IA ora restituisce il Bounding Box perfetto per centrare le funzioni, rispettando vincoli precisi per non sovraffollare lo schermo e calcolare con precisione i punti chiave.
 - **Integrazione nelle Condivisioni**: I grafici interattivi sono ora salvati nel database Supabase ed esportati dinamicamente all'interno dei link di condivisione pubblici (`/s/[id]`).
+33: 
+34: ### 6. **Chat Interattiva con il Tutor (Solo Premium)** 👑
+35: Abbiamo introdotto una funzionalità di "follow-up" che trasforma l'app in un tutor personale H24.
+36: - **Context-Aware AI**: La chat conosce l'esercizio e la spiegazione generata, permettendo domande specifiche senza ripetizioni.
+37: - **Monetizzazione (Teasing)**: Gli utenti free vedono un gancio visivo ("Hai dubbi? Chiedi al Tutor Pro") che punta al paywall, mentre i Premium hanno accesso illimitato.
+38: - **Rendering Dinamico**: I messaggi del tutor supportano Markdown e LaTeX per una chiarezza matematica assoluta.
+39: - **API Dedicata**: Nuovo endpoint `/api/chat` ottimizzato per risposte brevi, didattiche ed empatiche.
 
 ## Architettura Attuale
 
@@ -43,6 +50,6 @@ L'architettura ora segue un perfetto principio di separazione:
 
 Ora che le fondamenta architetturali e il Design System sono solidi come la roccia, ecco alcune idee per i prossimi sviluppi:
 
-- [ ] **Migliorare TypeScript**: Sostituire i tipi `any` presenti in alcuni punti storici (es. negli state per `exercise` o le chiamate API) con interfacce definite per avere un autocompletamento e check formale perfetto.
-- [ ] **Testing Multidispositivo**: Anche se il design usa classi responsive (es. `sm:flex-row`), un ciclo di test accurato su schermi molto piccoli (iPhone SE) e molto grandi potrebbe rivelare margini di ottimizzazione.
-- [ ] **Nuove Funzionalità (Feature expansion)**: Adesso l'app è esteticamente irresistibile. È il momento ideale per aggiungere nuove funzionalità core come la chat interattiva (o follow-up questions per i dubbi su un passaggio specifico).
+- [ ] **Simulazione Orale ("Allenati con il Prof")**: Implementare la modalità "Interrogazione" dove l'IA testa la preparazione dello studente su un argomento specifico, dando un voto finale.
+- [ ] **Migliorare TypeScript**: Sostituire i tipi `any` presenti in alcuni punti storici (es. chiamate API) con interfacce definite.
+- [ ] **Testing Multidispositivo**: Ottimizzazione layout per schermi ultra-small (iPhone SE).

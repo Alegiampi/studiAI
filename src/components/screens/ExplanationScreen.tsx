@@ -1,10 +1,13 @@
 'use client'
 
-import { useRef } from 'react'
 import ExplanationRenderer from '@/components/exercise/ExplanationRenderer'
 import GraficoMafs from '@/components/exercise/GraficoMafs'
 import { motion } from 'framer-motion'
-import { ChevronLeft, Share2, Copy, Plus, BarChart2, Loader2, CheckCircle2 } from 'lucide-react'
+import { ChevronLeft, Share2, Copy, Plus, BarChart2, Loader2, CheckCircle2, Crown, Send, Bot } from 'lucide-react'
+import { useState, useRef } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
 
 export const FRASI_MOTIVAZIONALI = [
   "Un problema alla volta, verso la soluzione...",
@@ -27,7 +30,12 @@ export default function ExplanationScreen({
   quoteIndex,
   onBack,
   handleGrafico,
-  handleShare
+  handleShare,
+  isPremium,
+  chatMessages,
+  chatLoading,
+  handleChatSubmit,
+  setScreen
 }: {
   exercise: any
   loading: boolean
@@ -41,8 +49,23 @@ export default function ExplanationScreen({
   onBack: () => void
   handleGrafico: () => void
   handleShare: () => void
+  isPremium: boolean
+  chatMessages: { role: 'user' | 'assistant', text: string }[]
+  chatLoading: boolean
+  handleChatSubmit: (msg: string) => void
+  setScreen: (screen: 'paywall') => void
 }) {
   const chatRef = useRef<HTMLDivElement>(null)
+  const [chatInput, setChatInput] = useState('')
+
+  const submitChat = () => {
+    if (!chatInput.trim()) return
+    handleChatSubmit(chatInput)
+    setChatInput('')
+    setTimeout(() => {
+      chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: 'smooth' })
+    }, 100)
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col relative">
@@ -115,6 +138,106 @@ export default function ExplanationScreen({
                   <><BarChart2 size={18} /> Visualizza Grafico Interattivo</>
                 )}
               </button>
+            )}
+          </motion.div>
+        )}
+
+        {/* CHAT MESSAGES */}
+        {explanation && !loading && (
+          <div className="mt-8 flex flex-col gap-4">
+            {chatMessages.map((msg, idx) => (
+              <motion.div 
+                key={idx} 
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div className={`max-w-[85%] rounded-2xl p-4 text-[15px] ${
+                  msg.role === 'user' 
+                  ? 'bg-primary text-background rounded-br-none' 
+                  : 'bg-surface border border-surface-border text-foreground rounded-bl-none shadow-sm'
+                }`}>
+                  {msg.role === 'assistant' && (
+                    <div className="flex items-center gap-2 mb-2 text-primary font-bold text-xs uppercase tracking-wider">
+                      <Bot size={14} /> Tutor StudiAI
+                    </div>
+                  )}
+                  <div className="leading-relaxed whitespace-pre-wrap md-content katex-display-chat">
+                    {msg.role === 'assistant' ? (
+                      <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+                        {msg.text}
+                      </ReactMarkdown>
+                    ) : (
+                      msg.text
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+            
+            {chatLoading && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
+                <div className="bg-surface border border-surface-border text-foreground rounded-2xl rounded-bl-none p-4 flex items-center gap-2">
+                  <Loader2 size={16} className="text-primary animate-spin" />
+                  <span className="text-sm text-foreground-subtle italic">Il tutor sta scrivendo...</span>
+                </div>
+              </motion.div>
+            )}
+          </div>
+        )}
+
+        {/* CHAT INPUT AREA */}
+        {explanation && !loading && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mt-6 mb-8">
+            {!isPremium ? (
+              <div onClick={() => setScreen('paywall')} className="cursor-pointer group relative">
+                <div className="absolute inset-0 bg-primary/5 blur-xl group-hover:bg-primary/10 transition-all rounded-full" />
+                <div className="relative border border-surface-border bg-surface/50 backdrop-blur-md rounded-2xl p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    <Crown size={20} fill="currentColor" />
+                  </div>
+                  <div className="flex-1 text-sm font-medium text-foreground-subtle">
+                    Hai dubbi su questa spiegazione? <span className="text-primary font-bold block sm:inline">Chiedi al Tutor Pro →</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {chatMessages.length === 0 && (
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {["Spiegami meglio il passaggio 2", "Fammi un esempio simile", "Quale formula hai usato?"].map((suggestion, i) => (
+                      <button 
+                        key={i}
+                        onClick={() => { setChatInput(suggestion); setTimeout(submitChat, 100); }}
+                        className="text-xs font-medium text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-full px-3 py-1.5 transition-colors"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="flex items-end gap-2 bg-surface border border-primary/30 rounded-2xl p-2 px-3 shadow-[0_0_20px_rgba(255,214,0,0.05)] focus-within:border-primary transition-colors">
+                  <textarea 
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        submitChat();
+                      }
+                    }}
+                    placeholder="Chiedi un chiarimento al tutor..." 
+                    className="flex-1 bg-transparent border-none outline-none text-[15px] text-foreground placeholder:text-foreground-muted resize-none max-h-32 min-h-[40px] py-2"
+                    rows={1}
+                  />
+                  <button 
+                    onClick={submitChat}
+                    disabled={!chatInput.trim() || chatLoading}
+                    className="bg-primary text-background p-2.5 rounded-xl cursor-pointer hover:bg-primary-hover disabled:opacity-50 disabled:cursor-default transition-all mb-0.5"
+                  >
+                    <Send size={18} className={chatInput.trim() ? "translate-x-0.5" : ""} />
+                  </button>
+                </div>
+              </div>
             )}
           </motion.div>
         )}

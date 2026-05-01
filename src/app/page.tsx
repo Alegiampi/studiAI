@@ -86,6 +86,11 @@ export default function Home() {
       onBack={() => { actions.setScreen('home'); actions.setText(''); actions.setImage(null); actions.setImageBase64(null) }}
       handleGrafico={actions.handleGrafico}
       handleShare={actions.handleShare}
+      isPremium={state.isPremium}
+      chatMessages={state.chatMessages}
+      chatLoading={state.chatLoading}
+      handleChatSubmit={actions.handleChatSubmit}
+      setScreen={actions.setScreen}
     />
   )
 

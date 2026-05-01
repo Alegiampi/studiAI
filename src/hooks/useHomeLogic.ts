@@ -26,6 +26,10 @@ export function useHomeLogic() {
   const [graficoLoading, setGraficoLoading] = useState(false)
   const [quoteIndex, setQuoteIndex] = useState(0)
   
+  // Chat state
+  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant', text: string }[]>([])
+  const [chatLoading, setChatLoading] = useState(false)
+  
   const supabase = createClient()
   const [isPremium, setIsPremium] = useState(false)
 
@@ -112,6 +116,7 @@ export function useHomeLogic() {
     setGrafico(null)
     setGraficoUtile(null)
     setShareUrl(null)
+    setChatMessages([]) // Reset chat
 
     const [explainRes, classifyRes] = await Promise.all([
       fetch('/api/explain', {
@@ -208,17 +213,45 @@ export function useHomeLogic() {
     if (data.url) window.location.href = data.url
   }
 
+  async function handleChatSubmit(messageText: string) {
+    if (!messageText.trim() || chatLoading) return
+    
+    const newMessages = [...chatMessages, { role: 'user' as const, text: messageText }]
+    setChatMessages(newMessages)
+    setChatLoading(true)
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: newMessages,
+          exercise: exercise?.text,
+          explanation: explanation
+        })
+      })
+      const data = await res.json()
+      if (data.reply) {
+        setChatMessages([...newMessages, { role: 'assistant' as const, text: data.reply }])
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setChatLoading(false)
+    }
+  }
+
   return {
     state: {
       screen, exercise, usedToday, explanation, loading, dragging, text, image, imageBase64,
       user, authLoading, showAuth, showOnboarding, showPersonalizzazione, profilo,
       shareUrl, shareLoading, grafico, graficoUtile, graficoLoading, quoteIndex, isPremium,
-      remaining, isLimited, supabase
+      remaining, isLimited, supabase, chatMessages, chatLoading
     },
     actions: {
       setScreen, setDragging, setText, setImage, setImageBase64, setShowAuth,
       setShowOnboarding, setShowPersonalizzazione, setProfilo,
-      logout, handleFile, handleSubmit, handleShare, handleGrafico, handleCheckout
+      logout, handleFile, handleSubmit, handleShare, handleGrafico, handleCheckout, handleChatSubmit
     }
   }
 }
