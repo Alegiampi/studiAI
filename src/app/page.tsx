@@ -74,6 +74,7 @@ export default function Home() {
 
   if (state.screen === 'explanation') return (
     <ExplanationScreen
+      exerciseId={state.currentExerciseId}
       exercise={state.exercise}
       loading={state.loading}
       explanation={state.explanation}

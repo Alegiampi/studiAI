@@ -25,6 +25,7 @@ export function useHomeLogic() {
   const [grafico, setGrafico] = useState<any>(null)
   const [graficoLoading, setGraficoLoading] = useState(false)
   const [quoteIndex, setQuoteIndex] = useState(0)
+  const [currentExerciseId, setCurrentExerciseId] = useState<number | null>(null)
   
   // Chat state
   const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant', text: string }[]>([])
@@ -110,6 +111,7 @@ export function useHomeLogic() {
     setUsedToday(u => u + 1)
     if (user) fetch('/api/usage', { method: 'POST' })
     setExercise({ text, imageBase64: imageBase64 || undefined, imagePreview: image || undefined })
+    setCurrentExerciseId(null) // Reset
     setScreen('explanation')
     setLoading(true)
     setExplanation('')
@@ -149,6 +151,8 @@ export function useHomeLogic() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: text, explanation: explainData.explanation, subject: detectedTipo })
+      }).then(r => r.json()).then(d => {
+        if (d.data?.id) setCurrentExerciseId(d.data.id)
       })
     }
     setLoading(false)
@@ -249,7 +253,7 @@ export function useHomeLogic() {
       screen, exercise, usedToday, explanation, loading, dragging, text, image, imageBase64,
       user, authLoading, showAuth, showOnboarding, showPersonalizzazione, profilo,
       shareUrl, shareLoading, grafico, graficoUtile, graficoLoading, quoteIndex, isPremium,
-      remaining, isLimited, supabase, chatMessages, chatLoading
+      remaining, isLimited, supabase, chatMessages, chatLoading, currentExerciseId
     },
     actions: {
       setScreen, setDragging, setText, setImage, setImageBase64, setShowAuth,

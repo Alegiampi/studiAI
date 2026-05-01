@@ -38,6 +38,14 @@ Il precedente sistema di rendering dei grafici è stato sostituito da un'impleme
 38: - **Rendering Dinamico**: I messaggi del tutor supportano Markdown e LaTeX per una chiarezza matematica assoluta.
 39: - **API Dedicata**: Nuovo endpoint `/api/chat` ottimizzato per risposte brevi, didattiche ed empatiche.
 
+### 7. **Restyling Avanzato dello Storico ed Engagement** 🕒
+Dopo aver consolidato la generazione, abbiamo reso la gestione degli esercizi passati un'esperienza fluida e organizzata:
+- **Categorizzazione Intelligente**: Gli esercizi sono classificati per argomento (Analisi, Geometria, Algebra, etc.) con colori e icone Lucide dedicate (Zap per Derivate, Variable per Funzioni, etc.).
+- **Filtri Rapidi (Chips)**: Introdotta una barra di navigazione orizzontale per filtrare istantaneamente tra "Tutti", "Preferiti" e singole materie.
+- **Sezione "Recenti"**: Uno slider orizzontale (Glassmorphism) in alto nello storico permette di riprendere gli ultimi 5 esercizi in un click.
+- **Sistema Notifiche Toast**: Implementate notifiche a scomparsa (stile WhatsApp) in "Pure Text" (giallo su nero) per feedback immediati su salvataggi e condivisioni.
+- **Salvataggio al Volo**: Aggiunta la possibilità di segnare un esercizio come "Preferito" direttamente dalla schermata di spiegazione appena generata.
+
 ## Architettura Attuale
 
 L'architettura ora segue un perfetto principio di separazione:
@@ -50,6 +58,8 @@ L'architettura ora segue un perfetto principio di separazione:
 
 Ora che le fondamenta architetturali e il Design System sono solidi come la roccia, ecco alcune idee per i prossimi sviluppi:
 
-- [ ] **Simulazione Orale ("Allenati con il Prof")**: Implementare la modalità "Interrogazione" dove l'IA testa la preparazione dello studente su un argomento specifico, dando un voto finale.
-- [ ] **Migliorare TypeScript**: Sostituire i tipi `any` presenti in alcuni punti storici (es. chiamate API) con interfacce definite.
-- [ ] **Testing Multidispositivo**: Ottimizzazione layout per schermi ultra-small (iPhone SE).
+- [ ] **Domanda di Controllo (Mini-Quiz)**: Aggiungere una singola domanda a scelta multipla alla fine della spiegazione per verificare la comprensione e iniziare a raccogliere dati sul livello dello studente (basso costo, alto valore).
+- [ ] **Modalità "ELI5" (Spiegamelo Semplice)**: Implementare un toggle per scegliere tra spiegazione accademica e spiegazione ultra-semplice/colloquiale (cambio di System Prompt).
+- [ ] **Gamification**: Aggiungere "Streaks" (serie di giorni consecutivi) per incentivare lo studio quotidiano.
+- [ ] **Migliorare TypeScript**: Sostituire i tipi `any` presenti in alcuni punti con interfacce rigorose (es. `ExerciseType`).
+- [ ] **Testing Multidispositivo**: Ottimizzazione per schermi ultra-small (iPhone SE).

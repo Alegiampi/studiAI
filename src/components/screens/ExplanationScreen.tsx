@@ -2,9 +2,9 @@
 
 import ExplanationRenderer from '@/components/exercise/ExplanationRenderer'
 import GraficoMafs from '@/components/exercise/GraficoMafs'
-import { motion } from 'framer-motion'
-import { ChevronLeft, Share2, Copy, Plus, BarChart2, Loader2, CheckCircle2, Crown, Send, Bot } from 'lucide-react'
-import { useState, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { ChevronLeft, Share2, Copy, Plus, BarChart2, Loader2, CheckCircle2, Crown, Send, Bot, Star, Link } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
@@ -35,8 +35,10 @@ export default function ExplanationScreen({
   chatMessages,
   chatLoading,
   handleChatSubmit,
-  setScreen
+  setScreen,
+  exerciseId
 }: {
+  exerciseId?: number | null
   exercise: any
   loading: boolean
   explanation: string
@@ -57,6 +59,32 @@ export default function ExplanationScreen({
 }) {
   const chatRef = useRef<HTMLDivElement>(null)
   const [chatInput, setChatInput] = useState('')
+  const [isFavorite, setIsFavorite] = useState(false)
+  const [toast, setToast] = useState<{ text: string; visible: boolean }>({ text: '', visible: false })
+
+  useEffect(() => {
+    if (shareUrl) {
+      showNotification('Link copiato!')
+    }
+  }, [shareUrl])
+
+  const showNotification = (text: string) => {
+    setToast({ text, visible: true })
+    setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 2500)
+  }
+
+  async function toggleFavorite() {
+    if (!exerciseId) return
+    const newFav = !isFavorite
+    setIsFavorite(newFav)
+    showNotification(newFav ? 'Aggiunto ai preferiti!' : 'Rimosso dai preferiti')
+    
+    await fetch('/api/exercises', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: exerciseId, is_favorite: newFav })
+    })
+  }
 
   const submitChat = () => {
     if (!chatInput.trim()) return
@@ -73,7 +101,16 @@ export default function ExplanationScreen({
         <button onClick={onBack} className="p-2 -ml-2 rounded-xl bg-transparent border-none text-foreground-muted cursor-pointer hover:bg-surface-active hover:text-foreground transition-colors">
           <ChevronLeft size={24} />
         </button>
-        <div className="text-[17px] font-bold text-foreground">Spiegazione</div>
+        <div className="flex-1 text-[17px] font-bold text-foreground">Spiegazione</div>
+        
+        {explanation && !loading && exerciseId && (
+          <button 
+            onClick={toggleFavorite}
+            className={`p-2 rounded-xl transition-colors ${isFavorite ? 'text-yellow-400 bg-yellow-400/10' : 'text-foreground-muted hover:bg-surface-active hover:text-foreground'}`}
+          >
+            <Star size={22} fill={isFavorite ? "currentColor" : "none"} />
+          </button>
+        )}
       </header>
 
       <main ref={chatRef} className="flex-1 overflow-y-auto px-5 pt-6 pb-24 max-w-[720px] mx-auto w-full relative z-10">
@@ -275,6 +312,20 @@ export default function ExplanationScreen({
           </button>
         </div>
       </div>
+
+      {/* Toast Notification (Stile WhatsApp) */}
+      <AnimatePresence>
+        {toast.visible && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: 20, x: '-50%', transition: { duration: 0.2 } }}
+            className="fixed bottom-24 left-1/2 z-[100] px-6 py-3 bg-zinc-900/95 backdrop-blur-md text-yellow-400 rounded-full shadow-2xl flex items-center gap-3 min-w-[200px] justify-center border border-white/10"
+          >
+            <span className="text-[14px] font-bold tracking-tight">{toast.text}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
