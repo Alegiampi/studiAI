@@ -8,21 +8,47 @@ import PersonalizzazioneScreen from '@/components/screens/PersonalizzazioneScree
 import ProfiloScreen from '@/components/screens/ProfiloScreen'
 import PaywallScreen from '@/components/screens/PaywallScreen'
 import ExplanationScreen from '@/components/screens/ExplanationScreen'
-import { useHomeLogic, DAILY_LIMIT } from '@/hooks/useHomeLogic'
+import { useAuth } from '@/hooks/useAuth'
+import { useProfile } from '@/hooks/useProfile'
+import { usePayments, DAILY_LIMIT } from '@/hooks/usePayments'
+import { useNavigation } from '@/hooks/useNavigation'
+import { useExercises } from '@/hooks/useExercises'
 import { motion } from 'framer-motion'
 import { Loader2, Sparkles } from 'lucide-react'
 
 export default function Home() {
-  const { state, actions } = useHomeLogic()
+  // Hook base: autenticazione
+  const { user, authLoading, supabase, logout } = useAuth()
 
-  if (state.authLoading) return (
+  // Hook navigazione
+  const navigation = useNavigation()
+
+  // Hook profilo (dipende da user)
+  const profile = useProfile(user)
+
+  // Hook pagamenti (dipende da user e isPremium)
+  const payments = usePayments(user, profile.isPremium)
+
+  // Hook esercizi (dipende da user, profilo, pagamenti e navigazione)
+  const exercises = useExercises(
+    user,
+    profile.profilo,
+    payments.incrementUsage,
+    payments.isLimited,
+    () => navigation.setScreen('paywall'),
+    () => navigation.setScreen('explanation')
+  )
+
+  // Loading iniziale
+  if (authLoading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background">
       <Loader2 size={40} className="text-primary animate-spin mb-4" />
       <div className="text-foreground-muted font-medium text-sm animate-pulse">Caricamento in corso...</div>
     </div>
   )
 
-  if (!state.user) return (
+  // Utente non loggato — mostra schermata di login
+  if (!user) return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden">
       {/* Sfondo dinamico animato */}
       <motion.div 
@@ -53,78 +79,84 @@ export default function Home() {
         </div>
         <p className="text-[16px] text-foreground-subtle mb-10 font-medium">Il tuo tutor intelligente 24/7</p>
         
-        <AuthModal supabase={state.supabase} isEmbedded={true} />
+        <AuthModal supabase={supabase} isEmbedded={true} />
       </motion.div>
     </div>
   )
 
-  if (state.showOnboarding) return <OnboardingScreen onDone={() => actions.setShowOnboarding(false)} />
-  if (state.showPersonalizzazione) return <PersonalizzazioneScreen onDone={(p) => { actions.setProfilo(p); actions.setShowPersonalizzazione(false) }} user={state.user} />
-  if (state.screen === 'storico') return <StoricoScreen onBack={() => actions.setScreen('home')} />
-  if (state.screen === 'profilo') return (
+  // Schermate di onboarding e personalizzazione
+  if (profile.showOnboarding) return <OnboardingScreen onDone={() => profile.setShowOnboarding(false)} />
+  if (profile.showPersonalizzazione) return <PersonalizzazioneScreen onDone={(p) => { profile.setProfilo(p); profile.setShowPersonalizzazione(false) }} user={user} />
+
+  // Schermate secondarie
+  if (navigation.screen === 'storico') return <StoricoScreen onBack={() => navigation.setScreen('home')} />
+  if (navigation.screen === 'profilo') return (
     <ProfiloScreen 
-      onBack={() => actions.setScreen('home')} 
-      profiloAttuale={state.profilo} 
-      user={state.user} 
-      onSave={(p) => { actions.setProfilo(p); actions.setScreen('home') }} 
-      isPremium={state.isPremium}
-      onManageSubscription={actions.handlePortal}
+      onBack={() => navigation.setScreen('home')} 
+      profiloAttuale={profile.profilo} 
+      user={user} 
+      onSave={(p) => { profile.setProfilo(p); navigation.setScreen('home') }} 
+      isPremium={profile.isPremium}
+      onManageSubscription={payments.handlePortal}
     />
   )
 
-  if (state.screen === 'paywall') return (
+  // Paywall
+  if (navigation.screen === 'paywall') return (
     <PaywallScreen 
-      usedToday={state.usedToday} 
+      usedToday={payments.usedToday} 
       DAILY_LIMIT={DAILY_LIMIT} 
-      handleCheckout={actions.handleCheckout} 
-      onBack={() => actions.setScreen('home')} 
+      handleCheckout={payments.handleCheckout} 
+      onBack={() => navigation.setScreen('home')} 
     />
   )
 
-  if (state.screen === 'explanation') return (
+  // Schermata di spiegazione
+  if (navigation.screen === 'explanation') return (
     <ExplanationScreen
-      exerciseId={state.currentExerciseId}
-      exercise={state.exercise}
-      loading={state.loading}
-      explanation={state.explanation}
-      graficoUtile={state.graficoUtile}
-      grafico={state.grafico}
-      graficoLoading={state.graficoLoading}
-      shareUrl={state.shareUrl}
-      shareLoading={state.shareLoading}
-      quoteIndex={state.quoteIndex}
-      onBack={() => { actions.setScreen('home'); actions.setText(''); actions.setImage(null); actions.setImageBase64(null) }}
-      handleGrafico={actions.handleGrafico}
-      handleShare={actions.handleShare}
-      isPremium={state.isPremium}
-      chatMessages={state.chatMessages}
-      chatLoading={state.chatLoading}
-      handleChatSubmit={actions.handleChatSubmit}
-      setScreen={actions.setScreen}
+      exerciseId={exercises.currentExerciseId}
+      exercise={exercises.exercise}
+      loading={exercises.loading}
+      explanation={exercises.explanation}
+      graficoUtile={exercises.graficoUtile}
+      grafico={exercises.grafico}
+      graficoLoading={exercises.graficoLoading}
+      shareUrl={exercises.shareUrl}
+      shareLoading={exercises.shareLoading}
+      quoteIndex={exercises.quoteIndex}
+      onBack={() => { navigation.setScreen('home'); exercises.resetExercise() }}
+      handleGrafico={exercises.handleGrafico}
+      handleShare={exercises.handleShare}
+      isPremium={profile.isPremium}
+      chatMessages={exercises.chatMessages}
+      chatLoading={exercises.chatLoading}
+      handleChatSubmit={exercises.handleChatSubmit}
+      setScreen={navigation.setScreen}
     />
   )
 
+  // Schermata principale (Home)
   return (
     <HomeScreen
-      user={state.user}
-      showAuth={state.showAuth}
-      setShowAuth={actions.setShowAuth}
-      supabase={state.supabase}
-      setScreen={actions.setScreen}
-      logout={actions.logout}
-      isLimited={state.isLimited}
-      remaining={state.remaining}
-      image={state.image}
-      setImage={actions.setImage}
-      setImageBase64={actions.setImageBase64}
-      dragging={state.dragging}
-      setDragging={actions.setDragging}
-      handleFile={actions.handleFile}
-      text={state.text}
-      setText={actions.setText}
-      handleSubmit={actions.handleSubmit}
-      usedToday={state.usedToday}
-      isPremium={state.isPremium}
+      user={user}
+      showAuth={navigation.showAuth}
+      setShowAuth={navigation.setShowAuth}
+      supabase={supabase}
+      setScreen={navigation.setScreen}
+      logout={logout}
+      isLimited={payments.isLimited}
+      remaining={payments.remaining}
+      image={exercises.image}
+      setImage={exercises.setImage}
+      setImageBase64={exercises.setImageBase64}
+      dragging={false}
+      setDragging={() => {}}
+      handleFile={exercises.handleFile}
+      text={exercises.text}
+      setText={exercises.setText}
+      handleSubmit={exercises.handleSubmit}
+      usedToday={payments.usedToday}
+      isPremium={profile.isPremium}
     />
   )
 }

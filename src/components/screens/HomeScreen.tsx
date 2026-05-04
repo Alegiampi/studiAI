@@ -42,7 +42,7 @@ export default function HomeScreen({
   isLimited, remaining, image, setImage, setImageBase64,
   dragging, setDragging, handleFile, text, setText, handleSubmit, usedToday,
   isPremium,
-}: HomeScreenProps) {
+  }: HomeScreenProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -52,6 +52,13 @@ export default function HomeScreen({
     document.body.style.overflow = menuOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [menuOpen])
+
+  // Cleanup: revoke object URL quando la pagina si smonta o l'immagine cambia
+  useEffect(() => {
+    return () => {
+      if (image) URL.revokeObjectURL(image)
+    }
+  }, [image])
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -228,7 +235,13 @@ export default function HomeScreen({
             <>
               <img src={image ?? undefined} alt="esercizio" className="w-full max-h-[280px] object-contain bg-black/20 backdrop-blur-md" />
               <button 
-                onClick={e => { e.stopPropagation(); setImage(null); setImageBase64(null) }} 
+                onClick={e => { 
+                  e.stopPropagation(); 
+                  if (image) URL.revokeObjectURL(image); 
+                  setImage(null); 
+                  setImageBase64(null); 
+                  if (fileRef.current) fileRef.current.value = '';
+                }} 
                 className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white border-none rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-black/80 transition-colors"
               >
                 <X size={16} />
@@ -245,7 +258,13 @@ export default function HomeScreen({
           )}
         </motion.div>
 
-        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files && handleFile(e.target.files[0])} />
+        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => {
+          const f = e.target.files?.[0]
+          if (!f) return
+          // Revoca eventuali URL precedenti per evitare confusione
+          if (image) URL.revokeObjectURL(image)
+          handleFile(f)
+        }} />
 
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="flex items-center gap-4 my-6">
           <div className="flex-1 h-[1px] bg-surface-border" />
@@ -262,13 +281,10 @@ export default function HomeScreen({
           className="w-full border border-surface-border rounded-[20px] p-5 text-[15px] resize-none outline-none mb-6 bg-surface text-foreground placeholder:text-foreground-muted focus:border-primary focus:ring-1 focus:ring-primary transition-all shadow-sm"
         />
 
-        <motion.button
-          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-          whileHover={(!text.trim() && !image) ? {} : { scale: 1.02 }}
-          whileTap={(!text.trim() && !image) ? {} : { scale: 0.98 }}
+        <button
           onClick={handleSubmit}
           disabled={!text.trim() && !image}
-          className={`w-full p-4 rounded-[16px] text-[16px] font-extrabold flex justify-center items-center gap-2 transition-all shadow-lg ${
+          className={`w-full p-4 rounded-[16px] text-[16px] font-extrabold flex justify-center items-center gap-2 transition-all shadow-lg transform hover:scale-105 ${
             (!text.trim() && !image) 
             ? 'bg-surface-active text-foreground-subtle shadow-none cursor-default' 
             : 'bg-primary text-background hover:bg-primary-hover hover:shadow-primary/25 cursor-pointer'
@@ -279,7 +295,7 @@ export default function HomeScreen({
           ) : (
             <>Spiega questo esercizio <Sparkles size={18} /></>
           )}
-        </motion.button>
+        </button>
 
         {!isLimited && !isPremium && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-6 bg-surface border border-surface-border rounded-2xl p-4 shadow-sm">
