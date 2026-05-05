@@ -7,7 +7,16 @@ Questo documento riassume lo stato attuale dell'architettura e dell'interfaccia 
 
 ## Log delle Modifiche (Storico)
 
-### 5 Maggio 2026 - Potenziamento Tutor AI, UX Chat e Toast System
+### 5 Maggio 2026 (Sera) - Raffinamento Estetico Explanation Page
+- **Formula Rendering Perfection**: 
+    - **STATO**: Considerato **PERFETTO** e non richiede ulteriori modifiche.
+    - **Dettaglio**: La centratura, il font e la spaziatura delle formule LaTeX in `ExplanationRenderer` sono ottimizzati per la massima chiarezza e non devono essere alterati.
+- **UI Refinement**:
+    - **Surgical Elegance**: Ridotto lo spessore dell'indicatore laterale degli step (da 1.5px a 2px) con un effetto luce più sottile.
+    - **Compact Action Dock**: Rimpicciolita la barra dei comandi inferiore (height h-11, padding ridotti) per una presenza più discreta e meno ingombrante.
+    - **Fluidità Transizioni**: Implementato l'uso del prop `layout` di Framer Motion per transizioni fluide tra i passaggi della spiegazione.
+
+### 5 Maggio 2026 (Pomeriggio) - Potenziamento Tutor AI, UX Chat e Toast System
 - **AI Tutor Hero Experience**:
     - **Welcome Proattivo**: Il tutor invia un messaggio di benvenuto automatico non appena la spiegazione è pronta.
     - **Tutor Profile UI**: Card profilo dedicata nella chat ("Online ora") per dare un'identità forte al tutor.

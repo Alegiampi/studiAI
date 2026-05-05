@@ -88,22 +88,24 @@ function ExplanationRenderer({
             <motion.div 
               key={i} 
               ref={el => { stepRefs.current[i] = el }}
+              layout
               initial={{ opacity: 0, y: 10 }} 
               animate={{ 
                 opacity: isDimmed ? 0.4 : 1,
-                scale: isFocused ? 1.02 : 1,
+                scale: isFocused ? 1.01 : 1,
                 y: 0 
               }} 
               transition={{ 
                 type: "spring",
-                stiffness: 300,
+                stiffness: 260,
                 damping: 25,
-                delay: i < parsed.passi.length ? 0.15 + (i * 0.05) : 0
+                delay: i < parsed.passi.length ? 0.15 + (i * 0.05) : 0,
+                layout: { duration: 0.4, ease: "easeInOut" }
               }}
               onClick={() => setFocusedIndex(isFocused ? null : i)}
               className={`flex gap-3 cursor-pointer transition-all duration-300 ${isFocused ? 'z-10' : 'z-0'} scroll-mt-24`}
             >
-              <div className={`w-1.5 rounded-full shrink-0 transition-colors duration-500 ${isFocused ? 'bg-primary shadow-[0_0_15px_rgba(255,214,0,0.5)]' : 'bg-surface-active'}`} />
+              <div className={`w-[2px] rounded-full shrink-0 transition-all duration-500 ${isFocused ? 'bg-primary shadow-[0_0_10px_rgba(255,214,0,0.3)]' : 'bg-surface-active/50'}`} />
               <div className="flex-1">
                 <div className={`bg-surface border transition-all duration-500 rounded-[24px] overflow-hidden shadow-sm ${isFocused ? 'border-primary/50 shadow-[0_10px_40px_rgba(0,0,0,0.2)]' : 'border-surface-border'}`}>
                   <div className={`px-5 py-4 border-b font-bold text-[14px] flex items-center gap-3 flex-wrap transition-colors duration-500 ${isFocused ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-active/50 border-surface-border text-foreground'}`}>
@@ -118,6 +120,7 @@ function ExplanationRenderer({
                 <AnimatePresence>
                   {isFocused && (
                     <motion.div 
+                      layout
                       initial={{ opacity: 0, y: 10, scale: 0.95 }} 
                       animate={{ opacity: 1, y: 0, scale: 1 }} 
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}

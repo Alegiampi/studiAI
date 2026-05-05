@@ -547,24 +547,24 @@ export default function ExplanationScreen({
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.2 }}
-          className="bg-surface/80 backdrop-blur-2xl border border-surface-border p-2 rounded-[24px] shadow-2xl flex items-center gap-2 pointer-events-auto"
+          className="bg-surface/80 backdrop-blur-2xl border border-surface-border p-1.5 rounded-[22px] shadow-2xl flex items-center gap-1.5 pointer-events-auto"
         >
           {explanation && !loading && (
             <button 
               onClick={handleShare} 
               disabled={shareLoading || !!shareUrl} 
-              className={`flex items-center gap-2 h-12 px-5 rounded-[18px] border text-[14px] font-bold transition-all ${
+              className={`flex items-center gap-2 h-11 px-4 rounded-[16px] border text-[13px] font-bold transition-all ${
                 shareUrl 
                   ? 'bg-success/10 border-success/30 text-success cursor-default' 
                   : 'bg-surface/50 border-surface-border text-foreground hover:bg-surface-active hover:border-primary/50 cursor-pointer'
               }`}
             >
               {shareLoading ? (
-                <Loader2 size={18} className="animate-spin" />
+                <Loader2 size={16} className="animate-spin" />
               ) : shareUrl ? (
-                <CheckCircle2 size={18} />
+                <CheckCircle2 size={16} />
               ) : (
-                <Share2 size={18} />
+                <Share2 size={16} />
               )}
               <span className="hidden sm:inline">{shareUrl ? 'Link Copiato!' : 'Condividi'}</span>
               <span className="sm:hidden">{shareUrl ? 'Copiato!' : 'Invia'}</span>
@@ -573,9 +573,9 @@ export default function ExplanationScreen({
           
           <button 
             onClick={onBack} 
-            className="flex items-center justify-center gap-2 h-12 px-8 rounded-[18px] bg-primary border-none text-background font-black cursor-pointer text-[15px] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-primary/30 group"
+            className="flex items-center justify-center gap-2 h-11 px-6 rounded-[16px] bg-primary border-none text-background font-black cursor-pointer text-[14px] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-primary/30 group"
           >
-            <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" />
+            <Plus size={18} className="group-hover:rotate-90 transition-transform duration-300" />
             Nuovo Esercizio
           </button>
         </motion.div>
