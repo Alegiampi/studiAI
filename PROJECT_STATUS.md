@@ -7,20 +7,36 @@ Questo documento riassume lo stato attuale dell'architettura e dell'interfaccia 
 
 ## Log delle Modifiche (Storico)
 
-### 5 Maggio 2026 - Potenziamento Tutor AI & UX Chat
+### 5 Maggio 2026 - Potenziamento Tutor AI, UX Chat e Toast System
 - **AI Tutor Hero Experience**:
-    - **Welcome Proattivo**: Il tutor ora invia un messaggio di benvenuto automatico non appena la spiegazione è pronta.
-    - **Tutor Profile UI**: Aggiunta una card profilo dedicata nella chat ("Online ora") per dare un'identità forte al tutor.
-    - **Floating Assistant Button (FAB)**: Implementato un pulsante fluttuante (robottino giallo) che si espande dinamicamente ("Chiedi al Tutor") per saltare alla chat da qualsiasi punto della spiegazione.
-- **Unificazione dell'Esperienza**:
-    - Collegati i pulsanti **"Dubbi?"** dei singoli passaggi direttamente alla chat principale, pre-compilando il contesto per una conversazione fluida.
+    - **Welcome Proattivo**: Il tutor invia un messaggio di benvenuto automatico non appena la spiegazione è pronta.
+    - **Tutor Profile UI**: Card profilo dedicata nella chat ("Online ora") per dare un'identità forte al tutor.
+    - **Floating Assistant Button (FAB)**: Pulsante fluttuante espandibile ("Chiedi al Tutor") per saltare alla chat con transizioni fluide.
+- **Unified Action Dock**:
+    - **Floating Dock**: Redesign radicale della barra inferiore in un'isola flottante glassmorphic.
+    - **Hero Buttons**: "Nuovo Esercizio" e "Condividi" ora hanno uno stile premium con micro-animazioni e shadow profonde.
+- **Global Dynamic Island Toast System**:
+    - **Centralizzazione**: Creato `ToastProvider` globale per gestire le notifiche in modo coerente in tutta l'app.
+    - **UI Dynamic Island**: Toast posizionati in alto al centro, a forma di pillola, con glassmorphism e animazioni spring.
+    - **Feedback Cromatico**: Colori specifici per azione (Oro per preferiti, Blu per link, Verde per successo) con icone contestuali.
+- **Onboarding & Personalizzazione Premium**:
+    - **Nuovo Flusso Onboarding**: Introdotte 5 slide immersive che presentano theLemma, le spiegazioni passo-passo, il Tutor AI e i grafici interattivi.
+    - **Design Visivo**: Implementati sfondi animati, glassmorphism e tipografia premium (Outfit) per un'esperienza "Apple-like".
+    - **Personalizzazione Avanzata**: Redesign della schermata di raccolta dati (nome, scuola, classe) con feedback visivi migliorati e micro-interazioni.
+- **Undo Toast per Immagini**: Aggiunta funzionalità di "Annulla" (4 secondi) dopo l'eliminazione di un'immagine caricata, con thumbnail di anteprima e progress bar.
 - **Raffinatezza Estetica e Funzionale**:
-    - **Layout Compatto**: Ottimizzati i margini e gli spazi verticali per migliorare la leggibilità delle spiegazioni lunghe.
-    - **Testo Giustificato**: Implementata la giustificazione del testo con sillabazione automatica per un look editoriale professionale.
-    - **Auto-Expanding Input**: L'area di inserimento testo della chat ora si espande dinamicamente in base alla lunghezza della domanda.
+    - **Layout Compatto & Giustificato**: Ottimizzata la leggibilità con testo giustificato, sillabazione e spaziature ridotte.
+    - **Auto-Expanding Input**: Chat textarea che si espande dinamicamente con il testo.
+- **Architettura & Pulizia**:
+    - **Type Centralization**: Iniziata la migrazione dei tipi core (es. `Toast`) in `@/types` per una migliore manutenibilità.
+    - **Bug Fix**: Risolto bug duplicazione messaggi e corretto layout di scrolling `h-screen`.
+- **Onboarding & Personalizzazione Premium**:
+    - **Nuovo Flusso Onboarding**: Introdotte 5 slide immersive che presentano theLemma, le spiegazioni passo-passo, il Tutor AI e i grafici interattivi.
+    - **Design Visivo**: Implementati sfondi animati, glassmorphism e tipografia premium (Outfit) per un'esperienza "Apple-like".
+    - **Personalizzazione Avanzata**: Redesign della schermata di raccolta dati (nome, scuola, classe) con feedback visivi migliorati e micro-interazioni.
+- **Undo Toast per Immagini**: Aggiunta funzionalità di "Annulla" (4 secondi) dopo l'eliminazione di un'immagine caricata, con thumbnail di anteprima e progress bar.
 - **Bug Fix & Stabilità**:
     - Risolto bug della duplicazione dei messaggi utente nella cronologia chat.
-    - Corretto il layout di scrolling (da body a interno `h-screen`) per garantire la visibilità costante di header, footer e FAB.
 
 ---
 
@@ -53,6 +69,7 @@ Questo documento riassume lo stato attuale dell'architettura e dell'interfaccia 
 
 ## Prossimi Passi
 
+- [ ] **Allenati con il Prof (Simulazione Interrogazione)**: Simulatore di esame orale con feedback in tempo reale.
 - [ ] **Domanda di Controllo (Mini-Quiz)**: Verifica della comprensione a fine spiegazione.
 - [ ] **Modalità "ELI5"**: Toggle per spiegazioni ultra-semplici o accademiche.
 - [ ] **Esportazione PDF**: Generazione di file PDF completi di grafici per la stampa.

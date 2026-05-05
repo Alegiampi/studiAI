@@ -1,9 +1,7 @@
-'use client'
-
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
-import { User, School, Book } from 'lucide-react'
+import { User, School, Book, Sparkles, GraduationCap } from 'lucide-react'
 
 export default function PersonalizzazioneScreen({ onDone, user }: { onDone: (data: { scuola: string; classe: string; materie: string[] }) => void, user?: any }) {
   const [nome, setNome] = useState(user?.user_metadata?.full_name || user?.user_metadata?.name || '')
@@ -37,38 +35,50 @@ export default function PersonalizzazioneScreen({ onDone, user }: { onDone: (dat
   const classi = scuola === 'Scuola Media' ? ['1ª media', '2ª media', '3ª media'] : ['1ª', '2ª', '3ª', '4ª', '5ª']
   const materieList = ['Matematica', 'Fisica', 'Chimica', 'Informatica']
   
-  const btnBase = "border rounded-xl px-4 py-2.5 text-sm cursor-pointer font-semibold transition-all duration-200"
-  const btnActive = `${btnBase} bg-primary text-background border-primary shadow-sm shadow-primary/20 scale-105`
+  const btnBase = "border rounded-xl px-4 py-3 text-[14px] cursor-pointer font-bold transition-all duration-300"
+  const btnActive = `${btnBase} bg-primary text-background border-primary shadow-[0_8px_20px_rgba(255,214,0,0.25)] scale-105 z-10`
   const btnInactive = `${btnBase} bg-surface-active text-foreground-subtle border-surface-border hover:bg-surface-hover hover:text-foreground`
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-primary/10 blur-[120px] rounded-full pointer-events-none" />
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden font-outfit">
+      {/* Sfondo dinamico */}
+      <motion.div 
+        animate={{ 
+          x: [0, -30, 20, 0], 
+          y: [0, 40, -20, 0],
+          scale: [1, 1.1, 0.9, 1]
+        }}
+        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+        className="absolute top-[-15%] left-[-10%] w-[70%] h-[70%] bg-primary/5 blur-[120px] rounded-full pointer-events-none" 
+      />
       
-      <main className="w-full max-w-[480px] relative z-10 bg-surface/50 p-8 rounded-[32px] border border-surface-border/50 backdrop-blur-xl shadow-2xl">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
-          <h1 className="text-3xl font-extrabold text-foreground tracking-tight mb-2">Personalizziamo</h1>
-          <p className="text-[15px] font-medium text-foreground-muted">Così le spiegazioni saranno calibrate sul tuo livello.</p>
+      <main className="w-full max-w-[520px] relative z-10 bg-surface/40 p-10 rounded-[32px] border border-surface-border/50 backdrop-blur-2xl shadow-2xl">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
+          <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-2xl mb-4">
+             <GraduationCap size={32} className="text-primary" />
+          </div>
+          <h1 className="text-3xl font-black text-foreground tracking-tight mb-2">Personalizziamo</h1>
+          <p className="text-[16px] font-medium text-foreground-muted">Così le spiegazioni saranno calibrate sul tuo livello.</p>
         </motion.div>
         
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="space-y-7">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="space-y-8">
           
           <div>
-            <div className="flex items-center gap-2 text-[13px] font-extrabold text-primary mb-3 uppercase tracking-wider">
-              <User size={16} /> Come ti chiami?
+            <div className="flex items-center gap-2 text-[12px] font-black text-primary mb-4 uppercase tracking-widest opacity-80">
+              <User size={14} /> Come ti chiami?
             </div>
             <input 
               type="text" 
               value={nome} 
               onChange={e => setNome(e.target.value)} 
               placeholder="Il tuo nome" 
-              className="w-full bg-surface-active border border-surface-border rounded-xl px-4 py-3.5 text-[15px] text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all shadow-sm"
+              className="w-full bg-surface-active border-2 border-surface-border rounded-2xl px-5 py-4 text-[16px] text-foreground outline-none focus:border-primary focus:ring-0 transition-all font-bold placeholder:text-foreground-subtle"
             />
           </div>
 
           <div>
-            <div className="flex items-center gap-2 text-[13px] font-extrabold text-primary mb-3 uppercase tracking-wider">
-              <School size={16} /> Che scuola frequenti?
+            <div className="flex items-center gap-2 text-[12px] font-black text-primary mb-4 uppercase tracking-widest opacity-80">
+              <School size={14} /> Che scuola frequenti?
             </div>
             <div className="flex flex-wrap gap-2.5">
               {scuole.map(s => (
@@ -79,12 +89,17 @@ export default function PersonalizzazioneScreen({ onDone, user }: { onDone: (dat
             </div>
           </div>
           
-          <AnimatePresence>
+          <AnimatePresence mode="wait">
             {scuola && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                <div className="flex items-center gap-2 text-[13px] font-extrabold text-primary mb-3 uppercase tracking-wider mt-2">
-                  <div className="w-4 h-4 bg-primary/20 rounded-full flex items-center justify-center"><div className="w-1.5 h-1.5 bg-primary rounded-full" /></div>
-                  Che classe sei?
+              <motion.div 
+                key={scuola}
+                initial={{ opacity: 0, height: 0, y: -10 }} 
+                animate={{ opacity: 1, height: 'auto', y: 0 }} 
+                exit={{ opacity: 0, height: 0, y: -10 }} 
+                className="overflow-hidden"
+              >
+                <div className="flex items-center gap-2 text-[12px] font-black text-primary mb-4 uppercase tracking-widest opacity-80 mt-2">
+                  <Sparkles size={14} /> Che classe sei?
                 </div>
                 <div className="flex gap-2.5 flex-wrap">
                   {classi.map(c => (
@@ -98,8 +113,8 @@ export default function PersonalizzazioneScreen({ onDone, user }: { onDone: (dat
           </AnimatePresence>
           
           <div className="pb-4">
-            <div className="flex items-center gap-2 text-[13px] font-extrabold text-primary mb-3 uppercase tracking-wider">
-              <Book size={16} /> Materie difficili?
+            <div className="flex items-center gap-2 text-[12px] font-black text-primary mb-4 uppercase tracking-widest opacity-80">
+              <Book size={14} /> Materie preferite?
             </div>
             <div className="flex flex-wrap gap-2.5">
               {materieList.map(m => (
@@ -111,16 +126,16 @@ export default function PersonalizzazioneScreen({ onDone, user }: { onDone: (dat
           </div>
         </motion.div>
         
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mt-8 flex flex-col gap-3">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mt-10 flex flex-col gap-4">
           <motion.button 
-            whileHover={(!scuola || !classe || !nome.trim() || loading) ? {} : { scale: 1.02 }}
+            whileHover={(!scuola || !classe || !nome.trim() || loading) ? {} : { scale: 1.02, y: -2 }}
             whileTap={(!scuola || !classe || !nome.trim() || loading) ? {} : { scale: 0.98 }}
             onClick={salva} 
             disabled={!scuola || !classe || !nome.trim() || loading} 
-            className={`w-full p-4 border-none rounded-[16px] text-[16px] font-extrabold transition-all ${
+            className={`w-full py-5 border-none rounded-[22px] text-[17px] font-black transition-all ${
               (!scuola || !classe || !nome.trim()) 
               ? 'bg-surface-active text-foreground-subtle cursor-default shadow-none' 
-              : 'bg-primary text-background cursor-pointer hover:bg-primary-hover shadow-lg shadow-primary/25'
+              : 'bg-primary text-background cursor-pointer hover:bg-primary-hover shadow-[0_12px_40px_rgba(255,214,0,0.25)]'
             }`}
           >
             {loading ? 'Attendi...' : 'Inizia a studiare →'}
@@ -131,7 +146,7 @@ export default function PersonalizzazioneScreen({ onDone, user }: { onDone: (dat
               fetch('/api/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ onboarding_done: true }) }); 
               onDone({ scuola: '', classe: '', materie: [] }) 
             }} 
-            className="w-full p-3 bg-transparent border-none text-foreground-subtle text-[14px] font-medium cursor-pointer hover:text-foreground transition-colors"
+            className="w-full p-3 bg-transparent border-none text-foreground-subtle text-[14px] font-bold cursor-pointer hover:text-foreground transition-colors"
           >
             Salta per ora
           </button>

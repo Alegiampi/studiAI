@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import ExplanationRenderer from '@/components/exercise/ExplanationRenderer'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, BookOpen, Clock, AlertCircle, Search, Star, Share2, Tag, Activity, Triangle, Divide, Calculator, FunctionSquare, LayoutGrid, Zap, Variable, Infinity, Link } from 'lucide-react'
+import { useToast } from '@/hooks/useToast'
 
 const SUBJECT_STYLES: Record<string, { color: string, icon: any, label: string }> = {
   'derivata': { color: 'bg-blue-500/10 text-blue-600 border-blue-200', icon: Zap, label: 'Derivata' },
@@ -20,18 +21,13 @@ const SUBJECT_STYLES: Record<string, { color: string, icon: any, label: string }
 }
 
 export default function StoricoScreen({ onBack }: { onBack: () => void }) {
+  const { showToast } = useToast()
   const [exercises, setExercises] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<any | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedSubject, setSelectedSubject] = useState<string>('Tutti')
   const [sharingId, setSharingId] = useState<number | null>(null)
-  const [toast, setToast] = useState<{ text: string; visible: boolean }>({ text: '', visible: false })
-
-  const showNotification = (text: string) => {
-    setToast({ text, visible: true })
-    setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 2500)
-  }
 
   useEffect(() => {
     fetch('/api/exercises').then(r => r.json()).then(data => { setExercises(data); setLoading(false) })
@@ -97,7 +93,7 @@ export default function StoricoScreen({ onBack }: { onBack: () => void }) {
     // Aggiornamento ottimistico
     setExercises(prev => prev.map(ex => ex.id === id ? { ...ex, is_favorite: newFav } : ex))
     
-    showNotification(newFav ? 'Aggiunto ai preferiti!' : 'Rimosso dai preferiti')
+    showToast(newFav ? 'Aggiunto ai preferiti!' : 'Rimosso dai preferiti', 'success')
 
     await fetch('/api/exercises', {
       method: 'PATCH',
@@ -148,10 +144,10 @@ export default function StoricoScreen({ onBack }: { onBack: () => void }) {
             url: shareUrl
           })
         } catch (err) {
-          try { await navigator.clipboard.writeText(shareUrl); showNotification('Link copiato!') } catch {}
+          try { await navigator.clipboard.writeText(shareUrl); showToast('Link copiato!', 'success') } catch {}
         }
       } else {
-        try { await navigator.clipboard.writeText(shareUrl); showNotification('Link copiato!') } catch {}
+        try { await navigator.clipboard.writeText(shareUrl); showToast('Link copiato!', 'success') } catch {}
       }
     }
     setSharingId(null)
@@ -355,19 +351,6 @@ export default function StoricoScreen({ onBack }: { onBack: () => void }) {
         </div>
       </main>
 
-      {/* Toast Notification (Stile WhatsApp) */}
-      <AnimatePresence>
-        {toast.visible && (
-          <motion.div 
-            initial={{ opacity: 0, y: 50, x: '-50%' }}
-            animate={{ opacity: 1, y: 0, x: '-50%' }}
-            exit={{ opacity: 0, y: 20, x: '-50%', transition: { duration: 0.2 } }}
-            className="fixed bottom-10 left-1/2 z-[100] px-6 py-3 bg-zinc-900/95 backdrop-blur-md text-yellow-400 rounded-full shadow-2xl flex items-center gap-3 min-w-[200px] justify-center border border-white/10"
-          >
-            <span className="text-[14px] font-bold tracking-tight">{toast.text}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   )
 }

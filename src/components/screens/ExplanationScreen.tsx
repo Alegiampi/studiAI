@@ -8,6 +8,7 @@ import { useState, useRef, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
+import { useToast } from '@/hooks/useToast'
 
 export const AI_STEPS = [
   { label: "Analisi dell'input...", icon: <Search size={18} /> },
@@ -57,11 +58,11 @@ export default function ExplanationScreen({
   handleChatSubmit: (msg: string) => void
   setScreen: (screen: 'paywall') => void
 }) {
+  const { showToast } = useToast()
   const chatRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const [chatInput, setChatInput] = useState('')
   const [isFavorite, setIsFavorite] = useState(false)
-  const [toast, setToast] = useState<{ text: string; visible: boolean }>({ text: '', visible: false })
   const [currentStep, setCurrentStep] = useState(0)
   const [showFAB, setShowFAB] = useState(false)
 
@@ -98,20 +99,15 @@ export default function ExplanationScreen({
 
   useEffect(() => {
     if (shareUrl) {
-      showNotification('Link copiato!')
+      showToast('Link copiato!', 'success')
     }
   }, [shareUrl])
-
-  const showNotification = (text: string) => {
-    setToast({ text, visible: true })
-    setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 2500)
-  }
 
   async function toggleFavorite() {
     if (!exerciseId) return
     const newFav = !isFavorite
     setIsFavorite(newFav)
-    showNotification(newFav ? 'Aggiunto ai preferiti!' : 'Rimosso dai preferiti')
+    showToast(newFav ? 'Aggiunto ai preferiti!' : 'Rimosso dai preferiti', 'success')
     
     await fetch('/api/exercises', {
       method: 'PATCH',
@@ -546,52 +542,45 @@ export default function ExplanationScreen({
         )}
       </AnimatePresence>
 
-      <div className="fixed bottom-0 inset-x-0 bg-surface/90 backdrop-blur-xl border-t border-surface-border p-4 pb-6 sm:pb-4 z-20">
-        <div className="max-w-[720px] mx-auto flex flex-wrap justify-center items-center gap-4">
+      <div className="fixed bottom-6 inset-x-0 z-20 px-4 flex justify-center pointer-events-none">
+        <motion.div 
+          initial={{ y: 100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.2 }}
+          className="bg-surface/80 backdrop-blur-2xl border border-surface-border p-2 rounded-[24px] shadow-2xl flex items-center gap-2 pointer-events-auto"
+        >
           {explanation && !loading && (
-            <div className="flex-shrink-0">
-              <button 
-                onClick={handleShare} 
-                disabled={shareLoading || !!shareUrl} 
-                className={`flex items-center gap-2 h-11 px-6 rounded-full border text-[14px] font-semibold transition-all shadow-sm ${
-                  shareUrl 
-                    ? 'bg-success/10 border-success/30 text-success cursor-default' 
-                    : 'bg-surface border-surface-border text-foreground hover:bg-surface-hover hover:border-primary/30 cursor-pointer'
-                }`}
-              >
-                {shareLoading ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : shareUrl ? (
-                  <CheckCircle2 size={16} />
-                ) : (
-                  <Share2 size={16} />
-                )}
-                {shareUrl ? 'Link Copiato!' : 'Condividi'}
-              </button>
-            </div>
+            <button 
+              onClick={handleShare} 
+              disabled={shareLoading || !!shareUrl} 
+              className={`flex items-center gap-2 h-12 px-5 rounded-[18px] border text-[14px] font-bold transition-all ${
+                shareUrl 
+                  ? 'bg-success/10 border-success/30 text-success cursor-default' 
+                  : 'bg-surface/50 border-surface-border text-foreground hover:bg-surface-active hover:border-primary/50 cursor-pointer'
+              }`}
+            >
+              {shareLoading ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : shareUrl ? (
+                <CheckCircle2 size={18} />
+              ) : (
+                <Share2 size={18} />
+              )}
+              <span className="hidden sm:inline">{shareUrl ? 'Link Copiato!' : 'Condividi'}</span>
+              <span className="sm:hidden">{shareUrl ? 'Copiato!' : 'Invia'}</span>
+            </button>
           )}
+          
           <button 
             onClick={onBack} 
-            className="flex items-center justify-center gap-2 h-11 px-8 rounded-full bg-primary border-none text-background font-extrabold cursor-pointer text-[14px] hover:bg-primary-hover transition-colors shadow-lg shadow-primary/20"
+            className="flex items-center justify-center gap-2 h-12 px-8 rounded-[18px] bg-primary border-none text-background font-black cursor-pointer text-[15px] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-primary/30 group"
           >
-            <Plus size={18} /> Nuovo Esercizio
+            <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" />
+            Nuovo Esercizio
           </button>
-        </div>
+        </motion.div>
       </div>
 
-      {/* Toast Notification (Stile WhatsApp) */}
-      <AnimatePresence>
-        {toast.visible && (
-          <motion.div 
-            initial={{ opacity: 0, y: 50, x: '-50%' }}
-            animate={{ opacity: 1, y: 0, x: '-50%' }}
-            exit={{ opacity: 0, y: 20, x: '-50%', transition: { duration: 0.2 } }}
-            className="fixed bottom-24 left-1/2 z-[100] px-6 py-3 bg-zinc-900/95 backdrop-blur-md text-yellow-400 rounded-full shadow-2xl flex items-center gap-3 min-w-[200px] justify-center border border-white/10"
-          >
-            <span className="text-[14px] font-bold tracking-tight">{toast.text}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   )
 }

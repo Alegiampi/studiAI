@@ -19,8 +19,7 @@ import ToastContainer from '@/components/Toast'
 import { useToast } from '@/hooks/useToast'
 
 export default function Home() {
-  // Toast globale
-  const toast = useToast()
+  const { showToast } = useToast()
 
   // Hook base: autenticazione
   const { user, authLoading, supabase, logout } = useAuth()
@@ -42,7 +41,7 @@ export default function Home() {
     payments.isLimited,
     () => navigation.setScreen('paywall'),
     () => navigation.setScreen('explanation'),
-    toast.showToast
+    showToast
   )
 
   // Loading iniziale
@@ -146,7 +145,6 @@ export default function Home() {
    // Schermata principale (Home)
    return (
      <>
-       <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />
         <HomeScreen
        user={user}
        showAuth={navigation.showAuth}

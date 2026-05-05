@@ -14,3 +14,11 @@ export type GraficoData = {
   boundingBox: [number, number, number, number]
   espressioni: ElementoGrafico[]
 }
+
+export type ToastType = 'error' | 'success' | 'info'
+
+export type Toast = {
+  id: number
+  message: string
+  type: ToastType
+}

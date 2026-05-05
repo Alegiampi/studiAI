@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import getCroppedImg from '@/utils/cropImage'
-import { GraficoData } from '@/types'
+import { GraficoData, ToastType } from '@/types'
 
 type ExerciseInput = {
   text: string
@@ -46,7 +46,7 @@ export function useExercises(
   isLimited: boolean,
   onGoToPaywall: () => void,
   onGoToExplanation: () => void,
-  showToast?: (msg: string, type: 'error' | 'success' | 'info') => void
+  showToast?: (msg: string, type: ToastType) => void
 ) {
   const [input, setInput] = useState<InputState>({
     text: '',
