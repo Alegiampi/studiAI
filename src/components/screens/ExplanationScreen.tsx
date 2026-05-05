@@ -8,7 +8,7 @@ import { useState, useRef, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
-import { useToast } from '@/hooks/useToast'
+import { useToast } from '@/hooks/ToastContext'
 
 export const AI_STEPS = [
   { label: "Analisi dell'input...", icon: <Search size={18} /> },

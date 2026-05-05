@@ -16,7 +16,7 @@ import { useExercises } from '@/hooks/useExercises'
 import { motion } from 'framer-motion'
 import { Loader2, Sparkles } from 'lucide-react'
 import ToastContainer from '@/components/Toast'
-import { useToast } from '@/hooks/useToast'
+import { useToast } from '@/hooks/ToastContext'
 
 export default function Home() {
   const { showToast } = useToast()

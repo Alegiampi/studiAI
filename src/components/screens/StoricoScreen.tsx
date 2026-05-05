@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import ExplanationRenderer from '@/components/exercise/ExplanationRenderer'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, BookOpen, Clock, AlertCircle, Search, Star, Share2, Tag, Activity, Triangle, Divide, Calculator, FunctionSquare, LayoutGrid, Zap, Variable, Infinity, Link } from 'lucide-react'
-import { useToast } from '@/hooks/useToast'
+import { useToast } from '@/hooks/ToastContext'
 
 const SUBJECT_STYLES: Record<string, { color: string, icon: any, label: string }> = {
   'derivata': { color: 'bg-blue-500/10 text-blue-600 border-blue-200', icon: Zap, label: 'Derivata' },

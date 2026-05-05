@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   description: "Risolvi e comprendi esercizi di matematica e fisica con l'aiuto dell'IA di theLemma.",
 };
 
-import { ToastProvider } from "@/hooks/useToast";
+import { ToastProvider } from "@/hooks/ToastContext";
 
 export default function RootLayout({
   children,
