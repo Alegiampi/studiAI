@@ -136,6 +136,15 @@ export default function StoricoScreen({ onBack }: { onBack: () => void }) {
     }
 
     if (shareUrl) {
+      // Proviamo a copiare negli appunti in ogni caso come fallback sicuro
+      try {
+        await navigator.clipboard.writeText(shareUrl)
+        showToast('Link copiato!', 'success')
+      } catch (err) {
+        console.error('Errore copia appunti:', err)
+      }
+
+      // Se disponibile, apriamo anche il menu di condivisione nativo (soprattutto su mobile)
       if (navigator.share) {
         try {
           await navigator.share({
@@ -144,10 +153,8 @@ export default function StoricoScreen({ onBack }: { onBack: () => void }) {
             url: shareUrl
           })
         } catch (err) {
-          try { await navigator.clipboard.writeText(shareUrl); showToast('Link copiato!', 'success') } catch {}
+          // L'utente potrebbe aver annullato la condivisione, non è un errore critico
         }
-      } else {
-        try { await navigator.clipboard.writeText(shareUrl); showToast('Link copiato!', 'success') } catch {}
       }
     }
     setSharingId(null)

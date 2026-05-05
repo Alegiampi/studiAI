@@ -170,22 +170,23 @@ export default function ExplanationScreen({
           opacity: 0.7;
           font-weight: 300;
         }
-        .md-content { line-height: 1.6; text-align: justify; hyphens: auto; }
-        .md-content p { margin-bottom: 0.6rem; }
+        .md-content { line-height: 1.55; text-align: left; hyphens: none; }
+        .md-content p { margin-bottom: 0.8rem; }
         .md-content p:last-child { margin-bottom: 0; }
-        .md-content ul, .md-content ol { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+        .md-content ul, .md-content ol { padding-left: 1.4rem; margin-bottom: 0.8rem; }
         .md-content ul { list-style-type: disc; }
         .md-content ol { list-style-type: decimal; }
-        .md-content li { margin-bottom: 0.3rem; }
+        .md-content li { margin-bottom: 0.4rem; }
         .md-content strong { color: var(--color-foreground); font-weight: 700; }
-        .katex { color: var(--color-foreground) !important; font-size: 1.1em; font-weight: 500; }
+        .katex { color: var(--color-foreground) !important; font-size: 1.15em; font-weight: 500; }
         .katex-display { 
-          margin: 0.6rem 0 !important; 
-          padding: 0.2rem 0; 
+          margin: 1.2rem 0 !important; 
+          padding: 0.4rem 0; 
           overflow-x: auto; 
           text-align: center;
+          width: 100%;
         }
-        .katex-display .katex { color: var(--color-foreground) !important; }
+        .katex-display .katex { color: var(--color-foreground) !important; font-size: 1.25em; }
       `}</style>
       <header className="sticky top-0 z-20 px-4 py-4 bg-surface/80 backdrop-blur-xl border-b border-surface-border flex items-center gap-3">
         <button onClick={onBack} className="p-2 -ml-2 rounded-xl bg-transparent border-none text-foreground-muted cursor-pointer hover:bg-surface-active hover:text-foreground transition-colors">

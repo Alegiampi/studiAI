@@ -20,7 +20,16 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   const showToast = useCallback((message: string, type: ToastType = 'info') => {
     const id = nextId++
-    setToasts(prev => [...prev, { id, message, type }])
+    
+    setToasts(prev => {
+      // Se il messaggio riguarda i preferiti, rimuoviamo i toast precedenti dello stesso argomento
+      // per evitare l'accumulo (spam) mostrato nello screenshot.
+      if (message.toLowerCase().includes('preferiti')) {
+        return [...prev.filter(t => !t.message.toLowerCase().includes('preferiti')), { id, message, type }]
+      }
+      return [...prev, { id, message, type }]
+    })
+
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id))
     }, 4000)

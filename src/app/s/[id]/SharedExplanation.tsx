@@ -51,21 +51,22 @@ export default function SharedExplanation({ data, id }: { data: any; id: string 
       <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[50%] bg-primary/10 blur-[120px] rounded-full pointer-events-none" />
       
       <style>{`
-        .katex { color: var(--color-foreground) !important; font-size: 1.2em; font-weight: 500; }
+        .katex { color: var(--color-foreground) !important; font-size: 1.15em; font-weight: 500; }
         .katex-display { 
-          margin: 1.5rem 0 !important; 
-          padding: 0.5rem 0; 
+          margin: 1.2rem 0 !important; 
+          padding: 0.4rem 0; 
           overflow-x: auto; 
           text-align: center;
+          width: 100%;
         }
-        .katex-display .katex { color: var(--color-foreground) !important; }
-        .md-content { line-height: 1.8; }
-        .md-content p { margin-bottom: 1.2rem; }
+        .katex-display .katex { color: var(--color-foreground) !important; font-size: 1.25em; }
+        .md-content { line-height: 1.55; text-align: left; }
+        .md-content p { margin-bottom: 0.8rem; }
         .md-content p:last-child { margin-bottom: 0; }
-        .md-content ul, .md-content ol { padding-left: 1.5rem; margin-bottom: 1.2rem; }
+        .md-content ul, .md-content ol { padding-left: 1.4rem; margin-bottom: 0.8rem; }
         .md-content ul { list-style-type: disc; }
         .md-content ol { list-style-type: decimal; }
-        .md-content li { margin-bottom: 0.5rem; }
+        .md-content li { margin-bottom: 0.4rem; }
         .md-content strong { color: var(--color-foreground); font-weight: 700; }
       `}</style>
       

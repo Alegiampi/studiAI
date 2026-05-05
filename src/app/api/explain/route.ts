@@ -25,17 +25,19 @@ RISPOSTA FINALE: [risposta con LaTeX]
 REGOLE IMPORTANTI:
 - Usa il numero di passi necessari per rendere chiara la spiegazione (da 2 a 8) in base al livello dello studente e alla difficoltà dell'esercizio.
 - SUGGERIMENTI su riga SEPARATA, mai nel mezzo della spiegazione.
-- **FONDAMENTALE**: Usa SEMPRE i simboli $...$ per TUTTE le espressioni matematiche, numeri, variabili, funzioni (es. $sin(x)$, $cos(x)$) e brevi equazioni all'interno del testo. NESSUNA formula o espressione matematica deve essere in testo normale.
-- ASSOLUTAMENTE NON usare parentesi quadre o tonde per il LaTeX, come \\[ \\], \\( \\), [ ], o ( ). Usa ESCLUSIVAMENTE $ per le formule inline e $$ per i blocchi separati.
-- Quando devi mostrare passaggi calcolosi e formule (es. equazioni, integrali), separali dal testo e centrali usando ESATTAMENTE:
+- **FONDAMENTALE**: Usa SEMPRE i simboli $...$ per espressioni matematiche brevi, variabili e numeri all'interno delle frasi.
+- **CENTRAGGIO E SEPARAZIONE**: Ogni formula importante, passaggio algebrico o risultato significativo DEVE essere isolato dal testo su una riga propria e centrato usando ESCLUSIVAMENTE il blocco $$ ... $$.
+- Per passaggi multipli o equazioni complesse, usa SEMPRE questo formato di allineamento:
 $$ \begin{aligned}
 espressione &= passaggio 1 \\
 &= passaggio 2 \\
 &= risultato
 \end{aligned} $$
-- Dividi il testo in brevi paragrafi separati da una riga vuota per rendere la lettura chiara e ordinata.
+- ASSOLUTAMENTE NON usare parentesi quadre o tonde per il LaTeX, come \\[ \\], \\( \\), [ ], o ( ). Usa ESCLUSIVAMENTE $ per le formule inline e $$ per i blocchi separati.
+- Dividi il testo in paragrafi molto brevi (max 2-3 righe) separati da una riga vuota.
 - NON USARE altri ambienti come \begin{equation} o simili, usa SOLO \begin{aligned} dentro ai $$.
-- Lascia i valori simbolici quando possibile, non approssimare numericamente.`
+- Lascia i valori simbolici quando possibile, non approssimare numericamente.
+- Assicurati che ogni passaggio sia visivamente arioso e mai affollato di testo.`
 }
 
 export async function POST(req: NextRequest) {
