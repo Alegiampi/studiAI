@@ -1,6 +1,6 @@
 {
-  "name": "StudiAI",
-  "short_name": "StudiAI",
+  "name": "theLemma",
+  "short_name": "theLemma",
   "description": "Il tuo tutor di matematica e fisica",
   "start_url": "/",
   "display": "standalone",

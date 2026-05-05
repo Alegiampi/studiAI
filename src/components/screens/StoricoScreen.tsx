@@ -143,8 +143,8 @@ export default function StoricoScreen({ onBack }: { onBack: () => void }) {
       if (navigator.share) {
         try {
           await navigator.share({
-            title: 'Spiegazione StudiAI',
-            text: 'Guarda questa spiegazione passo-passo su StudiAI!',
+            title: 'Spiegazione theLemma',
+            text: 'Guarda questa spiegazione passo-passo su theLemma!',
             url: shareUrl
           })
         } catch (err) {

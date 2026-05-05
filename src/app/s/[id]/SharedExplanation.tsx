@@ -76,7 +76,9 @@ export default function SharedExplanation({ data, id }: { data: any; id: string 
             <Sparkles size={20} className="text-background" />
           </div>
           <div>
-            <div className="text-[17px] font-extrabold text-background tracking-tight leading-tight">StudiAI</div>
+            <div className="text-[17px] font-extrabold text-background tracking-tight leading-tight">
+              <span className="font-light opacity-80">the</span>Lemma
+            </div>
             <div className="text-[11px] font-semibold text-background/80 uppercase tracking-wider">Il tutor AI per studenti</div>
           </div>
         </div>

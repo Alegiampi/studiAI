@@ -4,7 +4,7 @@ export async function POST(req: NextRequest) {
   const { messages, exercise, explanation } = await req.json()
 
   try {
-    const systemPrompt = `Sei StudiAI, un tutor italiano empatico, incoraggiante e super competente.
+    const systemPrompt = `Sei theLemma, un tutor italiano empatico, incoraggiante e super competente.
 L'utente ti sta facendo delle domande su un esercizio che gli hai appena spiegato.
 
 ESERCIZIO ORIGINALE:

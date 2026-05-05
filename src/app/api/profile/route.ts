@@ -43,13 +43,13 @@ export async function POST(req: NextRequest) {
 
   await supabase
     .from('profiles')
-    .update({
+    .upsert({
+      id: user.id,
       onboarding_done: body.onboarding_done ?? true,
       scuola: body.scuola,
       classe: body.classe,
       materie: body.materie
-    })
-    .eq('id', user.id)
+    }, { onConflict: 'id' })
 
   return NextResponse.json({ ok: true })
 }

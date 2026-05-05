@@ -62,6 +62,19 @@ export default function ExplanationScreen({
   const [isFavorite, setIsFavorite] = useState(false)
   const [toast, setToast] = useState<{ text: string; visible: boolean }>({ text: '', visible: false })
   const [currentStep, setCurrentStep] = useState(0)
+  const [showFAB, setShowFAB] = useState(false)
+
+  // Scroll handler for FAB
+  useEffect(() => {
+    const main = chatRef.current
+    if (!main) return
+    const handleScroll = () => {
+      // Mostra il FAB se scendiamo un po' ma non siamo ancora alla chat
+      setShowFAB(main.scrollTop > 300 && main.scrollTop < main.scrollHeight - 800)
+    }
+    main.addEventListener('scroll', handleScroll)
+    return () => main.removeEventListener('scroll', handleScroll)
+  }, [])
 
   useEffect(() => {
     if (!loading) {
@@ -107,13 +120,90 @@ export default function ExplanationScreen({
     }, 100)
   }
 
+  const onAskTutor = (stepTitle: string, stepBody: string) => {
+    const question = `Non mi è chiaro il passaggio "${stepTitle}". Puoi spiegarmelo meglio?`
+    setChatInput(question)
+    // Scroll to chat input
+    setTimeout(() => {
+      chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: 'smooth' })
+    }, 100)
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col relative">
+      <style>{`
+        @keyframes shimmer {
+          0% { background-position: -200% center; }
+          100% { background-position: 200% center; }
+        }
+        .logo-shimmer {
+          background: linear-gradient(
+            90deg,
+            #FFD600 0%,
+            #FFF8DC 20%,
+            #FFD600 35%,
+            #FFA500 50%,
+            #FFD600 65%,
+            #FFF8DC 80%,
+            #FFD600 100%
+          );
+          background-size: 200% auto;
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: shimmer 2s linear infinite;
+        }
+        .logo-shimmer-the {
+          opacity: 0.7;
+          font-weight: 300;
+        }
+      `}</style>
       <header className="sticky top-0 z-20 px-4 py-4 bg-surface/80 backdrop-blur-xl border-b border-surface-border flex items-center gap-3">
         <button onClick={onBack} className="p-2 -ml-2 rounded-xl bg-transparent border-none text-foreground-muted cursor-pointer hover:bg-surface-active hover:text-foreground transition-colors">
           <ChevronLeft size={24} />
         </button>
-        <div className="flex-1 text-[17px] font-bold text-foreground">Spiegazione</div>
+        <div className="flex-1">
+          <AnimatePresence mode="wait">
+            {loading ? (
+              <motion.div
+                key="logo-loading"
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 6 }}
+                transition={{ duration: 0.25 }}
+                className="flex items-center gap-1.5"
+              >
+                <motion.div
+                  animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.2, 1] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <Sparkles size={16} className="text-primary" />
+                </motion.div>
+                <span className="text-[18px] font-extrabold tracking-tight">
+                  <span className="logo-shimmer logo-shimmer-the">the</span>
+                  <span className="logo-shimmer">Lemma</span>
+                </span>
+                <motion.div
+                  animate={{ rotate: [0, -15, 15, 0], scale: [1, 1.2, 1] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                >
+                  <Sparkles size={14} className="text-primary/60" />
+                </motion.div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="title-done"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.25 }}
+                className="text-[17px] font-bold text-foreground"
+              >
+                Spiegazione
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
         
         {explanation && !loading && exerciseId && (
           <button 
@@ -153,38 +243,47 @@ export default function ExplanationScreen({
               />
             </div>
 
-            {/* AI Status Indicator */}
-            <div className="flex flex-col items-center justify-center mb-4 relative z-10">
-              <div className="relative mb-6">
-                <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl animate-pulse" />
-                <div className="relative w-20 h-20 rounded-3xl bg-surface border border-primary/30 flex items-center justify-center shadow-[0_0_30px_rgba(255,214,0,0.15)]">
-                  <motion.div
-                    key={currentStep}
-                    initial={{ scale: 0.8, opacity: 0, rotate: -10 }}
-                    animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                    className="text-primary"
-                  >
-                    {AI_STEPS[currentStep].icon}
-                  </motion.div>
-                  <div className="absolute -bottom-1 -right-1">
-                     <Loader2 size={24} className="text-primary animate-spin" />
-                  </div>
-                </div>
-              </div>
-              
-              <div className="text-center space-y-2">
+            {/* AI Status Indicator — theLemma Hero */}
+            <div className="flex flex-col items-center justify-center py-6 mb-2 relative z-10">
+              {/* Glow halo */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <motion.div
-                  key={currentStep}
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-lg font-extrabold text-foreground tracking-tight"
-                >
-                  {AI_STEPS[currentStep].label}
-                </motion.div>
-                <div className="text-sm font-medium text-foreground-subtle animate-pulse">
-                  Il tutor sta lavorando per te
-                </div>
+                  animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.45, 0.2] }}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+                  className="w-[260px] h-[120px] bg-primary/30 blur-[60px] rounded-full"
+                />
               </div>
+
+              {/* Logo shimmer gigante */}
+              <div className="flex items-center gap-3 mb-6 relative">
+                <motion.div
+                  animate={{ rotate: [0, 20, -20, 0], scale: [1, 1.4, 1] }}
+                  transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+                >
+                  <Sparkles size={24} className="text-primary" />
+                </motion.div>
+                <span className="text-[52px] font-extrabold tracking-tight leading-none">
+                  <span className="logo-shimmer logo-shimmer-the">the</span><span className="logo-shimmer">Lemma</span>
+                </span>
+                <motion.div
+                  animate={{ rotate: [0, -20, 20, 0], scale: [1, 1.4, 1] }}
+                  transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
+                >
+                  <Sparkles size={18} className="text-primary/60" />
+                </motion.div>
+              </div>
+
+              {/* Step corrente come pill */}
+              <motion.div
+                key={currentStep}
+                initial={{ opacity: 0, y: 8, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.3 }}
+                className="flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-full px-4 py-2 text-primary font-semibold text-[13px] shadow-sm"
+              >
+                {AI_STEPS[currentStep].icon}
+                <span>{AI_STEPS[currentStep].label}</span>
+              </motion.div>
             </div>
 
             {/* Skeleton passi */}
@@ -208,7 +307,11 @@ export default function ExplanationScreen({
           </motion.div>
         ) : explanation ? (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <ExplanationRenderer text={explanation} esercizio={exercise?.text || ''} />
+            <ExplanationRenderer 
+              text={explanation} 
+              esercizio={exercise?.text || ''} 
+              onAskTutor={onAskTutor}
+            />
           </motion.div>
         ) : null}
 
@@ -238,21 +341,43 @@ export default function ExplanationScreen({
 
         {/* CHAT MESSAGES */}
         {explanation && !loading && (
-          <div className="mt-8 flex flex-col gap-4">
+          <div className="mt-12 flex flex-col gap-6">
+            {/* Tutor Profile Section */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-primary/5 border border-primary/20 rounded-[32px] p-6 mb-4 flex items-center gap-5 relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 p-4 opacity-10">
+                <Sparkles size={80} className="text-primary" />
+              </div>
+              <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-background shadow-xl shadow-primary/20 shrink-0 relative z-10">
+                <Bot size={32} />
+              </div>
+              <div className="relative z-10">
+                <h3 className="text-lg font-black text-foreground mb-1">Tutor <span className="font-light opacity-60">the</span>Lemma</h3>
+                <p className="text-sm text-foreground-muted leading-snug">Il tuo assistente intelligente. Chiedimi qualsiasi cosa sulla spiegazione qui sopra!</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-success">Online ora</span>
+                </div>
+              </div>
+            </motion.div>
+
             {chatMessages.map((msg, idx) => (
               <motion.div 
                 key={idx} 
                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div className={`max-w-[85%] rounded-2xl p-4 text-[15px] ${
+                <div className={`max-w-[85%] rounded-2xl p-4 text-[15px] shadow-sm ${
                   msg.role === 'user' 
                   ? 'bg-primary text-background rounded-br-none' 
-                  : 'bg-surface border border-surface-border text-foreground rounded-bl-none shadow-sm'
+                  : 'bg-surface border border-surface-border text-foreground rounded-bl-none'
                 }`}>
                   {msg.role === 'assistant' && (
-                    <div className="flex items-center gap-2 mb-2 text-primary font-bold text-xs uppercase tracking-wider">
-                      <Bot size={14} /> Tutor StudiAI
+                    <div className="flex items-center gap-2 mb-2 text-primary font-bold text-[11px] uppercase tracking-widest">
+                      <Bot size={14} /> Tutor AI
                     </div>
                   )}
                   <div className="leading-relaxed whitespace-pre-wrap md-content katex-display-chat">
@@ -270,9 +395,9 @@ export default function ExplanationScreen({
             
             {chatLoading && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-                <div className="bg-surface border border-surface-border text-foreground rounded-2xl rounded-bl-none p-4 flex items-center gap-2">
+                <div className="bg-surface border border-surface-border text-foreground rounded-2xl rounded-bl-none p-4 flex items-center gap-2 shadow-sm">
                   <Loader2 size={16} className="text-primary animate-spin" />
-                  <span className="text-sm text-foreground-subtle italic">Il tutor sta scrivendo...</span>
+                  <span className="text-sm text-foreground-subtle italic font-medium">Il tutor sta elaborando...</span>
                 </div>
               </motion.div>
             )}
@@ -281,61 +406,88 @@ export default function ExplanationScreen({
 
         {/* CHAT INPUT AREA */}
         {explanation && !loading && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mt-6 mb-8">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mt-8 mb-12">
             {!isPremium ? (
               <div onClick={() => setScreen('paywall')} className="cursor-pointer group relative">
-                <div className="absolute inset-0 bg-primary/5 blur-xl group-hover:bg-primary/10 transition-all rounded-full" />
-                <div className="relative border border-surface-border bg-surface/50 backdrop-blur-md rounded-2xl p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                    <Crown size={20} fill="currentColor" />
+                <div className="absolute inset-0 bg-primary/10 blur-2xl group-hover:bg-primary/20 transition-all rounded-[32px]" />
+                <div className="relative border-2 border-primary/30 bg-surface/50 backdrop-blur-md rounded-[28px] p-6 flex items-center gap-4 shadow-xl">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-yellow-500 flex items-center justify-center text-background shrink-0 shadow-lg">
+                    <Crown size={28} fill="currentColor" />
                   </div>
-                  <div className="flex-1 text-sm font-medium text-foreground-subtle">
-                    Hai dubbi su questa spiegazione? <span className="text-primary font-bold block sm:inline">Chiedi al Tutor Pro →</span>
+                  <div className="flex-1">
+                    <div className="text-sm font-bold text-foreground mb-0.5">Hai ancora dei dubbi?</div>
+                    <div className="text-[13px] text-foreground-subtle leading-snug">
+                      Sblocca il <span className="text-primary font-black">Tutor Pro</span> per chattare senza limiti e risolvere ogni incertezza.
+                    </div>
                   </div>
+                  <ChevronLeft className="rotate-180 text-primary" size={24} />
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col gap-2">
-                {chatMessages.length === 0 && (
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    {["Spiegami meglio il passaggio 2", "Fammi un esempio simile", "Quale formula hai usato?"].map((suggestion, i) => (
+              <div className="flex flex-col gap-4">
+                {chatMessages.length <= 1 && (
+                  <div className="flex flex-wrap gap-2 mb-1">
+                    {["Spiegami meglio l'ultimo passaggio", "Fammi un esempio simile", "Quale formula hai usato?"].map((suggestion, i) => (
                       <button 
                         key={i}
                         onClick={() => { setChatInput(suggestion); setTimeout(submitChat, 100); }}
-                        className="text-xs font-medium text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-full px-3 py-1.5 transition-colors"
+                        className="text-[13px] font-bold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-full px-4 py-2 transition-all hover:scale-105 active:scale-95"
                       >
                         {suggestion}
                       </button>
                     ))}
                   </div>
                 )}
-                <div className="flex items-end gap-2 bg-surface border border-primary/30 rounded-2xl p-2 px-3 shadow-[0_0_20px_rgba(255,214,0,0.05)] focus-within:border-primary transition-colors">
-                  <textarea 
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        submitChat();
-                      }
-                    }}
-                    placeholder="Chiedi un chiarimento al tutor..." 
-                    className="flex-1 bg-transparent border-none outline-none text-[15px] text-foreground placeholder:text-foreground-muted resize-none max-h-32 min-h-[40px] py-2"
-                    rows={1}
-                  />
-                  <button 
-                    onClick={submitChat}
-                    disabled={!chatInput.trim() || chatLoading}
-                    className="bg-primary text-background p-2.5 rounded-xl cursor-pointer hover:bg-primary-hover disabled:opacity-50 disabled:cursor-default transition-all mb-0.5"
-                  >
-                    <Send size={18} className={chatInput.trim() ? "translate-x-0.5" : ""} />
-                  </button>
+                <div className="relative group">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-yellow-500/20 rounded-[22px] blur opacity-0 group-focus-within:opacity-100 transition duration-500" />
+                  <div className="relative flex items-end gap-2 bg-surface border-2 border-primary/20 rounded-[20px] p-2.5 px-4 shadow-lg focus-within:border-primary focus-within:shadow-primary/10 transition-all">
+                    <textarea 
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          submitChat();
+                        }
+                      }}
+                      placeholder="Chiedi un chiarimento al tutor..." 
+                      className="flex-1 bg-transparent border-none outline-none text-[16px] text-foreground placeholder:text-foreground-muted resize-none max-h-32 min-h-[44px] py-2.5"
+                      rows={1}
+                    />
+                    <button 
+                      onClick={submitChat}
+                      disabled={!chatInput.trim() || chatLoading}
+                      className="bg-primary text-background p-3 rounded-xl cursor-pointer hover:bg-primary-hover disabled:opacity-50 disabled:cursor-default transition-all mb-0.5 shadow-md shadow-primary/20"
+                    >
+                      <Send size={20} className={chatInput.trim() ? "translate-x-0.5" : ""} />
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
           </motion.div>
         )}
       </main>
+
+      {/* Floating Assistant Button (FAB) */}
+      <AnimatePresence>
+        {showFAB && !loading && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.5, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.5, y: 20 }}
+            onClick={() => chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: 'smooth' })}
+            className="fixed bottom-24 right-6 z-40 w-14 h-14 rounded-2xl bg-primary text-background flex items-center justify-center shadow-2xl shadow-primary/30 border-none cursor-pointer hover:scale-110 active:scale-95 transition-all"
+          >
+            <Bot size={28} />
+            <motion.div 
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="absolute -top-1 -right-1 w-4 h-4 bg-success rounded-full border-2 border-background"
+            />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       <div className="fixed bottom-0 inset-x-0 bg-surface/90 backdrop-blur-xl border-t border-surface-border p-4 pb-6 sm:pb-4 z-20">
         <div className="max-w-[720px] mx-auto flex flex-wrap justify-center items-center gap-4">

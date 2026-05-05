@@ -9,8 +9,8 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "StudiAI - Il tuo tutor di Matematica e Fisica",
-  description: "Risolvi i tuoi esercizi e impara con il tuo tutor AI personale.",
+  title: "theLemma - Il tuo tutor di Matematica e Fisica",
+  description: "Risolvi e comprendi esercizi di matematica e fisica con l'aiuto dell'IA di theLemma.",
 };
 
 export default function RootLayout({

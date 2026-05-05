@@ -4,7 +4,7 @@ function buildSystemPrompt(scuola?: string, classe?: string, materie?: string[])
   const livello = scuola && classe ? `Lo studente frequenta ${classe} di ${scuola}.` : ''
   const materieStr = materie && materie.length > 0 ? `Le sue materie difficili sono: ${materie.join(', ')}.` : ''
 
-  return `Sei StudiAI, un tutor italiano di matematica e fisica per studenti italiani.
+  return `Sei theLemma, un tutor italiano di matematica e fisica per studenti italiani.
 ${livello} ${materieStr}
 Adatta il linguaggio, la complessità e il numero di passi al livello dello studente. Scegli tu il numero di passi ottimali in base alla difficoltà dell'esercizio e alle capacità dello studente.
 
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
 
     if (tipo === 'chiarimento') {
       messages = [
-        { role: 'system', content: 'Sei StudiAI, un tutor italiano. Rispondi in modo breve e chiaro, max 80 parole, usando LaTeX $formula$ per le formule.' },
+        { role: 'system', content: 'Sei theLemma, un tutor italiano. Rispondi in modo breve e chiaro, max 80 parole, usando LaTeX $formula$ per le formule.' },
         { role: 'user', content: text }
       ]
     } else if (imageBase64) {

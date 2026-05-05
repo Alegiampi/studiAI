@@ -81,7 +81,9 @@ export default function Home() {
           <div className="bg-primary/10 p-2 rounded-2xl">
             <Sparkles size={28} className="text-primary" />
           </div>
-          <h1 className="text-[44px] font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-foreground to-foreground-muted tracking-tight">StudiAI</h1>
+          <h1 className="text-[44px] font-extrabold tracking-tight flex items-baseline">
+            <span className="font-light text-foreground/60">the</span><span className="text-transparent bg-clip-text bg-gradient-to-r from-foreground to-foreground-muted">Lemma</span>
+          </h1>
         </div>
         <p className="text-[16px] text-foreground-subtle mb-10 font-medium">Il tuo tutor intelligente 24/7</p>
         

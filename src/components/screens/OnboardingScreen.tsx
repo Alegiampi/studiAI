@@ -9,7 +9,7 @@ export default function OnboardingScreen({ onDone }: { onDone: () => void }) {
   
   const steps = [
     { icon: <Camera size={64} className="text-primary mb-6" />, title: 'Fotografa o scrivi', desc: 'Carica una foto del tuo esercizio di matematica o fisica, oppure scrivilo direttamente.' },
-    { icon: <BrainCircuit size={64} className="text-primary mb-6" />, title: 'Spiegazione passo passo', desc: 'StudiAI spiega ogni passaggio in italiano con formule chiare. Puoi chiedere chiarimenti su ogni passo.' },
+    { icon: <BrainCircuit size={64} className="text-primary mb-6" />, title: 'Spiegazione passo passo', desc: 'theLemma spiega ogni passaggio in italiano con formule chiare. Puoi chiedere chiarimenti su ogni passo.' },
     { icon: <Zap size={64} className="text-primary mb-6" />, title: '5 esercizi al giorno gratis', desc: 'Ogni giorno hai 5 spiegazioni gratuite. Sblocca tutto con il piano premium.' },
   ]
 

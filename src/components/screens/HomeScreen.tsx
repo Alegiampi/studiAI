@@ -3,7 +3,8 @@
 import { useRef, useState, useEffect, useCallback, useRef as useRefOrig } from 'react'
 import AuthModal from '@/components/AuthModal'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, BookOpen, User, LogOut, Camera, Crown, Sparkles, Zap, Trash2, RotateCcw } from 'lucide-react'
+import { Menu, X, BookOpen, User, LogOut, Camera, Crown, Sparkles, Zap, Trash2, RotateCcw, Pencil } from 'lucide-react'
+import CropModal from '@/components/CropModal'
 
 const DAILY_LIMIT = 5
 
@@ -58,10 +59,14 @@ export default function HomeScreen({
   const fileRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   const [history, setHistory] = useState<string[]>([])
   const [historyIndex, setHistoryIndex] = useState(-1)
   const skipHistoryRef = useRefOrig(false)
+
+  // Gestione Crop Immagine
+  const [editingImage, setEditingImage] = useState<string | null>(null)
 
   // Undo Toast per eliminazione immagine
   const [deletedImage, setDeletedImage] = useState<{url: string | null, base64: string | null} | null>(null)
@@ -184,6 +189,12 @@ export default function HomeScreen({
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
   }
 
+  function handleImageForCrop(file: File) {
+    if (!file || !file.type.startsWith('image/')) return
+    const url = URL.createObjectURL(file)
+    setEditingImage(url)
+  }
+
   const displayName = getUserDisplayName(user)
 
   useEffect(() => {
@@ -212,6 +223,24 @@ export default function HomeScreen({
           >
             <AuthModal onClose={() => setShowAuth(false)} supabase={supabase} />
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {editingImage && (
+          <CropModal 
+            image={editingImage} 
+            onClose={() => {
+              if (editingImage !== image) URL.revokeObjectURL(editingImage)
+              setEditingImage(null)
+            }}
+            onConfirm={(url, base64) => {
+              if (image && image !== url) URL.revokeObjectURL(image)
+              setImage(url)
+              setImageBase64(base64)
+              setEditingImage(null)
+            }}
+          />
         )}
       </AnimatePresence>
 
@@ -246,7 +275,7 @@ export default function HomeScreen({
                 </div>
               ) : (
                 <div className="text-lg font-bold text-primary flex items-center gap-2">
-                  <Sparkles size={20} /> StudiAI
+                  <Sparkles size={20} /> theLemma
                 </div>
               )}
               <button onClick={() => setMenuOpen(false)} className="text-foreground-muted hover:text-foreground transition-colors p-1 rounded-md hover:bg-surface-active">
@@ -318,8 +347,8 @@ export default function HomeScreen({
       {/* HEADER */}
       <header className="sticky top-0 z-40 bg-surface/80 backdrop-blur-xl border-b border-surface-border px-6 py-4 flex justify-between items-center shadow-sm">
         <div className="flex flex-col">
-          <div className="text-[22px] font-extrabold text-primary tracking-tight flex items-center gap-1.5">
-            StudiAI <Sparkles size={18} className="text-primary/70" />
+          <div className="text-[22px] font-extrabold text-primary tracking-tight flex items-center">
+            <span className="font-light opacity-80">the</span>Lemma <Sparkles size={18} className="text-primary/70 ml-1.5" />
           </div>
           <div className="text-[11px] font-medium text-foreground-subtle tracking-wide uppercase">il tuo tutor smart</div>
         </div>
@@ -368,7 +397,7 @@ export default function HomeScreen({
           onClick={() => !image && fileRef.current?.click()}
           onDragOver={e => { e.preventDefault(); setDragging(true) }}
           onDragLeave={() => setDragging(false)}
-          onDrop={e => { e.preventDefault(); setDragging(false); handleFile(e.dataTransfer.files[0]) }}
+          onDrop={e => { e.preventDefault(); setDragging(false); handleImageForCrop(e.dataTransfer.files[0]) }}
           className={`relative overflow-hidden rounded-[24px] border-2 transition-all duration-300 ${
             dragging ? 'border-primary bg-primary/5 scale-[1.02]' : 'border-surface-border bg-surface hover:border-primary/40'
           } ${image ? 'p-0 border-transparent' : 'p-10 text-center cursor-pointer group'}`}
@@ -376,12 +405,20 @@ export default function HomeScreen({
           {image ? (
              <>
                <img src={image ?? undefined} alt="esercizio" className="w-full max-h-[280px] object-contain bg-black/20 backdrop-blur-md" />
-               <button
-                  onClick={handleDeleteImage}
-                  className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white border-none rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-black/80 transition-colors"
-                >
-                  <Trash2 size={16} />
-                </button>
+                <div className="absolute top-4 right-4 flex gap-2">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setEditingImage(image) }}
+                    className="bg-black/60 backdrop-blur-md text-white border-none rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-black/80 transition-colors"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    onClick={handleDeleteImage}
+                    className="bg-black/60 backdrop-blur-md text-white border-none rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-black/80 transition-colors"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </>
             ) : (
             <div className="flex flex-col items-center justify-center">
@@ -397,9 +434,8 @@ export default function HomeScreen({
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => {
           const f = e.target.files?.[0]
           if (!f) return
-          // Revoca eventuali URL precedenti per evitare confusione
-          if (image) URL.revokeObjectURL(image)
-          handleFile(f)
+          handleImageForCrop(f)
+          if (fileRef.current) fileRef.current.value = '' // Reset input
         }} />
 
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="flex items-center gap-4 my-6">
@@ -440,21 +476,95 @@ export default function HomeScreen({
            />
          </div>
 
-        <button
-          onClick={handleSubmit}
+        <style>{`
+          @keyframes shimmer-btn {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+          }
+          .btn-shimmer {
+            background: linear-gradient(
+              90deg,
+              #FFD600 0%, #FFF8DC 20%, #FFD600 35%,
+              #FFA500 50%, #FFD600 65%, #FFF8DC 80%, #FFD600 100%
+            );
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer-btn 1.8s linear infinite;
+          }
+          .btn-shimmer-the { font-weight: 300; opacity: 0.75; }
+        `}</style>
+
+        <motion.button
+          layout
+          onClick={async () => {
+            if (submitting || (!text.trim() && !image)) return
+            setSubmitting(true)
+            await new Promise(r => setTimeout(r, 650))
+            handleSubmit()
+            setSubmitting(false)
+          }}
           disabled={!text.trim() && !image}
-          className={`w-full p-4 rounded-[16px] text-[16px] font-extrabold flex justify-center items-center gap-2 transition-all shadow-lg transform hover:scale-105 ${
-            (!text.trim() && !image) 
-            ? 'bg-surface-active text-foreground-subtle shadow-none cursor-default' 
-            : 'bg-primary text-background hover:bg-primary-hover hover:shadow-primary/25 cursor-pointer'
+          whileHover={
+            (!text.trim() && !image) || submitting
+              ? {}
+              : { scale: 1.035 }
+          }
+          whileTap={
+            (!text.trim() && !image) || submitting
+              ? {}
+              : { scale: 0.97 }
+          }
+          transition={{
+            layout: { duration: 0.4, ease: [0.34, 1.56, 0.64, 1] },
+            scale: { duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] },
+          }}
+          className={`w-full rounded-[22px] flex justify-center items-center gap-2.5 transition-colors overflow-hidden ${
+            (!text.trim() && !image)
+              ? 'py-4 px-6 bg-surface-active text-foreground-subtle shadow-none cursor-default'
+              : submitting
+                ? 'py-5 px-8 bg-background border-2 border-primary/40 cursor-default shadow-[0_0_40px_rgba(255,214,0,0.2)]'
+                : 'py-5 px-6 bg-primary text-background cursor-pointer shadow-[0_8px_32px_rgba(255,214,0,0.28)] border border-primary-hover/60 hover:bg-primary-hover hover:shadow-[0_12px_40px_rgba(255,214,0,0.38)]'
           }`}
         >
-          {isLimited ? (
-            <><Zap size={20} fill="currentColor" /> Sblocca per continuare</>
-          ) : (
-            <>Spiega questo esercizio <Sparkles size={18} /></>
-          )}
-        </button>
+          <AnimatePresence mode="wait">
+            {submitting ? (
+              <motion.span
+                key="shimmer-logo"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="flex items-center gap-2"
+              >
+                <motion.div
+                  animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.3, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                >
+                  <Sparkles size={18} className="text-primary" />
+                </motion.div>
+                <span className="text-[20px] font-extrabold tracking-tight">
+                  <span className="btn-shimmer btn-shimmer-the">the</span>
+                  <span className="btn-shimmer">Lemma</span>
+                </span>
+                <motion.div
+                  animate={{ rotate: [0, -15, 15, 0], scale: [1, 1.3, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
+                >
+                  <Sparkles size={14} className="text-primary/60" />
+                </motion.div>
+              </motion.span>
+            ) : isLimited ? (
+              <motion.span key="limited" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2 text-[16px] font-extrabold">
+                <Zap size={20} fill="currentColor" /> Sblocca per continuare
+              </motion.span>
+            ) : (
+              <motion.span key="spiega" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2.5 text-[16px] font-extrabold tracking-wide">
+                Spiega questo esercizio <Sparkles size={18} className="opacity-90" />
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.button>
 
         {!isLimited && !isPremium && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-6 bg-surface border border-surface-border rounded-2xl p-4 shadow-sm">

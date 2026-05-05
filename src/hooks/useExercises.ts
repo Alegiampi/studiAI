@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import getCroppedImg from '@/utils/cropImage'
 import { GraficoData } from '@/types'
 
 type ExerciseInput = {
@@ -91,15 +92,33 @@ export function useExercises(
   }
 
   // Gestione file immagine
-  const handleFile = useCallback((file: File) => {
+  const handleFile = useCallback(async (file: File) => {
     if (!file || !file.type.startsWith('image/')) return
-    const preview = URL.createObjectURL(file)
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const base64 = (e.target?.result as string).split(',')[1]
-      setInput(prev => ({ ...prev, image: preview, imageBase64: base64 }))
+    const url = URL.createObjectURL(file)
+    
+    try {
+      // Ottimizziamo l'immagine caricata (resize e compressione)
+      // Carichiamo l'immagine per avere le dimensioni originali per il "crop" totale
+      const img = new Image()
+      img.src = url
+      await new Promise((resolve) => { img.onload = resolve })
+
+      const { url: optimizedUrl, base64 } = await getCroppedImg(
+        url,
+        { x: 0, y: 0, width: img.width, height: img.height },
+        0
+      )
+      setInput(prev => ({ ...prev, image: optimizedUrl, imageBase64: base64 }))
+    } catch (e) {
+      console.error('Errore ottimizzazione immagine:', e)
+      // Fallback
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const base64 = (e.target?.result as string).split(',')[1]
+        setInput(prev => ({ ...prev, image: url, imageBase64: base64 }))
+      }
+      reader.readAsDataURL(file)
     }
-    reader.readAsDataURL(file)
   }, [])
 
   // Submit dell'esercizio
@@ -165,6 +184,7 @@ export function useExercises(
         explanation: explainData.explanation,
         loading: false,
         graficoUtile: classifyData.graficoUtile ?? false,
+        chatMessages: [{ role: 'assistant' as const, text: "Ciao! Ho analizzato l'esercizio e preparato la spiegazione passo-passo. Se c'è qualcosa che non ti è chiaro o vuoi approfondire un punto specifico, chiedimi pure!" }]
       }))
       if (classifyData.tipo) detectedTipo = classifyData.tipo
     } else {
@@ -173,6 +193,7 @@ export function useExercises(
         explanation: explainData.explanation,
         loading: false,
         graficoUtile: false,
+        chatMessages: [{ role: 'assistant' as const, text: "Ciao! Ho analizzato l'esercizio e preparato la spiegazione passo-passo. Se c'è qualcosa che non ti è chiaro o vuoi approfondire un punto specifico, chiedimi pure!" }]
       }))
     }
 
@@ -210,8 +231,8 @@ export function useExercises(
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Spiegazione StudiAI',
-          text: 'Guarda questa spiegazione passo-passo su StudiAI!',
+          title: 'Spiegazione theLemma',
+          text: 'Guarda questa spiegazione passo-passo su theLemma!',
           url: url
         })
         setExerciseState(prev => ({ ...prev, shareLoading: false }))
