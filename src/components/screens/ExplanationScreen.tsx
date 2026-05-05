@@ -3,19 +3,19 @@
 import ExplanationRenderer from '@/components/exercise/ExplanationRenderer'
 import GraficoMafs from '@/components/exercise/GraficoMafs'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, Share2, Copy, Plus, BarChart2, Loader2, CheckCircle2, Crown, Send, Bot, Star, Link } from 'lucide-react'
+import { ChevronLeft, Share2, Copy, Plus, BarChart2, Loader2, CheckCircle2, Crown, Send, Bot, Star, Link, Sparkles, Brain, Search, Layout, Lightbulb, Calculator, Zap } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 
-export const FRASI_MOTIVAZIONALI = [
-  "Un problema alla volta, verso la soluzione...",
-  "Scaldando i motori della fisica...",
-  "La matematica non mente, stiamo calcolando la migliore per te!",
-  "Elaborando i dati, quasi pronto...",
-  "Ricorda: ogni errore è un passo verso la comprensione.",
-  "Mettendo in ordine i numeri..."
+export const AI_STEPS = [
+  { label: "Analisi dell'input...", icon: <Search size={18} /> },
+  { label: "Identificazione concetti chiave...", icon: <Lightbulb size={18} /> },
+  { label: "Elaborazione passaggi logici...", icon: <Brain size={18} /> },
+  { label: "Risoluzione equazioni...", icon: <Calculator size={18} /> },
+  { label: "Formattazione spiegazione...", icon: <Layout size={18} /> },
+  { label: "Finalizzazione...", icon: <Sparkles size={18} /> },
 ]
 
 export default function ExplanationScreen({
@@ -61,6 +61,18 @@ export default function ExplanationScreen({
   const [chatInput, setChatInput] = useState('')
   const [isFavorite, setIsFavorite] = useState(false)
   const [toast, setToast] = useState<{ text: string; visible: boolean }>({ text: '', visible: false })
+  const [currentStep, setCurrentStep] = useState(0)
+
+  useEffect(() => {
+    if (!loading) {
+      setCurrentStep(0)
+      return
+    }
+    const interval = setInterval(() => {
+      setCurrentStep(prev => (prev + 1) % AI_STEPS.length)
+    }, 2500)
+    return () => clearInterval(interval)
+  }, [loading])
 
   useEffect(() => {
     if (shareUrl) {
@@ -128,25 +140,70 @@ export default function ExplanationScreen({
         </motion.div>
 
         {loading ? (
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} 
-            className="flex flex-col items-center justify-center py-16 px-5 gap-6"
-          >
-            <div className="relative flex items-center justify-center">
-              <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
-              <Loader2 size={48} className="text-primary animate-spin relative z-10" />
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-6 relative">
+            {/* Thinking Glow Background */}
+            <div className="absolute inset-0 -top-20 pointer-events-none z-0">
+              <motion.div
+                animate={{ 
+                  scale: [1, 1.1, 1],
+                  opacity: [0.15, 0.3, 0.15]
+                }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute top-0 left-1/2 -translate-x-1/2 w-[300px] h-[300px] bg-primary/20 blur-[80px] rounded-full"
+              />
             </div>
-            <div className="text-center">
-              <motion.div 
-                animate={{ opacity: [1, 0.5, 1] }} 
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                className="text-[16px] font-extrabold text-primary mb-3"
-              >
-                Analizzando l'esercizio...
-              </motion.div>
-              <div className="text-[14px] text-foreground-subtle italic max-w-[280px] mx-auto leading-relaxed">
-                "{FRASI_MOTIVAZIONALI[quoteIndex]}"
+
+            {/* AI Status Indicator */}
+            <div className="flex flex-col items-center justify-center mb-4 relative z-10">
+              <div className="relative mb-6">
+                <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl animate-pulse" />
+                <div className="relative w-20 h-20 rounded-3xl bg-surface border border-primary/30 flex items-center justify-center shadow-[0_0_30px_rgba(255,214,0,0.15)]">
+                  <motion.div
+                    key={currentStep}
+                    initial={{ scale: 0.8, opacity: 0, rotate: -10 }}
+                    animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                    className="text-primary"
+                  >
+                    {AI_STEPS[currentStep].icon}
+                  </motion.div>
+                  <div className="absolute -bottom-1 -right-1">
+                     <Loader2 size={24} className="text-primary animate-spin" />
+                  </div>
+                </div>
               </div>
+              
+              <div className="text-center space-y-2">
+                <motion.div
+                  key={currentStep}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-lg font-extrabold text-foreground tracking-tight"
+                >
+                  {AI_STEPS[currentStep].label}
+                </motion.div>
+                <div className="text-sm font-medium text-foreground-subtle animate-pulse">
+                  Il tutor sta lavorando per te
+                </div>
+              </div>
+            </div>
+
+            {/* Skeleton passi */}
+            <div className="space-y-4 relative z-10">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="flex gap-4 opacity-40">
+                  <div className="w-1.5 bg-surface-active rounded-full shrink-0" />
+                  <div className="flex-1 bg-surface/50 border border-surface-border rounded-[24px] overflow-hidden backdrop-blur-sm">
+                    <div className="bg-surface-active/50 px-5 py-4 border-b border-surface-border/50">
+                      <div className="h-4 bg-surface-active rounded-md w-1/3 animate-pulse" />
+                    </div>
+                    <div className="px-6 py-5 space-y-3">
+                      <div className="h-3 bg-surface-active rounded-full w-full animate-pulse" />
+                      <div className="h-3 bg-surface-active rounded-full w-[92%] animate-pulse [animation-delay:200ms]" />
+                      <div className="h-3 bg-surface-active rounded-full w-[85%] animate-pulse [animation-delay:400ms]" />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </motion.div>
         ) : explanation ? (

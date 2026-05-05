@@ -15,8 +15,13 @@ import { useNavigation } from '@/hooks/useNavigation'
 import { useExercises } from '@/hooks/useExercises'
 import { motion } from 'framer-motion'
 import { Loader2, Sparkles } from 'lucide-react'
+import ToastContainer from '@/components/Toast'
+import { useToast } from '@/hooks/useToast'
 
 export default function Home() {
+  // Toast globale
+  const toast = useToast()
+
   // Hook base: autenticazione
   const { user, authLoading, supabase, logout } = useAuth()
 
@@ -36,7 +41,8 @@ export default function Home() {
     payments.incrementUsage,
     payments.isLimited,
     () => navigation.setScreen('paywall'),
-    () => navigation.setScreen('explanation')
+    () => navigation.setScreen('explanation'),
+    toast.showToast
   )
 
   // Loading iniziale
@@ -135,28 +141,32 @@ export default function Home() {
     />
   )
 
-  // Schermata principale (Home)
-  return (
-    <HomeScreen
-      user={user}
-      showAuth={navigation.showAuth}
-      setShowAuth={navigation.setShowAuth}
-      supabase={supabase}
-      setScreen={navigation.setScreen}
-      logout={logout}
-      isLimited={payments.isLimited}
-      remaining={payments.remaining}
-      image={exercises.image}
-      setImage={exercises.setImage}
-      setImageBase64={exercises.setImageBase64}
-      dragging={false}
-      setDragging={() => {}}
-      handleFile={exercises.handleFile}
-      text={exercises.text}
-      setText={exercises.setText}
-      handleSubmit={exercises.handleSubmit}
-      usedToday={payments.usedToday}
-      isPremium={profile.isPremium}
-    />
-  )
-}
+   // Schermata principale (Home)
+   return (
+     <>
+       <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />
+        <HomeScreen
+       user={user}
+       showAuth={navigation.showAuth}
+       setShowAuth={navigation.setShowAuth}
+       supabase={supabase}
+       setScreen={navigation.setScreen}
+       logout={logout}
+       isLimited={payments.isLimited}
+       remaining={payments.remaining}
+       image={exercises.image}
+       setImage={exercises.setImage}
+       imageBase64={exercises.imageBase64}
+       setImageBase64={exercises.setImageBase64}
+       dragging={false}
+       setDragging={() => {}}
+       handleFile={exercises.handleFile}
+       text={exercises.text}
+       setText={exercises.setText}
+       handleSubmit={exercises.handleSubmit}
+       usedToday={payments.usedToday}
+        isPremium={profile.isPremium}
+      />
+     </>
+   )
+ }

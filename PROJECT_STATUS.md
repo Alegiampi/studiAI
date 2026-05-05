@@ -54,12 +54,34 @@ L'architettura ora segue un perfetto principio di separazione:
 *   **`src/components/screens/`**: Componenti visivi isolati, costruiti rigorosamente con Tailwind e animati.
 *   **`src/app/s/[id]/`**: Rotta dinamica per la visualizzazione delle spiegazioni condivise.
 
+## Cosa abbiamo fatto recentemente (Sessione UX)
+
+### 8. **Miglioramenti UX (Maggio 2026)** ✨
+- **Skeleton Loader**: Sostituito il semplice spinner con uno scheletro animato che simula la struttura della spiegazione (titolo + 3 passi) durante il caricamento in `ExplanationScreen.tsx`.
+- **Gestione Errori API con Toast**: Introdotto `useToast` e `ToastContainer` per mostrare errori user-friendly (es. "Errore nel contattare il tutor", "Errore di connessione") invece di fallimenti silenziosi. Integrato in `useExercises.ts` per le API `/api/explain`, `/api/chat` e `/api/graph`.
+- **Undo Toast per Eliminazione Immagine**: Rimosso il pop-up invasivo di conferma eliminazione. Ora l'immagine viene rimossa istantaneamente e appare un toast in basso (stile WhatsApp: sfondo scuro, testo rosso "Immagine rimossa", pulsante "Annulla" con alone giallo) con finestra di 4 secondi per ripristinare. Fix applicato per ricreare l'URL oggetto dal base64 evitando errori di URL revocati.
+- **Undo/Redo Input Testo**: Implementato storico locale (fino a 50 voci) per l'input testo con supporto a `Ctrl+Z` / `Cmd+Z` (undo) e `Ctrl+Y` / `Cmd+Shift+Z` (redo).
+- **Toast UX Premium**: Redesign completo dei toast (Undo e globali) con glassmorphism, barre di progresso animate, miniature delle immagini e micro-animazioni fluide.
+
+### 9. **Evoluzione UX: AI Thinking & Interattività (In corso)** 🧠
+Stiamo portando l'esperienza utente a un livello "AI-Native" focalizzandoci sulla percezione dell'intelligenza artificiale e sulla profondità dell'interazione:
+- **AI Thinking Sequence**: Sostituzione dei caricamenti statici con una sequenza di stati dinamici che mostrano "cosa sta facendo" l'IA (es: Analisi → Formattazione → Calcolo).
+- **Interattività Avanzata**: Implementazione di passaggi risolutivi interattivi (expand/collapse) e focus visivo sui concetti chiave.
+- **Micro-feedback Contestuali**: Glow dinamici, effetti di "sparkle" al completamento delle task e feedback visivi proattivi.
+
 ## Prossimi Passi Consigliati
 
 Ora che le fondamenta architetturali e il Design System sono solidi come la roccia, ecco alcune idee per i prossimi sviluppi:
 
 - [ ] **Domanda di Controllo (Mini-Quiz)**: Aggiungere una singola domanda a scelta multipla alla fine della spiegazione per verificare la comprensione e iniziare a raccogliere dati sul livello dello studente (basso costo, alto valore).
 - [ ] **Modalità "ELI5" (Spiegamelo Semplice)**: Implementare un toggle per scegliere tra spiegazione accademica e spiegazione ultra-semplice/colloquiale (cambio di System Prompt).
-- [ ] **Gamification**: Aggiungere "Streaks" (serie di giorni consecutivi) per incentivare lo studio quotidiano.
+- [ ] **Passaggi Interattivi**: Rendere i singoli passaggi della spiegazione espandibili o evidenziabili per migliorare il focus dello studente.
+- [ ] **Quick Replies Contestuali**: Suggerimenti di domande nella chat basati sul tipo di esercizio risolto.
+- [ ] **Drag & Drop Glow**: Feedback visivo proattivo (bagliore dei bordi) quando un file viene trascinato sull'area di upload.
+- [ ] **Gamification (Streaks)**: Aggiungere serie di giorni consecutivi per incentivare lo studio quotidiano.
 - [ ] **Migliorare TypeScript**: Sostituire i tipi `any` presenti in alcuni punti con interfacce rigorose (es. `ExerciseType`).
 - [ ] **Testing Multidispositivo**: Ottimizzazione per schermi ultra-small (iPhone SE).
+- [ ] **Compressore Immagini Client-side**: Comprimere l'immagine prima dell'upload per evitare payload enormi verso l'API.
+- [ ] **Salvataggio Bozza Automatico**: Salvare la bozza di testo in `localStorage` per evitare perdite accidentali.
+- [ ] **Esportazione PDF**: Esportare la spiegazione (con grafici) in un file PDF condivisibile.
+- [ ] **Modalità "Esercitati"**: Quiz basati sulla spiegazione generata per verificare l'apprendimento.

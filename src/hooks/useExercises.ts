@@ -44,7 +44,8 @@ export function useExercises(
   incrementUsage: () => void,
   isLimited: boolean,
   onGoToPaywall: () => void,
-  onGoToExplanation: () => void
+  onGoToExplanation: () => void,
+  showToast?: (msg: string, type: 'error' | 'success' | 'info') => void
 ) {
   const [input, setInput] = useState<InputState>({
     text: '',
@@ -142,7 +143,19 @@ export function useExercises(
       }) : Promise.resolve(null)
     ])
 
+    if (!explainRes.ok) {
+      setExerciseState(prev => ({ ...prev, loading: false }))
+      showToast?.('Errore nel contattare il tutor. Riprova tra poco.', 'error')
+      return
+    }
+
     const explainData = await explainRes.json()
+    if (explainData.explanation?.startsWith('Errore')) {
+      setExerciseState(prev => ({ ...prev, loading: false }))
+      showToast?.(explainData.explanation.slice(0, 100), 'error')
+      return
+    }
+
     let detectedTipo = 'Altro'
 
     if (classifyRes) {
@@ -217,20 +230,29 @@ export function useExercises(
   // Generazione del grafico
   const handleGrafico = useCallback(async () => {
     setExerciseState(prev => ({ ...prev, graficoLoading: true }))
-    const res = await fetch('/api/graph', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ esercizio: exerciseState.exercise?.text || '', spiegazione: exerciseState.explanation })
-    })
-    const data = await res.json()
-    if (data.data) {
-      console.log('Grafico:', JSON.stringify(data.data))
-      setExerciseState(prev => ({ ...prev, grafico: data.data, graficoLoading: false }))
-    } else {
+    try {
+      const res = await fetch('/api/graph', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ esercizio: exerciseState.exercise?.text || '', spiegazione: exerciseState.explanation })
+      })
+      if (!res.ok) {
+        showToast?.('Errore generazione grafico. Riprova.', 'error')
+        setExerciseState(prev => ({ ...prev, graficoLoading: false }))
+        return
+      }
+      const data = await res.json()
+      if (data.data) {
+        setExerciseState(prev => ({ ...prev, grafico: data.data, graficoLoading: false }))
+      } else {
+        showToast?.('Nessun grafico disponibile per questo esercizio.', 'info')
+        setExerciseState(prev => ({ ...prev, graficoLoading: false }))
+      }
+    } catch (e) {
+      showToast?.('Errore di connessione. Riprova.', 'error')
       setExerciseState(prev => ({ ...prev, graficoLoading: false }))
     }
-    if (data.error) console.log('Grafico error:', data.error)
-  }, [exerciseState.exercise, exerciseState.explanation])
+  }, [exerciseState.exercise, exerciseState.explanation, showToast])
 
   // Chat con il tutor
   const handleChatSubmit = useCallback(async (messageText: string) => {
@@ -252,6 +274,11 @@ export function useExercises(
           explanation: exerciseState.explanation
         })
       })
+      if (!res.ok) {
+        showToast?.('Errore nella chat. Riprova.', 'error')
+        setExerciseState(prev => ({ ...prev, chatLoading: false }))
+        return
+      }
       const data = await res.json()
       if (data.reply) {
         setExerciseState(prev => ({
@@ -259,9 +286,13 @@ export function useExercises(
           chatMessages: [...prev.chatMessages, { role: 'user' as const, text: messageText }, { role: 'assistant' as const, text: data.reply }],
           chatLoading: false,
         }))
+      } else {
+        showToast?.('Risposta non ricevuta. Riprova.', 'error')
+        setExerciseState(prev => ({ ...prev, chatLoading: false }))
       }
     } catch (e) {
       console.error(e)
+      showToast?.('Errore di connessione. Controlla la rete.', 'error')
       setExerciseState(prev => ({ ...prev, chatLoading: false }))
     }
   }, [exerciseState.chatMessages, exerciseState.exercise, exerciseState.explanation])

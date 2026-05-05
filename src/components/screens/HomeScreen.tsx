@@ -1,9 +1,9 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useCallback, useRef as useRefOrig } from 'react'
 import AuthModal from '@/components/AuthModal'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, BookOpen, User, LogOut, Camera, Crown, Sparkles, Zap } from 'lucide-react'
+import { Menu, X, BookOpen, User, LogOut, Camera, Crown, Sparkles, Zap, Trash2, RotateCcw } from 'lucide-react'
 
 const DAILY_LIMIT = 5
 
@@ -18,6 +18,7 @@ interface HomeScreenProps {
   remaining: number
   image: string | null
   setImage: (v: string | null) => void
+  imageBase64: string | null
   setImageBase64: (v: string | null) => void
   dragging: boolean
   setDragging: (v: boolean) => void
@@ -37,14 +38,151 @@ function getUserDisplayName(user: any): string {
   return user?.email?.split('@')[0] ?? 'studente'
 }
 
+const MAX_HISTORY = 50
+
+const PLACEHOLDERS = [
+  "Calcola la derivata di f(x) = x² · sin(x)...",
+  "Risolvi il sistema: x + y = 10, 2x - y = 5...",
+  "Trova il dominio di f(x) = log(x² - 1)...",
+  "Bilancia la reazione: H₂ + O₂ = H₂O...",
+  "Determina l'equazione della retta per A(1,2) e B(3,4)...",
+  "Calcola l'accelerazione di un corpo di 5kg con forza 20N...",
+]
+
 export default function HomeScreen({
   user, showAuth, setShowAuth, supabase, setScreen, logout,
-  isLimited, remaining, image, setImage, setImageBase64,
+  isLimited, remaining, image, setImage, imageBase64, setImageBase64,
   dragging, setDragging, handleFile, text, setText, handleSubmit, usedToday,
   isPremium,
   }: HomeScreenProps) {
   const fileRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [menuOpen, setMenuOpen] = useState(false)
+
+  const [history, setHistory] = useState<string[]>([])
+  const [historyIndex, setHistoryIndex] = useState(-1)
+  const skipHistoryRef = useRefOrig(false)
+
+  // Undo Toast per eliminazione immagine
+  const [deletedImage, setDeletedImage] = useState<{url: string | null, base64: string | null} | null>(null)
+  const shieldedUrlRef = useRef<string | null>(null)
+  const [showUndoToast, setShowUndoToast] = useState(false)
+  const undoTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  const updateTextWithHistory = useCallback((newText: string) => {
+    if (skipHistoryRef.current) return
+    setText(newText)
+    setHistory(prev => {
+      const newHistory = prev.slice(0, historyIndex + 1)
+      newHistory.push(newText)
+      if (newHistory.length > MAX_HISTORY) newHistory.shift()
+      return newHistory
+    })
+    setHistoryIndex(prev => Math.min(prev + 1, MAX_HISTORY - 1))
+  }, [setText, historyIndex])
+
+  const undo = useCallback(() => {
+    if (historyIndex <= 0) return
+    skipHistoryRef.current = true
+    const prevText = history[historyIndex - 1]
+    setText(prevText)
+    setHistoryIndex(prev => prev - 1)
+    setTimeout(() => { skipHistoryRef.current = false }, 0)
+  }, [history, historyIndex, setText])
+
+  const redo = useCallback(() => {
+    if (historyIndex >= history.length - 1) return
+    skipHistoryRef.current = true
+    const nextText = history[historyIndex + 1]
+    setText(nextText)
+    setHistoryIndex(prev => prev + 1)
+    setTimeout(() => { skipHistoryRef.current = false }, 0)
+  }, [history, historyIndex, setText])
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        undo()
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault()
+        redo()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [undo, redo])
+
+  // Sincronizza l'altezza della textarea quando il testo cambia esternamente (es. undo/redo)
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px'
+    }
+  }, [text])
+
+  // Cleanup undo timer
+  useEffect(() => {
+    return () => {
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
+    }
+  }, [])
+
+  const [placeholderIndex, setPlaceholderIndex] = useState(0)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPlaceholderIndex(prev => (prev + 1) % PLACEHOLDERS.length)
+    }, 4000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Quando il toast scade senza undo, revoca l'URL per evitare memory leak
+  useEffect(() => {
+    if (!showUndoToast && deletedImage?.url) {
+      // Se il toast è sparito e non abbiamo annullato, revoca definitivamente
+      URL.revokeObjectURL(deletedImage.url)
+      if (shieldedUrlRef.current === deletedImage.url) {
+        shieldedUrlRef.current = null
+      }
+      setDeletedImage(null)
+    }
+  }, [showUndoToast, deletedImage])
+
+  function handleDeleteImage(e: React.MouseEvent) {
+    e.stopPropagation()
+    if (!image) return
+    // Salva i dati per undo
+    setDeletedImage({ url: image, base64: imageBase64 })
+    if (shieldedUrlRef.current && shieldedUrlRef.current !== image) {
+      URL.revokeObjectURL(shieldedUrlRef.current)
+    }
+    // Proteggi l'URL dalla revoca automatica
+    shieldedUrlRef.current = image
+    // Elimina dallo stato ma non revocare ancora (lo farà il cleanup o il timer)
+    setImage(null)
+    setImageBase64(null)
+    if (fileRef.current) fileRef.current.value = ''
+    // Mostra toast
+    setShowUndoToast(true)
+    // Auto-hide after 4s
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
+    undoTimerRef.current = setTimeout(() => {
+      setShowUndoToast(false)
+      setDeletedImage(null)
+    }, 4000)
+  }
+
+  function handleUndo() {
+    if (!deletedImage) return
+    // Rimuovi lo scudo prima di ripristinare per evitare loop o leak
+    shieldedUrlRef.current = null
+    setImage(deletedImage.url)
+    setImageBase64(deletedImage.base64)
+    setShowUndoToast(false)
+    setDeletedImage(null)
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
+  }
 
   const displayName = getUserDisplayName(user)
 
@@ -55,8 +193,12 @@ export default function HomeScreen({
 
   // Cleanup: revoke object URL quando la pagina si smonta o l'immagine cambia
   useEffect(() => {
+    const urlToCleanup = image
     return () => {
-      if (image) URL.revokeObjectURL(image)
+      // Revoca solo se non è l'immagine "scudata" per l'undo
+      if (urlToCleanup && urlToCleanup !== shieldedUrlRef.current) {
+        URL.revokeObjectURL(urlToCleanup)
+      }
     }
   }, [image])
 
@@ -232,22 +374,16 @@ export default function HomeScreen({
           } ${image ? 'p-0 border-transparent' : 'p-10 text-center cursor-pointer group'}`}
         >
           {image ? (
-            <>
-              <img src={image ?? undefined} alt="esercizio" className="w-full max-h-[280px] object-contain bg-black/20 backdrop-blur-md" />
-              <button 
-                onClick={e => { 
-                  e.stopPropagation(); 
-                  if (image) URL.revokeObjectURL(image); 
-                  setImage(null); 
-                  setImageBase64(null); 
-                  if (fileRef.current) fileRef.current.value = '';
-                }} 
-                className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white border-none rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-black/80 transition-colors"
-              >
-                <X size={16} />
-              </button>
-            </>
-          ) : (
+             <>
+               <img src={image ?? undefined} alt="esercizio" className="w-full max-h-[280px] object-contain bg-black/20 backdrop-blur-md" />
+               <button
+                  onClick={handleDeleteImage}
+                  className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white border-none rounded-full w-8 h-8 flex items-center justify-center cursor-pointer hover:bg-black/80 transition-colors"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </>
+            ) : (
             <div className="flex flex-col items-center justify-center">
               <div className="w-16 h-16 rounded-full bg-surface-active flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 group-hover:bg-primary/20 group-hover:text-primary text-foreground-muted">
                 <Camera size={28} />
@@ -272,14 +408,37 @@ export default function HomeScreen({
           <div className="flex-1 h-[1px] bg-surface-border" />
         </motion.div>
 
-        <motion.textarea
-          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-          value={text}
-          onChange={e => setText(e.target.value)}
-          placeholder="Es: Calcola la derivata di f(x) = x² · sin(x)..."
-          rows={3}
-          className="w-full border border-surface-border rounded-[20px] p-5 text-[15px] resize-none outline-none mb-6 bg-surface text-foreground placeholder:text-foreground-muted focus:border-primary focus:ring-1 focus:ring-primary transition-all shadow-sm"
-        />
+         <div className="relative w-full mb-6 group">
+           <AnimatePresence mode="wait">
+             {!text && (
+               <motion.div
+                 key={placeholderIndex}
+                 initial={{ opacity: 0, y: 5 }}
+                 animate={{ opacity: 1, y: 0 }}
+                 exit={{ opacity: 0, y: -5 }}
+                 transition={{ duration: 0.5, ease: "easeInOut" }}
+                 className="absolute left-5 top-4 pointer-events-none text-foreground-muted text-[15px] italic select-none z-10"
+               >
+                 {PLACEHOLDERS[placeholderIndex]}
+               </motion.div>
+             )}
+           </AnimatePresence>
+           
+           <motion.textarea
+             ref={textareaRef}
+             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+             value={text}
+             onChange={e => {
+               updateTextWithHistory(e.target.value)
+               // Auto-resize logic
+               e.target.style.height = 'auto'
+               e.target.style.height = e.target.scrollHeight + 'px'
+             }}
+             placeholder=""
+             rows={1}
+             className="w-full border-2 border-surface-border rounded-[24px] p-4 px-5 text-[15px] resize-none outline-none bg-surface text-foreground placeholder:text-transparent hover:border-primary/40 focus:border-primary focus:ring-1 focus:ring-primary transition-all shadow-sm min-h-[58px] max-h-[300px] overflow-y-auto relative z-0 scrollbar-hide"
+           />
+         </div>
 
         <button
           onClick={handleSubmit}
@@ -316,6 +475,52 @@ export default function HomeScreen({
           </motion.div>
         )}
       </main>
+
+      {/* Undo Toast per eliminazione immagine */}
+      <AnimatePresence>
+        {showUndoToast && deletedImage && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: 20, x: '-50%', scale: 0.95, transition: { duration: 0.2 } }}
+            className="fixed bottom-10 left-1/2 z-[100] min-w-[320px] max-w-[90vw] bg-surface/90 backdrop-blur-xl border border-surface-border rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden"
+          >
+            <div className="p-4 flex items-center gap-4">
+              {/* Thumbnail dell'immagine eliminata */}
+              <div className="w-12 h-12 rounded-lg overflow-hidden bg-black/40 flex-shrink-0 border border-white/10 shadow-inner flex items-center justify-center">
+                <img 
+                  src={deletedImage.base64 ? `data:image/jpeg;base64,${deletedImage.base64}` : (deletedImage.url || undefined)} 
+                  alt="deleted" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
+              <div className="flex-1 flex flex-col gap-0.5">
+                <span className="text-[14px] font-bold text-foreground tracking-tight">Immagine rimossa</span>
+                <span className="text-[12px] text-foreground-subtle font-medium">Hai 4 secondi per annullare</span>
+              </div>
+
+              <button
+                onClick={handleUndo}
+                className="flex items-center gap-1.5 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl transition-all hover:scale-105 active:scale-95 group"
+              >
+                <RotateCcw size={14} className="group-hover:rotate-[-45deg] transition-transform" />
+                <span className="text-xs font-bold uppercase tracking-wider">Annulla</span>
+              </button>
+            </div>
+
+            {/* Progress bar per l'auto-hide */}
+            <div className="h-1 w-full bg-surface-active overflow-hidden">
+              <motion.div
+                initial={{ width: '100%' }}
+                animate={{ width: 0 }}
+                transition={{ duration: 4, ease: 'linear' }}
+                className="h-full bg-primary"
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

@@ -2,11 +2,11 @@
 
 import { parseExplanation } from '@/lib/utils'
 import type { Passo } from '@/types'
-import { useState } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, ArrowUp, X, Loader2 } from 'lucide-react'
 
 
@@ -17,10 +17,37 @@ const MD = ({ children }: { children: string }) => (
 )
 
 function ExplanationRenderer({ text, esercizio }: { text: string; esercizio: string }) {
-  const parsed = parseExplanation(text)
+  const parsed = useMemo(() => parseExplanation(text), [text])
   const [passi, setPassi] = useState<Passo[]>(parsed.passi)
   const [openInput, setOpenInput] = useState<number | null>(null)
   const [inputs, setInputs] = useState<string[]>(parsed.passi.map(() => ''))
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(0)
+  const [showFinale, setShowFinale] = useState(false)
+  const stepRefs = useRef<(HTMLDivElement | null)[]>([])
+  const finaleRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (focusedIndex === passi.length && finaleRef.current) {
+      setTimeout(() => {
+        finaleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }, 100)
+      return
+    }
+
+    if (focusedIndex !== null && stepRefs.current[focusedIndex]) {
+      const element = stepRefs.current[focusedIndex]
+      if (element) {
+        // Usiamo scrollIntoView con block: 'center' per portarlo bene in vista
+        // ma con un piccolo timeout per aspettare che le animazioni di espansione inizino
+        setTimeout(() => {
+          element.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+          })
+        }, 100)
+      }
+    }
+  }, [focusedIndex])
 
   async function chiedi(i: number, domanda: string) {
     if (!domanda.trim()) return
@@ -66,91 +93,162 @@ function ExplanationRenderer({ text, esercizio }: { text: string; esercizio: str
       )}
 
       <div className="space-y-6">
-        {passi.map((passo, i) => (
-          <motion.div 
-            key={i} 
-            initial={{ opacity: 0, y: 10 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            transition={{ delay: 0.15 + (i * 0.05) }}
-            className="flex gap-3"
-          >
-            <div className="w-1 bg-primary/30 rounded-full shrink-0" />
-            <div className="flex-1">
-              <div className="bg-surface border border-surface-border rounded-[20px] overflow-hidden shadow-sm">
-                <div className="bg-surface-active px-4 py-3 border-b border-surface-border font-bold text-[14px] text-foreground flex items-center gap-2 flex-wrap">
-                  <span className="text-foreground-subtle font-semibold uppercase tracking-wider text-[11px] bg-background/50 px-2 py-0.5 rounded-md">Passo {i + 1}</span>
-                  <span className="text-foreground-muted mx-1">•</span>
-                  <MD>{passo.titolo}</MD>
-                </div>
-                <div className="md-content px-5 py-4 text-[15px] text-foreground-muted bg-surface/50">
-                  <MD>{passo.corpo}</MD>
-                </div>
-              </div>
+        {passi.map((passo, i) => {
+          const isFocused = focusedIndex === i
+          const isDimmed = focusedIndex !== null && !isFocused
 
-              {passo.domanda && (
-                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mt-3 ml-4 border border-primary/20 rounded-[16px] overflow-hidden shadow-sm">
-                  <div className="bg-primary/10 px-4 py-2.5 text-[13px] text-primary font-bold flex items-center gap-2 border-b border-primary/10">
-                    <span className="bg-primary text-background text-[10px] uppercase px-1.5 py-0.5 rounded-sm">Domanda</span>
-                    {passo.domanda}
+          return (
+            <motion.div 
+              key={i} 
+              ref={el => { stepRefs.current[i] = el }}
+              initial={{ opacity: 0, y: 10 }} 
+              animate={{ 
+                opacity: isDimmed ? 0.4 : 1,
+                scale: isFocused ? 1.02 : 1,
+                y: 0 
+              }} 
+              transition={{ 
+                type: "spring",
+                stiffness: 300,
+                damping: 25,
+                delay: i < parsed.passi.length ? 0.15 + (i * 0.05) : 0
+              }}
+              onClick={() => setFocusedIndex(isFocused ? null : i)}
+              className={`flex gap-3 cursor-pointer transition-all duration-300 ${isFocused ? 'z-10' : 'z-0'} scroll-mt-24`}
+            >
+              <div className={`w-1.5 rounded-full shrink-0 transition-colors duration-500 ${isFocused ? 'bg-primary shadow-[0_0_15px_rgba(255,214,0,0.5)]' : 'bg-surface-active'}`} />
+              <div className="flex-1">
+                <div className={`bg-surface border transition-all duration-500 rounded-[24px] overflow-hidden shadow-sm ${isFocused ? 'border-primary/50 shadow-[0_10px_40px_rgba(0,0,0,0.2)]' : 'border-surface-border'}`}>
+                  <div className={`px-5 py-4 border-b font-bold text-[14px] flex items-center gap-3 flex-wrap transition-colors duration-500 ${isFocused ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-active/50 border-surface-border text-foreground'}`}>
+                    <span className={`font-extrabold uppercase tracking-widest text-[10px] px-2 py-1 rounded-lg transition-colors duration-500 ${isFocused ? 'bg-primary text-background' : 'bg-background/50 text-foreground-subtle'}`}>Passo {i + 1}</span>
+                    <MD>{passo.titolo}</MD>
                   </div>
-                  <div className="px-5 py-4 text-[14px] text-foreground-muted leading-relaxed bg-surface/30 md-content">
-                    {passo.loadingRisposta ? (
-                      <div className="flex items-center gap-2 text-primary/70 font-medium">
-                        <Loader2 size={16} className="animate-spin" /> Sto generando la spiegazione...
-                      </div>
-                    ) : (
-                      <MD>{passo.risposta || ''}</MD>
-                    )}
+                  <div className={`md-content px-6 py-5 text-[15px] leading-relaxed transition-colors duration-500 ${isFocused ? 'text-foreground' : 'text-foreground-muted'}`}>
+                    <MD>{passo.corpo}</MD>
                   </div>
-                </motion.div>
-              )}
+                </div>
 
-              {!passo.loadingRisposta && (
-                <div className="mt-3 ml-4">
-                  {openInput === i ? (
-                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex gap-2 items-center bg-surface border border-surface-border rounded-full p-1 pl-4 shadow-sm">
-                      <input 
-                        autoFocus 
-                        value={inputs[i]} 
-                        onChange={e => { const n = [...inputs]; n[i] = e.target.value; setInputs(n) }} 
-                        onKeyDown={e => e.key === 'Enter' && chiedi(i, inputs[i].trim())} 
-                        placeholder="Cosa non ti è chiaro di questo passo?" 
-                        className="flex-1 bg-transparent border-none text-[14px] outline-none text-foreground placeholder:text-foreground-subtle" 
-                      />
-                      <button onClick={() => chiedi(i, inputs[i].trim())} className="w-9 h-9 rounded-full bg-primary border-none cursor-pointer text-background shrink-0 flex items-center justify-center hover:bg-primary-hover hover:scale-105 transition-all shadow-sm">
-                        <ArrowUp size={18} strokeWidth={3} />
-                      </button>
-                      <button onClick={() => setOpenInput(null)} className="w-9 h-9 rounded-full bg-surface-active border border-surface-border cursor-pointer text-foreground-muted shrink-0 flex items-center justify-center hover:bg-surface-border hover:text-foreground transition-all">
-                        <X size={16} strokeWidth={2.5} />
-                      </button>
+                {passo.domanda && (
+                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mt-3 ml-4 border border-primary/20 rounded-[16px] overflow-hidden shadow-sm">
+                    <div className="bg-primary/10 px-4 py-2.5 text-[13px] text-primary font-bold flex items-center gap-2 border-b border-primary/10">
+                      <span className="bg-primary text-background text-[10px] uppercase px-1.5 py-0.5 rounded-sm">Domanda</span>
+                      {passo.domanda}
+                    </div>
+                    <div className="px-5 py-4 text-[14px] text-foreground-muted leading-relaxed bg-surface/30 md-content">
+                      {passo.loadingRisposta ? (
+                        <div className="flex items-center gap-2 text-primary/70 font-medium">
+                          <Loader2 size={16} className="animate-spin" /> Sto generando la spiegazione...
+                        </div>
+                      ) : (
+                        <MD>{passo.risposta || ''}</MD>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+
+                <AnimatePresence>
+                  {isFocused && !passo.loadingRisposta && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }} 
+                      animate={{ opacity: 1, y: 0, scale: 1 }} 
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="mt-6 flex justify-center relative z-20"
+                    >
+                      {openInput === i ? (
+                        <motion.div 
+                          layoutId={`action-bar-${i}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-full max-w-[400px] flex gap-2 items-center bg-surface border border-primary/40 rounded-2xl p-2 pl-5 shadow-2xl"
+                        >
+                          <input 
+                            autoFocus 
+                            value={inputs[i]} 
+                            onChange={e => { const n = [...inputs]; n[i] = e.target.value; setInputs(n) }} 
+                            onKeyDown={e => e.key === 'Enter' && chiedi(i, inputs[i].trim())} 
+                            placeholder="Cosa non ti è chiaro?" 
+                            className="flex-1 bg-transparent border-none text-[14px] outline-none text-foreground placeholder:text-foreground-subtle" 
+                          />
+                          <div className="flex gap-1">
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); chiedi(i, inputs[i].trim()); }} 
+                              className="w-9 h-9 rounded-xl bg-primary border-none cursor-pointer text-background flex items-center justify-center hover:bg-primary-hover transition-all"
+                            >
+                              <ArrowUp size={18} strokeWidth={3} />
+                            </button>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); setOpenInput(null); }} 
+                              className="w-9 h-9 rounded-xl bg-surface-active border border-surface-border cursor-pointer text-foreground-subtle flex items-center justify-center hover:bg-surface-border hover:text-foreground transition-all"
+                            >
+                              <X size={18} />
+                            </button>
+                          </div>
+                        </motion.div>
+                      ) : (
+                        <motion.div 
+                          layoutId={`action-bar-${i}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="bg-zinc-900/90 backdrop-blur-xl border border-white/10 p-1.5 px-2 rounded-full shadow-2xl flex items-center gap-1"
+                        >
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); setOpenInput(i); }} 
+                            className="h-10 px-4 rounded-full bg-transparent border-none text-[13px] text-white/70 hover:text-white hover:bg-white/5 transition-all flex items-center gap-2 font-bold cursor-pointer"
+                          >
+                            <Sparkles size={14} className="text-primary" /> Dubbi?
+                          </button>
+                          
+                          <div className="w-[1px] h-4 bg-white/10 mx-1" />
+
+                          {i < passi.length - 1 ? (
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); setFocusedIndex(i + 1); }}
+                              className="h-10 px-5 rounded-full bg-primary border-none text-background font-extrabold text-[13px] hover:bg-primary-hover transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-primary/20"
+                            >
+                              Passaggio successivo <ArrowUp size={16} className="rotate-90" />
+                            </button>
+                          ) : (
+                            !showFinale && (
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); setShowFinale(true); setFocusedIndex(passi.length); }}
+                                className="h-10 px-5 rounded-full bg-primary border-none text-background font-extrabold text-[13px] hover:bg-primary-hover transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-primary/20"
+                              >
+                                <Sparkles size={14} fill="currentColor" /> Rivela Soluzione
+                              </button>
+                            )
+                          )}
+                        </motion.div>
+                      )}
                     </motion.div>
-                  ) : (
-                    <button onClick={() => setOpenInput(i)} className="bg-transparent border-none text-[13px] text-primary/70 cursor-pointer py-1 font-semibold hover:text-primary transition-colors flex items-center gap-1.5">
-                      <span className="text-lg leading-none">+</span> Chiedimi di più su questo passo
-                    </button>
                   )}
-                </div>
-              )}
-            </div>
-          </motion.div>
-        ))}
+                </AnimatePresence>
+              </div>
+            </motion.div>
+          )
+        })}
       </div>
 
-      {parsed.finale && (
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }} 
-          animate={{ opacity: 1, scale: 1 }} 
-          transition={{ delay: 0.4 }}
-          className="bg-primary/5 border-2 border-primary/40 rounded-[20px] p-5 mt-8 mb-4 shadow-[0_0_30px_rgba(255,214,0,0.1)]"
-        >
-          <div className="text-[12px] font-extrabold text-primary uppercase tracking-[0.1em] mb-2 flex items-center gap-2">
-            <Sparkles size={14} /> Risposta Finale
-          </div>
-          <div className="md-content text-[18px] font-bold text-primary">
-            <MD>{parsed.finale}</MD>
-          </div>
-        </motion.div>
-      )}
+      <AnimatePresence>
+        {parsed.finale && showFinale && (
+          <motion.div 
+            ref={finaleRef}
+            initial={{ opacity: 0, scale: 0.9, y: 20 }} 
+            animate={{ opacity: 1, scale: 1, y: 0 }} 
+            className="mt-10 mb-10 bg-primary/5 border-2 border-primary/40 rounded-[24px] p-6 relative overflow-hidden"
+          >
+            <motion.div 
+              initial={{ x: '-100%' }}
+              animate={{ x: '250%' }}
+              transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent w-full -skew-x-12 z-0"
+            />
+            <div className="text-[12px] font-extrabold text-primary uppercase tracking-[0.2em] mb-3 flex items-center gap-2 relative z-10">
+              <Sparkles size={16} fill="currentColor" /> Soluzione Finale
+            </div>
+            <div className="md-content text-[22px] font-black text-primary relative z-10 leading-tight">
+              <MD>{parsed.finale}</MD>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
