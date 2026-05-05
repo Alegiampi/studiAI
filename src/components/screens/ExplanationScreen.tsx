@@ -58,6 +58,7 @@ export default function ExplanationScreen({
   setScreen: (screen: 'paywall') => void
 }) {
   const chatRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const [chatInput, setChatInput] = useState('')
   const [isFavorite, setIsFavorite] = useState(false)
   const [toast, setToast] = useState<{ text: string; visible: boolean }>({ text: '', visible: false })
@@ -69,12 +70,20 @@ export default function ExplanationScreen({
     const main = chatRef.current
     if (!main) return
     const handleScroll = () => {
-      // Mostra il FAB se scendiamo un po' ma non siamo ancora alla chat
-      setShowFAB(main.scrollTop > 300 && main.scrollTop < main.scrollHeight - 800)
+      if (!main) return
+      const isNearBottom = main.scrollHeight - main.scrollTop - main.clientHeight < 300
+      
+      // Mostra il FAB sempre, a meno che non siamo già arrivati alla chat in fondo
+      setShowFAB(!isNearBottom)
     }
     main.addEventListener('scroll', handleScroll)
-    return () => main.removeEventListener('scroll', handleScroll)
-  }, [])
+    // Eseguiamo un controllo immediato con un piccolo delay per il layout
+    const timeout = setTimeout(handleScroll, 100)
+    return () => {
+      main.removeEventListener('scroll', handleScroll)
+      clearTimeout(timeout)
+    }
+  }, [loading, explanation])
 
   useEffect(() => {
     if (!loading) {
@@ -120,6 +129,14 @@ export default function ExplanationScreen({
     }, 100)
   }
 
+  // Auto-expand textarea
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto'
+      inputRef.current.style.height = `${inputRef.current.scrollHeight}px`
+    }
+  }, [chatInput])
+
   const onAskTutor = (stepTitle: string, stepBody: string) => {
     const question = `Non mi è chiaro il passaggio "${stepTitle}". Puoi spiegarmelo meglio?`
     setChatInput(question)
@@ -130,7 +147,7 @@ export default function ExplanationScreen({
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col relative">
+    <div className="h-screen bg-background flex flex-col relative overflow-hidden">
       <style>{`
         @keyframes shimmer {
           0% { background-position: -200% center; }
@@ -157,6 +174,22 @@ export default function ExplanationScreen({
           opacity: 0.7;
           font-weight: 300;
         }
+        .md-content { line-height: 1.6; text-align: justify; hyphens: auto; }
+        .md-content p { margin-bottom: 0.6rem; }
+        .md-content p:last-child { margin-bottom: 0; }
+        .md-content ul, .md-content ol { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+        .md-content ul { list-style-type: disc; }
+        .md-content ol { list-style-type: decimal; }
+        .md-content li { margin-bottom: 0.3rem; }
+        .md-content strong { color: var(--color-foreground); font-weight: 700; }
+        .katex { color: var(--color-foreground) !important; font-size: 1.1em; font-weight: 500; }
+        .katex-display { 
+          margin: 0.6rem 0 !important; 
+          padding: 0.2rem 0; 
+          overflow-x: auto; 
+          text-align: center;
+        }
+        .katex-display .katex { color: var(--color-foreground) !important; }
       `}</style>
       <header className="sticky top-0 z-20 px-4 py-4 bg-surface/80 backdrop-blur-xl border-b border-surface-border flex items-center gap-3">
         <button onClick={onBack} className="p-2 -ml-2 rounded-xl bg-transparent border-none text-foreground-muted cursor-pointer hover:bg-surface-active hover:text-foreground transition-colors">
@@ -442,6 +475,7 @@ export default function ExplanationScreen({
                   <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-yellow-500/20 rounded-[22px] blur opacity-0 group-focus-within:opacity-100 transition duration-500" />
                   <div className="relative flex items-end gap-2 bg-surface border-2 border-primary/20 rounded-[20px] p-2.5 px-4 shadow-lg focus-within:border-primary focus-within:shadow-primary/10 transition-all">
                     <textarea 
+                      ref={inputRef}
                       value={chatInput}
                       onChange={(e) => setChatInput(e.target.value)}
                       onKeyDown={(e) => {
@@ -451,7 +485,7 @@ export default function ExplanationScreen({
                         }
                       }}
                       placeholder="Chiedi un chiarimento al tutor..." 
-                      className="flex-1 bg-transparent border-none outline-none text-[16px] text-foreground placeholder:text-foreground-muted resize-none max-h-32 min-h-[44px] py-2.5"
+                      className="flex-1 bg-transparent border-none outline-none text-[16px] text-foreground placeholder:text-foreground-muted resize-none max-h-48 min-h-[44px] py-2.5 leading-normal"
                       rows={1}
                     />
                     <button 
@@ -473,17 +507,40 @@ export default function ExplanationScreen({
       <AnimatePresence>
         {showFAB && !loading && (
           <motion.button
+            layout
             initial={{ opacity: 0, scale: 0.5, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.5, y: 20 }}
+            transition={{ 
+              layout: { type: "spring", stiffness: 300, damping: 30 },
+              opacity: { duration: 0.2 }
+            }}
             onClick={() => chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: 'smooth' })}
-            className="fixed bottom-24 right-6 z-40 w-14 h-14 rounded-2xl bg-primary text-background flex items-center justify-center shadow-2xl shadow-primary/30 border-none cursor-pointer hover:scale-110 active:scale-95 transition-all"
+            className="fixed bottom-24 right-6 z-40 h-14 rounded-2xl bg-primary text-background flex items-center shadow-2xl shadow-primary/30 border-none cursor-pointer hover:scale-105 active:scale-95 transition-transform overflow-hidden group px-3.5"
           >
-            <Bot size={28} />
+            <motion.div layout className="flex items-center gap-3">
+              <Bot size={28} className="shrink-0" />
+              <AnimatePresence mode="popLayout">
+                {chatMessages.length <= 1 && (
+                  <motion.span 
+                    layout
+                    initial={{ opacity: 0, width: 0, x: -10 }}
+                    animate={{ opacity: 1, width: "auto", x: 0 }}
+                    exit={{ opacity: 0, width: 0, x: -10 }}
+                    transition={{ duration: 0.3 }}
+                    className="text-[14px] font-black whitespace-nowrap overflow-hidden"
+                  >
+                    Chiedi al Tutor
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.div>
+            
             <motion.div 
-              animate={{ scale: [1, 1.2, 1] }}
+              layout
+              animate={{ scale: [1, 1.4, 1], opacity: [1, 0, 1] }}
               transition={{ duration: 2, repeat: Infinity }}
-              className="absolute -top-1 -right-1 w-4 h-4 bg-success rounded-full border-2 border-background"
+              className="absolute top-2 right-2 w-2.5 h-2.5 bg-success rounded-full border-2 border-primary"
             />
           </motion.button>
         )}

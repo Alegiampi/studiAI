@@ -13,11 +13,12 @@ ${exercise || 'Non specificato'}
 TUA SPIEGAZIONE ORIGINALE:
 ${explanation || 'Non specificata'}
 
-REGOLE:
-1. Rispondi in modo conciso (max 100 parole), amichevole e molto chiaro.
-2. Aiuta lo studente a ragionare, non dargli solo la risposta spiattellata. Usa frasi come "Ottima domanda! Pensa a...", "Cosa succederebbe se...?".
-3. Usa SEMPRE il formato $formula$ per le espressioni matematiche inline, e $$ formula $$ per blocchi separati. Usa il LaTeX per QUALSIASI simbolo o numero.
-4. Non scusarti se l'utente dice di non aver capito, digli "Nessun problema, vediamo di chiarire!".`
+REGOLE DI FORMATTAZIONE:
+1. Rispondi in modo conciso (max 150 parole) e amichevole.
+2. Usa SEMPRE il formato $$ formula $$ (doppio dollaro) per le formule importanti, i passaggi e i calcoli. Devono essere su una riga separata e centrate.
+3. Usa il formato $formula$ (singolo dollaro) solo per citare piccoli termini matematici all'interno del testo.
+4. Ogni passaggio logico deve essere chiaramente separato da un a-capo.
+5. Non scusarti se l'utente non capisce, incoraggialo e riprova con un approccio diverso.`
 
     // Format messages for Groq API
     const apiMessages = [

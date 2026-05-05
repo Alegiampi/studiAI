@@ -1,64 +1,59 @@
 # Stato del Progetto: theLemma 🚀
 
-Questo documento riassume lo stato attuale dell'architettura e dell'interfaccia utente (UI/UX) del progetto dopo la grande fase di rebranding e l'introduzione di funzionalità avanzate di editing immagini.
+> [!IMPORTANT]
+> **REGOLA MANDATORIA**: Da questo momento in poi (5 Maggio 2026), ogni modifica apportata al progetto DEVE essere documentata in questo file specificando la **DATA** dell'intervento nella sezione "Log delle Modifiche".
 
-## Cosa abbiamo fatto finora
+Questo documento riassume lo stato attuale dell'architettura e dell'interfaccia utente (UI/UX) del progetto theLemma.
+
+## Log delle Modifiche (Storico)
+
+### 5 Maggio 2026 - Potenziamento Tutor AI & UX Chat
+- **AI Tutor Hero Experience**:
+    - **Welcome Proattivo**: Il tutor ora invia un messaggio di benvenuto automatico non appena la spiegazione è pronta.
+    - **Tutor Profile UI**: Aggiunta una card profilo dedicata nella chat ("Online ora") per dare un'identità forte al tutor.
+    - **Floating Assistant Button (FAB)**: Implementato un pulsante fluttuante (robottino giallo) che si espande dinamicamente ("Chiedi al Tutor") per saltare alla chat da qualsiasi punto della spiegazione.
+- **Unificazione dell'Esperienza**:
+    - Collegati i pulsanti **"Dubbi?"** dei singoli passaggi direttamente alla chat principale, pre-compilando il contesto per una conversazione fluida.
+- **Raffinatezza Estetica e Funzionale**:
+    - **Layout Compatto**: Ottimizzati i margini e gli spazi verticali per migliorare la leggibilità delle spiegazioni lunghe.
+    - **Testo Giustificato**: Implementata la giustificazione del testo con sillabazione automatica per un look editoriale professionale.
+    - **Auto-Expanding Input**: L'area di inserimento testo della chat ora si espande dinamicamente in base alla lunghezza della domanda.
+- **Bug Fix & Stabilità**:
+    - Risolto bug della duplicazione dei messaggi utente nella cronologia chat.
+    - Corretto il layout di scrolling (da body a interno `h-screen`) per garantire la visibilità costante di header, footer e FAB.
+
+---
+
+## Cosa abbiamo fatto finora (Riepilogo Generale)
 
 ### 1. **Rebranding Completo: da StudiAI a theLemma**
-Il progetto ha subito una trasformazione d'identità per posizionarsi come un brand più autorevole, accademico e distintivo:
 - **Nuovo Nome**: Scelta di **theLemma**, richiamando il concetto matematico di "verità dimostrata".
-- **Identità Visiva "Tech-Brand"**: Implementato un logo testuale raffinato con contrasto tipografico: `the` (font-light, opacità ridotta) e `Lemma` (font-extrabold, solido).
-- **Consistenza del Brand**: Aggiornati tutti i punti di contatto: metadati, manifest PWA, prompt dell'IA (che ora si identifica come theLemma), messaggi di condivisione e interfacce UI.
+- **Identità Visiva**: Logo testuale raffinato con contrasto tipografico e shimmer animation "Thinking".
 
-### 2. **Nuovo Design System Premium (Tailwind v4 + Framer Motion)**
-L'intera applicazione è stata rivoluzionata dal punto di vista estetico:
-- **Tema Dark Mode Elegante**: Sistema di colori centralizzato in `globals.css` (sfondo `#121212`, accenti `#FFD600`, superfici `#1E1E1E`).
-- **Glassmorphism**: Effetti di sfocatura (backdrop-blur) a modali, header e barre di navigazione per un look nativo e premium.
-- **Animazioni Fluide**: Ogni transizione è gestita da Framer Motion per un'esperienza d'uso naturale.
-- **Tipografia**: Utilizzo del font premium **Outfit** per un look moderno e leggibile.
+### 2. **Design System Premium**
+- **Tailwind v4 + Framer Motion**: Tema dark mode elegante (`#121212`), glassmorphism e animazioni fluide.
+- **Tipografia**: Font premium **Outfit**.
 
 ### 3. **Image Editing & Cropping Avanzato** ✂️
-Abbiamo implementato un sistema di editing professionale per massimizzare la qualità dell'input:
-- **Ritaglio Libero (Free-form)**: Sostituito il vecchio sistema a dimensione fissa con un selettore a angoli trascinabili. Gli studenti possono ora inquadrare porzioni di testo di qualsiasi forma (lunghe, larghe o quadrate).
-- **Inquadratura Intelligente**: Di default viene selezionata l'intera immagine per minimizzare i clic necessari.
-- **Rotazione 90° Integrata**: Supporto alla rotazione istantanea per correggere foto scattate nel verso sbagliato, con ricalcolo automatico delle coordinate di ritaglio.
-- **Ottimizzazione Performance & API**: Ridimensionamento automatico intelligente (max 1280px) e compressione JPEG bilanciata (0.7). Riduce il consumo di banda, memoria e costi API senza sacrificare l'accuratezza dell'IA.
-- **Header UI Raffinato**: Testata del modal con titolo a centratura assoluta per una simmetria perfetta su tutti i dispositivi.
+- **Ritaglio Libero**: Selettore a angoli trascinabili per inquadrature flessibili.
+- **Rotazione 90°**: Supporto integrato con ricalcolo coordinate.
+- **Ottimizzazione API**: Ridimensionamento (1280px) e compressione JPEG (0.7) per risparmio banda e costi.
 
-### 4. **Motore Grafico Avanzato (Mafs + mathjs)**
-- **Mafs**: Rendering di grafici interattivi in SVG, bellissimi e responsivi.
-- **Mathjs**: Valutazione sicura delle espressioni matematiche senza l'uso di `eval()`.
-- **Bounding Box Intelligente**: L'IA calcola l'inquadratura perfetta per visualizzare i punti chiave delle funzioni.
+### 4. **Motore Grafico & Chat**
+- **Mafs + mathjs**: Rendering di grafici interattivi SVG di alta qualità.
+- **Chat Context-Aware**: Il tutor conosce l'esercizio e la spiegazione corrente.
 
-### 5. **Chat Interattiva con il Tutor (Solo Premium)** 👑
-- **Context-Aware**: Il tutor conosce il contesto dell'esercizio e della spiegazione appena generata.
-- **Rendering LaTeX**: Supporto completo per le formule matematiche all'interno dei messaggi della chat.
+---
 
-### 6. **Restyling Storico ed Engagement** 🕒
-- **Categorizzazione**: Esercizi divisi per argomento (Analisi, Geometria, Algebra) con icone dedicate.
-- **Preferiti**: Sistema di salvataggio rapido con feedback visivo immediato.
-- **Sezione "Recenti"**: Accesso rapido agli ultimi esercizi tramite slider orizzontale glassmorphism.
+## Architettura Tecnologica
 
-## Architettura Attuale
-
-- **`src/app/page.tsx`**: Landing page e Router visivo degli stati.
-- **`src/components/screens/`**: Schermate isolate (Home, Explanation, Storico, Profilo, Paywall).
-- **`src/hooks/`**: Logica di business separata (Auth, Exercises, Payments, Profile, Toast).
-- **`src/app/api/`**: Endpoint per Spiegazioni, Chat, Grafici, Usage e Stripe.
-
-## Miglioramenti UX Recenti (Maggio 2026) ✨
-
-- **AI Thinking Sequence**: Sequenza dinamica di stati durante il caricamento ("Analisi...", "Calcolo...", "Finalizzazione...").
-- **Skeleton Loader**: Struttura animata che anticipa la forma della spiegazione finale.
-- **Undo Toast per Immagini**: Feedback in stile WhatsApp per il ripristino di immagini eliminate accidentalmente.
-- **Undo/Redo Testo**: Storico locale per l'input di testo (Cmd+Z / Cmd+Shift+Z).
-- **Toast Premium**: Notifiche con progress bar e micro-animazioni.
-- **Submit Button "Smart"**: Animazione di ingrandimento fluida (Framer Motion), feedback tattile al click, e restyling estetico (ombra profonda, bordo luminoso). Lo scale è ora inibito se il bottone non è attivo.
+- **Frontend**: Next.js (App Router), Tailwind CSS, Framer Motion.
+- **Backend**: Supabase (Auth, DB), Groq (Llama 3.3 70B) per Spiegazioni e Chat.
+- **Utility**: Mafs (Grafici), Mathjs (Calcoli), React-Markdown (Rendering).
 
 ## Prossimi Passi
 
 - [ ] **Domanda di Controllo (Mini-Quiz)**: Verifica della comprensione a fine spiegazione.
 - [ ] **Modalità "ELI5"**: Toggle per spiegazioni ultra-semplici o accademiche.
-- [ ] **Passaggi Interattivi**: Rendere i singoli passi della spiegazione espandibili.
 - [ ] **Esportazione PDF**: Generazione di file PDF completi di grafici per la stampa.
 - [ ] **Miglioramento TypeScript**: Rimozione degli ultimi tipi `any` a favore di interfacce rigorose.

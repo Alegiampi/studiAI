@@ -184,7 +184,7 @@ export function useExercises(
         explanation: explainData.explanation,
         loading: false,
         graficoUtile: classifyData.graficoUtile ?? false,
-        chatMessages: [{ role: 'assistant' as const, text: "Ciao! Ho analizzato l'esercizio e preparato la spiegazione passo-passo. Se c'è qualcosa che non ti è chiaro o vuoi approfondire un punto specifico, chiedimi pure!" }]
+        chatMessages: [{ role: 'assistant' as const, text: "Ciao! Ho preparato la spiegazione passo-passo. Se hai dubbi su un punto specifico, clicca sul pulsante **'Dubbi?'** che trovi su ogni passaggio per chiedermi chiarimenti immediati, oppure scrivimi pure qui!" }]
       }))
       if (classifyData.tipo) detectedTipo = classifyData.tipo
     } else {
@@ -193,7 +193,7 @@ export function useExercises(
         explanation: explainData.explanation,
         loading: false,
         graficoUtile: false,
-        chatMessages: [{ role: 'assistant' as const, text: "Ciao! Ho analizzato l'esercizio e preparato la spiegazione passo-passo. Se c'è qualcosa che non ti è chiaro o vuoi approfondire un punto specifico, chiedimi pure!" }]
+        chatMessages: [{ role: 'assistant' as const, text: "Ciao! Ho preparato la spiegazione passo-passo. Se hai dubbi su un punto specifico, clicca sul pulsante **'Dubbi?'** che trovi su ogni passaggio per chiedermi chiarimenti immediati, oppure scrivimi pure qui!" }]
       }))
     }
 
@@ -304,7 +304,7 @@ export function useExercises(
       if (data.reply) {
         setExerciseState(prev => ({
           ...prev,
-          chatMessages: [...prev.chatMessages, { role: 'user' as const, text: messageText }, { role: 'assistant' as const, text: data.reply }],
+          chatMessages: [...prev.chatMessages, { role: 'assistant' as const, text: data.reply }],
           chatLoading: false,
         }))
       } else {
