@@ -7,45 +7,26 @@ Questo documento riassume lo stato attuale dell'architettura e dell'interfaccia 
 
 ## Log delle Modifiche (Storico)
 
+### 6 Maggio 2026 (Sera) - Espansione Gamification e Studio Proattivo
+- **Nuove Direzioni di Progetto**:
+    - **Modalità Giochi (Allenamento)**: Definizione dell'architettura per mini-giochi educativi (partendo dalle Tabelline) con tracking dei record personali.
+    - **Generatore di Esercizi Smart**: Progettazione di un sistema AI che genera varianti di esercizi basandosi sulla cronologia o su input manuale (modalità: Riscaldamento, Consolidamento, Sfida).
+
 ### 5 Maggio 2026 (Sera) - Raffinamento Estetico Explanation Page
 - **Formula Rendering Perfection**: 
     - **STATO**: Considerato **PERFETTO** e non richiede ulteriori modifiche.
-    - **Dettaglio**: La centratura, il font e la spaziatura delle formule LaTeX in `ExplanationRenderer` sono ottimizzati per la massima chiarezza e non devono essere alterati.
 - **UI Refinement**:
     - **Surgical Elegance**: Ridotto lo spessore dell'indicatore laterale degli step (da 1.5px a 2px) con un effetto luce più sottile.
     - **Compact Action Dock**: Rimpicciolita la barra dei comandi inferiore (height h-11, padding ridotti) per una presenza più discreta e meno ingombrante.
     - **Fluidità Transizioni**: Implementato l'uso del prop `layout` di Framer Motion per transizioni fluide tra i passaggi della spiegazione.
 
 ### 5 Maggio 2026 (Pomeriggio) - Potenziamento Tutor AI, UX Chat e Toast System
-- **AI Tutor Hero Experience**:
-    - **Welcome Proattivo**: Il tutor invia un messaggio di benvenuto automatico non appena la spiegazione è pronta.
-    - **Tutor Profile UI**: Card profilo dedicata nella chat ("Online ora") per dare un'identità forte al tutor.
-    - **Floating Assistant Button (FAB)**: Pulsante fluttuante espandibile ("Chiedi al Tutor") per saltare alla chat con transizioni fluide.
-- **Unified Action Dock**:
-    - **Floating Dock**: Redesign radicale della barra inferiore in un'isola flottante glassmorphic.
-    - **Hero Buttons**: "Nuovo Esercizio" e "Condividi" ora hanno uno stile premium con micro-animazioni e shadow profonde.
-- **Global Dynamic Island Toast System**:
-    - **Centralizzazione**: Creato `ToastProvider` globale per gestire le notifiche in modo coerente in tutta l'app.
-    - **UI Dynamic Island**: Toast posizionati in alto al centro, a forma di pillola, con glassmorphism e animazioni spring.
-    - **Feedback Cromatico**: Colori specifici per azione (Oro per preferiti, Blu per link, Verde per successo) con icone contestuali.
-- **Onboarding & Personalizzazione Premium**:
-    - **Nuovo Flusso Onboarding**: Introdotte 5 slide immersive che presentano theLemma, le spiegazioni passo-passo, il Tutor AI e i grafici interattivi.
-    - **Design Visivo**: Implementati sfondi animati, glassmorphism e tipografia premium (Outfit) per un'esperienza "Apple-like".
-    - **Personalizzazione Avanzata**: Redesign della schermata di raccolta dati (nome, scuola, classe) con feedback visivi migliorati e micro-interazioni.
-- **Undo Toast per Immagini**: Aggiunta funzionalità di "Annulla" (4 secondi) dopo l'eliminazione di un'immagine caricata, con thumbnail di anteprima e progress bar.
-- **Raffinatezza Estetica e Funzionale**:
-    - **Layout Compatto & Giustificato**: Ottimizzata la leggibilità con testo giustificato, sillabazione e spaziature ridotte.
-    - **Auto-Expanding Input**: Chat textarea che si espande dinamicamente con il testo.
-- **Architettura & Pulizia**:
-    - **Type Centralization**: Iniziata la migrazione dei tipi core (es. `Toast`) in `@/types` per una migliore manutenibilità.
-    - **Bug Fix**: Risolto bug duplicazione messaggi e corretto layout di scrolling `h-screen`.
-- **Onboarding & Personalizzazione Premium**:
-    - **Nuovo Flusso Onboarding**: Introdotte 5 slide immersive che presentano theLemma, le spiegazioni passo-passo, il Tutor AI e i grafici interattivi.
-    - **Design Visivo**: Implementati sfondi animati, glassmorphism e tipografia premium (Outfit) per un'esperienza "Apple-like".
-    - **Personalizzazione Avanzata**: Redesign della schermata di raccolta dati (nome, scuola, classe) con feedback visivi migliorati e micro-interazioni.
-- **Undo Toast per Immagini**: Aggiunta funzionalità di "Annulla" (4 secondi) dopo l'eliminazione di un'immagine caricata, con thumbnail di anteprima e progress bar.
-- **Bug Fix & Stabilità**:
-    - Risolto bug della duplicazione dei messaggi utente nella cronologia chat.
+- **AI Tutor Hero Experience**: Welcome proattivo, Tutor Profile UI e Floating Assistant Button (FAB).
+- **Unified Action Dock**: Redesign radicale della barra inferiore in un'isola flottante glassmorphic.
+- **Global Dynamic Island Toast System**: Creato `ToastProvider` globale con stile pillola "Apple-like".
+- **Onboarding & Personalizzazione Premium**: 5 slide immersive, sfondi animati e tipografia Outfit.
+- **Undo Toast per Immagini**: Aggiunta funzionalità di "Annulla" (4 secondi) per l'eliminazione immagini.
+- **Bug Fix & Stabilità**: Risolto bug duplicazione messaggi e corretto layout di scrolling.
 
 ---
 
@@ -78,8 +59,14 @@ Questo documento riassume lo stato attuale dell'architettura e dell'interfaccia 
 
 ## Prossimi Passi
 
+- [ ] **Modalità Giochi (Tabelline & Progressi)**: Mini-giochi interattivi per l'allenamento rapido.
+    - *Tabelline Speed-Run*: Record di tempo su 20 domande.
+    - *Il Duello delle Equazioni*: Risoluzione rapida di equazioni semplici.
+    - *Caccia all'Errore*: Identificazione di errori comuni in passaggi matematici.
+    - *Formula Master*: Matching tra nomi di leggi e formule.
+    - *Vero o Falso Scientifico*: Quiz rapidi di cultura generale/scienze.
+- [ ] **Generatore di Esercizi Smart**: Creazione di varianti (più facili/difficili) partendo dallo storico.
 - [ ] **Allenati con il Prof (Simulazione Interrogazione)**: Simulatore di esame orale con feedback in tempo reale.
 - [ ] **Domanda di Controllo (Mini-Quiz)**: Verifica della comprensione a fine spiegazione.
-- [ ] **Modalità "ELI5"**: Toggle per spiegazioni ultra-semplici o accademiche.
 - [ ] **Esportazione PDF**: Generazione di file PDF completi di grafici per la stampa.
 - [ ] **Miglioramento TypeScript**: Rimozione degli ultimi tipi `any` a favore di interfacce rigorose.

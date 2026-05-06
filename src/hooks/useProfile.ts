@@ -18,8 +18,8 @@ export function useProfile(user: any) {
     if (!user) return
 
     const d = await fetch('/api/profile').then(r => r.json())
-    if (!d.onboarding_done) setRawShowOnboarding(true)
-    if (!d.scuola) setRawShowPersonalizzazione(true)
+    setRawShowOnboarding(!d.onboarding_done)
+    setRawShowPersonalizzazione(!d.scuola)
     setRawProfile({ scuola: d.scuola, classe: d.classe, materie: d.materie })
     setRawIsPremium(d.is_premium ?? false)
   }, [user])
@@ -43,6 +43,7 @@ export function useProfile(user: any) {
     showOnboarding,
     setShowOnboarding: setRawShowOnboarding,
     showPersonalizzazione,
-    setShowPersonalizzazione: setRawShowPersonalizzazione
+    setShowPersonalizzazione: setRawShowPersonalizzazione,
+    refreshProfile: fetchProfile
   }
 }

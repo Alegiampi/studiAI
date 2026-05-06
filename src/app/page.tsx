@@ -92,8 +92,8 @@ export default function Home() {
   )
 
   // Schermate di onboarding e personalizzazione
-  if (profile.showOnboarding) return <OnboardingScreen onDone={() => profile.setShowOnboarding(false)} />
-  if (profile.showPersonalizzazione) return <PersonalizzazioneScreen onDone={(p) => { profile.setProfilo(p); profile.setShowPersonalizzazione(false) }} user={user} />
+  if (profile.showOnboarding) return <OnboardingScreen onDone={() => { profile.setShowOnboarding(false); profile.refreshProfile(); }} />
+  if (profile.showPersonalizzazione) return <PersonalizzazioneScreen onDone={(p) => { profile.setProfilo(p); profile.setShowPersonalizzazione(false); profile.refreshProfile(); }} user={user} />
 
   // Schermate secondarie
   if (navigation.screen === 'storico') return <StoricoScreen onBack={() => navigation.setScreen('home')} />

@@ -13,14 +13,18 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ onboarding_done: false })
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('profiles')
     .select('onboarding_done, scuola, classe, materie, is_premium')
     .eq('id', user.id)
     .single()
 
+  if (error && error.code !== 'PGRST116') {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
   return NextResponse.json({
-  onboarding_done: data?.onboarding_done || false,
+  onboarding_done: data?.onboarding_done ?? false,
   scuola: data?.scuola || null,
   classe: data?.classe || null,
   materie: data?.materie || [],
@@ -40,16 +44,24 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ ok: false })
 
   const body = await req.json()
+  
+  const updateData: any = { id: user.id }
+  if (body.onboarding_done !== undefined) updateData.onboarding_done = body.onboarding_done
+  else updateData.onboarding_done = true // Default to true if calling POST to profile without specific value
+  
+  if (body.scuola !== undefined) updateData.scuola = body.scuola
+  if (body.classe !== undefined) updateData.classe = body.classe
+  if (body.materie !== undefined) updateData.materie = body.materie
 
-  await supabase
+  const { data: result, error } = await supabase
     .from('profiles')
-    .upsert({
-      id: user.id,
-      onboarding_done: body.onboarding_done ?? true,
-      scuola: body.scuola,
-      classe: body.classe,
-      materie: body.materie
-    }, { onConflict: 'id' })
+    .upsert(updateData, { onConflict: 'id' })
+    .select()
+
+  if (error) {
+    console.error('Error updating profile:', error)
+    return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+  }
 
   return NextResponse.json({ ok: true })
 }

@@ -3,8 +3,9 @@ import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url)
-  const code = searchParams.get('code')
+  const requestUrl = new URL(request.url)
+  const code = requestUrl.searchParams.get('code')
+  const next = requestUrl.searchParams.get('next') ?? '/'
 
   if (code) {
     const cookieStore = await cookies()
@@ -13,7 +14,9 @@ export async function GET(request: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          getAll() { return cookieStore.getAll() },
+          getAll() {
+            return cookieStore.getAll()
+          },
           setAll(cookiesToSet) {
             cookiesToSet.forEach(({ name, value, options }) =>
               cookieStore.set(name, value, options)
@@ -22,8 +25,17 @@ export async function GET(request: NextRequest) {
         },
       }
     )
-    await supabase.auth.exchangeCodeForSession(code)
+    
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    if (error) {
+      console.error('Error exchanging code for session:', error)
+      return NextResponse.redirect(new URL('/?error=auth', request.url))
+    }
   }
 
-  return NextResponse.redirect(origin + '/?loggedin=1')
+  // URL per il redirect finale
+  const redirectUrl = new URL(next, request.url)
+  redirectUrl.searchParams.set('loggedin', '1')
+  
+  return NextResponse.redirect(redirectUrl)
 }

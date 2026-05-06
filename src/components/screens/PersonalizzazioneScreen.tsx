@@ -142,8 +142,8 @@ export default function PersonalizzazioneScreen({ onDone, user }: { onDone: (dat
           </motion.button>
           
           <button 
-            onClick={() => { 
-              fetch('/api/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ onboarding_done: true }) }); 
+            onClick={async () => { 
+              await fetch('/api/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ onboarding_done: true }) }).catch(e => console.error(e)); 
               onDone({ scuola: '', classe: '', materie: [] }) 
             }} 
             className="w-full p-3 bg-transparent border-none text-foreground-subtle text-[14px] font-bold cursor-pointer hover:text-foreground transition-colors"

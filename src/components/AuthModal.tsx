@@ -12,7 +12,11 @@ function AuthModal({ onClose, supabase, isEmbedded = false }: { onClose?: () => 
   const [msg, setMsg] = useState('')
 
   async function loginConGoogle() {
-    await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } })
+    const redirectTo = `${window.location.origin}/auth/callback`
+    await supabase.auth.signInWithOAuth({ 
+      provider: 'google', 
+      options: { redirectTo } 
+    })
   }
 
   async function handleEmail() {
@@ -24,7 +28,12 @@ function AuthModal({ onClose, supabase, isEmbedded = false }: { onClose?: () => 
       if (error) setMsg(error.message)
       else if (onClose) onClose()
     } else {
-      const { error } = await supabase.auth.signUp({ email, password })
+      const redirectTo = `${window.location.origin}/auth/callback`
+      const { error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: { redirectTo }
+      })
       if (error) setMsg(error.message)
       else setMsg('Controlla la tua email per confermare la registrazione.')
     }

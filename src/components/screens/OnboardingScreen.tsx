@@ -55,9 +55,27 @@ export default function OnboardingScreen({ onDone }: { onDone: () => void }) {
     },
   ]
 
-  function next() {
-    if (step < steps.length - 1) { setStep(s => s + 1) }
-    else { fetch('/api/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ onboarding_done: true }) }).then(() => onDone()) }
+  async function next() {
+    if (step < steps.length - 1) { 
+      setStep(s => s + 1) 
+    } else { 
+      try {
+        const res = await fetch('/api/profile', { 
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' }, 
+          body: JSON.stringify({ onboarding_done: true }) 
+        })
+        if (res.ok) {
+          onDone()
+        } else {
+          const errorData = await res.json()
+          console.error('Failed to update onboarding:', errorData)
+          alert('Errore nel salvataggio del profilo. Controlla le policy RLS su Supabase.')
+        }
+      } catch (e) {
+        console.error('Failed to update onboarding:', e)
+      }
+    }
   }
 
   return (
@@ -138,7 +156,14 @@ export default function OnboardingScreen({ onDone }: { onDone: () => void }) {
           
           {step < steps.length - 1 && (
             <button 
-              onClick={() => { fetch('/api/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ onboarding_done: true }) }).then(() => onDone()) }} 
+              onClick={async () => { 
+                const res = await fetch('/api/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ onboarding_done: true }) }).catch(e => { console.error(e); return null; });
+                if (res?.ok) {
+                  onDone();
+                } else {
+                  alert('Errore nel salvataggio. Controlla le policy RLS.');
+                }
+              }} 
               className="bg-transparent border-none text-foreground-subtle text-[14px] font-bold cursor-pointer py-2 hover:text-foreground transition-colors"
             >
               Salta introduzione
