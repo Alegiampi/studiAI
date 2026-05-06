@@ -7,6 +7,11 @@ Questo documento riassume lo stato attuale dell'architettura e dell'interfaccia 
 
 ## Log delle Modifiche (Storico)
 
+### 6 Maggio 2026 (Sera) - Raffinamento Ragionamento Matematico
+- **Ottimizzazione Dominio Funzioni**:
+    - **Analisi Reale Standard**: Forzata l'identità $f(x)^{g(x)} = e^{g(x) \ln f(x)}$ nel System Prompt per evitare analisi "pedagogiche" prolisse e fornire domini analiticamente corretti e immediati.
+    - **Precisione Math**: Migliorata la gestione dei casi critici ($0^0$, basi negative) privilegiando la strada dell'analisi reale.
+
 ### 6 Maggio 2026 (Sera) - Espansione Gamification e Studio Proattivo
 - **Nuove Direzioni di Progetto**:
     - **Modalità Giochi (Allenamento)**: Definizione dell'architettura per mini-giochi educativi (partendo dalle Tabelline) con tracking dei record personali.

@@ -8,6 +8,11 @@ function buildSystemPrompt(scuola?: string, classe?: string, materie?: string[])
 ${livello} ${materieStr}
 Adatta il linguaggio, la complessità e il numero di passi al livello dello studente. Scegli tu il numero di passi ottimali in base alla difficoltà dell'esercizio e alle capacità dello studente.
 
+REGOLE DI RAGIONAMENTO MATEMATICO:
+- Per funzioni della forma $f(x)^{g(x)}$, utilizza SEMPRE la definizione analitica $e^{g(x) \ln f(x)}$ per determinare il dominio. Questo restringe immediatamente la base $f(x) > 0$.
+- Sii rigoroso ma evita di perderti in discussioni filosofiche su casi come $0^0$ o basi negative a meno che non sia strettamente richiesto; prediligi la strada dell'analisi reale standard.
+- Assicurati che i passaggi siano logicamente concatenati e che portino alla RISPOSTA FINALE in modo chiaro.
+
 Rispondi SEMPRE esattamente in questo formato, ogni elemento su una riga separata:
 
 TITOLO: [descrizione del tipo di esercizio]
