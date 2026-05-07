@@ -7,6 +7,15 @@ Questo documento riassume lo stato attuale dell'architettura e dell'interfaccia 
 
 ## Log delle Modifiche (Storico)
 
+### 7 Maggio 2026 - Potenziamento Grafici e Analisi Interattiva
+- **Grafici 2.0 (Analisi Interattiva)**:
+    - **Punto Tangente Dinamico**: Introdotto un punto mobile sulla funzione che calcola e visualizza istantaneamente la retta tangente e la pendenza ($m$) tramite `mathjs`. Ideale per spiegare il concetto di derivata.
+    - **Stabilizzazione Rendering**: Risolti bug critici di sparizione dei grafici durante il panning tramite clipping Y intelligente (+/- 5000) e gestione dello stato `viewBox` via `key-reset` (compatibilità Mafs 0.21.0).
+- **Rigore Matematico AI**:
+    - Aggiornate le istruzioni dell'IA per prevenire allucinazioni su asintoti e limiti (es. rimosso asintoto errato per $x^x$).
+    - Migliorata la precisione del "centramento" iniziale del grafico per mostrare sempre gli assi cartesiani e l'origine.
+- **Fix Strutturali & Compatibilità**: Corretti errori di sintassi critici in `route.ts` e risolti conflitti di tipi in `GraficoMafs.tsx`.
+
 ### 6 Maggio 2026 (Notte) - Upgrade Intelligenza di Ragionamento
 - **Pipeline Vision a 2 Stadi**: `llama-4-scout` estrae il testo dall'immagine (OCR), poi `openai/gpt-oss-120b` genera la spiegazione. Ora tutti e tre i path (immagine, testo, chat) usano lo stesso motore di ragionamento.
 - **Helper `callGroq`**: Estratta una funzione riutilizzabile `callGroq()` per semplificare le chiamate API e centralizzare la gestione degli errori.
