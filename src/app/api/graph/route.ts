@@ -1,35 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-export async function POST(req: NextRequest) {
-  const { esercizio, spiegazione } = await req.json()
-
-  const systemPrompt = `Sei un esperto di matematica. Il tuo unico compito è generare i dati per plottare il grafico dell'esercizio usando 'mathjs'.
-
-REGOLE ASSOLUTE:
-1. Rispondi SOLO con un JSON, zero testo aggiuntivo. Nessun markdown \`\`\`json.
-2. Il JSON deve avere questa struttura esatta:
-{
-  "boundingBox": [-10, 10, -5, 5], // [xmin, xmax, ymin, ymax] calcolato per inquadrare in modo ottimale i punti di interesse
-  "espressioni": [
-    { "type": "function", "fn": "sin(x)*x^2", "color": "#FFD600", "label": "f(x)" },
-    { "type": "point", "coords": [1, 2], "color": "#E84393", "label": "Punto critico" }
-  ]
-}
-3. MASSIMO 5-6 elementi in "espressioni". Disegna la funzione principale, le eventuali funzioni secondarie (es. derivata se richiesta) e TUTTI i punti chiave (es. TUTTI i punti critici, flessi o intersezioni calcolati nell'esercizio). Non omettere punti rilevanti.
-4. Per le funzioni, usa stringhe matematiche standard parsabili da mathjs. La variabile è sempre 'x'.
-   - Moltiplicazione: '2*x' o 'sin(x)*cos(x)'
-   - Potenze: 'x^2'
-   - Esponenziale: 'e^x' o 'exp(x)'
-   - Logaritmi: 'log(x)' (naturale), 'log10(x)'
-5. COLORI PREDEFINITI DA USARE: #FFD600 (principale), #00B894 (secondario/derivata), #E84393 (tangente/punto), #A8B1FF (asintoti).`
-
-  const userPrompt = `Genera il JSON per questo grafico.
-
-Esercizio: ${esercizio}
-Spiegazione: ${spiegazione}
-
-Rispondi SOLO con il JSON crudo.`
-
+async function callGroq(messages: any[]) {
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -40,23 +11,69 @@ Rispondi SOLO con il JSON crudo.`
       model: 'llama-3.3-70b-versatile',
       max_tokens: 800,
       temperature: 0.1,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
-      ]
+      messages
     })
   })
+  return res.json()
+}
 
-  const data = await res.json()
-  if (!data.choices) return NextResponse.json({ error: 'Errore API' })
+export async function POST(req: NextRequest) {
+  const { esercizio, spiegazione } = await req.json()
+
+  const systemPrompt = `Sei un esperto di matematica. Il tuo unico compito è generare i dati per plottare il grafico dell'esercizio usando 'mathjs'.
+
+REGOLE ASSOLUTE:
+1. Rispondi SOLO con un JSON, zero testo aggiuntivo. Nessun markdown \`\`\`json.
+2. Il JSON deve avere questa struttura esatta:
+{
+  "boundingBox": [-5, 5, -2, 8],
+  "espressioni": [
+    { 
+      "type": "function", 
+      "fn": "exp(x*log(x))", 
+      "color": "#FFD600", 
+      "label": "f(x)",
+      "domain": [0.01, 1000],
+      "interactive": true
+    },
+    { "type": "point", "coords": [1, 1], "color": "#E84393", "label": "Punto (1,1)" }
+  ]
+}
+3. MASSIMO 5-6 elementi in "espressioni". Includi la funzione principale, derivate se utili, e i punti critici (zeri, max/min, flessi).
+4. NON DUPLICARE: Se usi exp(x*log(x)) per x^x, NON aggiungere anche x^x. Scegline UNA.
+5. ESPRESSIONI ROBUSTE (OBBLIGATORIO):
+   - Per potenze con base variabile (es. x^x, x^(1/x), (x+1)^x), usa SEMPRE la forma esponenziale: "exp(x*log(x))" o "exp((1/x)*log(x))".
+   - Variabile: 'x'. Logaritmo naturale: 'log(x)'. Esponenziale: 'exp(x)'.
+6. COLORI: #FFD600 (principale), #00B894 (secondaria), #E84393 (punti), #A8B1FF (asintoti).
+7. DOMINIO E VISTA:
+   - "domain": [min, max] è il dominio matematico reale.
+   - "boundingBox": [xmin, xmax, ymin, ymax] definisce lo ZOOM INIZIALE. Centra sempre la vista sull'origine o sugli elementi chiave.
+8. INTERATTIVITÀ:
+   - Imposta "interactive": true sulla funzione principale per mostrare tangente e derivata.
+9. RIGORE MATEMATICO (CRITICO):
+   - Includi asintoti (es. y=0, x=0) SOLO se matematicamente esistenti e corretti per la funzione data.
+   - Verifica i limiti per x -> 0 e x -> infinito prima di aggiungere linee di supporto. Per x^x, il limite per x->0 è 1, quindi y=0 NON è un asintoto. Non aggiungere asintoti a caso.`;
+
+  const userPrompt = `Genera il JSON per questo grafico.
+
+Esercizio: ${esercizio}
+Spiegazione: ${spiegazione}
+
+Rispondi SOLO con il JSON crudo.`;
+
+  const data = await callGroq([
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userPrompt }
+  ]);
+
+  if (!data.choices) return NextResponse.json({ error: 'Errore API' });
 
   try {
-    const text = data.choices[0].message.content.trim()
-    const clean = text.replace(/```json|```/g, '').trim()
-    const graficoData = JSON.parse(clean)
-    return NextResponse.json({ data: graficoData })
-  } catch (e) {
-    console.error('Parse error:', data.choices[0].message.content)
-    return NextResponse.json({ error: 'JSON non valido' })
+    const text = data.choices[0].message.content.trim();
+    const clean = text.replace(/\`\`\`json|\`\`\`/g, '').trim();
+    const graficoData = JSON.parse(clean);
+    return NextResponse.json({ data: graficoData });
+  } catch {
+    return NextResponse.json({ error: 'JSON non valido' });
   }
 }

@@ -7,6 +7,10 @@ Questo documento riassume lo stato attuale dell'architettura e dell'interfaccia 
 
 ## Log delle Modifiche (Storico)
 
+### 6 Maggio 2026 (Notte) - Upgrade Intelligenza di Ragionamento
+- **Pipeline Vision a 2 Stadi**: `llama-4-scout` estrae il testo dall'immagine (OCR), poi `openai/gpt-oss-120b` genera la spiegazione. Ora tutti e tre i path (immagine, testo, chat) usano lo stesso motore di ragionamento.
+- **Helper `callGroq`**: Estratta una funzione riutilizzabile `callGroq()` per semplificare le chiamate API e centralizzare la gestione degli errori.
+
 ### 6 Maggio 2026 (Sera) - Raffinamento Ragionamento Matematico
 - **Ottimizzazione Dominio Funzioni**:
     - **Analisi Reale Standard**: Forzata l'identità $f(x)^{g(x)} = e^{g(x) \ln f(x)}$ nel System Prompt per evitare analisi "pedagogiche" prolisse e fornire domini analiticamente corretti e immediati.

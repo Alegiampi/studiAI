@@ -45,51 +45,68 @@ espressione &= passaggio 1 \\
 - Assicurati che ogni passaggio sia visivamente arioso e mai affollato di testo.`
 }
 
+async function callGroq(model: string, messages: any[], maxTokens: number): Promise<string> {
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+    },
+    body: JSON.stringify({ model, max_tokens: maxTokens, messages })
+  })
+  const data = await res.json()
+  if (!data.choices) throw new Error(JSON.stringify(data))
+  return data.choices[0].message.content || ''
+}
+
 export async function POST(req: NextRequest) {
   const { text, imageBase64, tipo, scuola, classe, materie } = await req.json()
 
   try {
-    let messages: any[]
     const systemPrompt = buildSystemPrompt(scuola, classe, materie)
+    let explanationText = ''
 
     if (tipo === 'chiarimento') {
-      messages = [
+      // Chiarimento rapido: modello veloce e diretto
+      const messages = [
         { role: 'system', content: 'Sei theLemma, un tutor italiano. Rispondi in modo breve e chiaro, max 80 parole, usando LaTeX $formula$ per le formule.' },
         { role: 'user', content: text }
       ]
+      explanationText = await callGroq('openai/gpt-oss-120b', messages, 400)
+
     } else if (imageBase64) {
-      messages = [
-        { role: 'system', content: systemPrompt },
+      // STAGE 1: Llama 4 Scout estrae il testo matematico dall'immagine
+      const extractMessages = [
+        {
+          role: 'system',
+          content: 'Sei un sistema OCR specializzato in matematica e fisica. Il tuo unico compito è trascrivere FEDELMENTE tutto il testo e le formule presenti nell\'immagine, usando la notazione LaTeX dove necessario. Non spiegare, non risolvere: trascrivi soltanto.'
+        },
         {
           role: 'user',
           content: [
             { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
-            { type: 'text', text: text || 'Spiega questo esercizio.' }
+            { type: 'text', text: 'Trascrivi fedelmente tutto il testo e le formule di questo esercizio.' }
           ]
         }
       ]
+      const extractedText = await callGroq('meta-llama/llama-4-scout-17b-16e-instruct', extractMessages, 500)
+
+      // STAGE 2: GPT OSS 120B ragiona sul testo estratto e genera la spiegazione completa
+      const explainMessages = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `Spiega questo esercizio: ${extractedText}` }
+      ]
+      explanationText = await callGroq('openai/gpt-oss-120b', explainMessages, 1500)
+
     } else {
-      messages = [
+      // Testo diretto: GPT OSS 120B genera la spiegazione
+      const messages = [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: 'Spiega questo esercizio: ' + text }
       ]
+      explanationText = await callGroq('openai/gpt-oss-120b', messages, 1500)
     }
 
-    const model = imageBase64 ? 'meta-llama/llama-4-scout-17b-16e-instruct' : 'llama-3.3-70b-versatile'
-
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
-      },
-      body: JSON.stringify({ model, max_tokens: 1500, messages })
-    })
-
-    const data = await res.json()
-    if (!data.choices) return NextResponse.json({ explanation: JSON.stringify(data) })
-    
-    let explanationText = data.choices[0].message.content || ''
     // Fallback: se il modello usa comunque \[ \] o \( \)
     explanationText = explanationText.replace(/\\\[/g, '$$$$').replace(/\\\]/g, '$$$$')
     explanationText = explanationText.replace(/\\\(/g, '$').replace(/\\\)/g, '$')

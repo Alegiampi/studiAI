@@ -7,7 +7,7 @@ export type Passo = {
 }
 
 export type ElementoGrafico = 
-  | { type: 'function'; fn: string; color: string; label: string }
+  | { type: 'function'; fn: string; color: string; label: string; domain?: [number, number]; interactive?: boolean }
   | { type: 'point'; coords: [number, number]; color: string; label: string }
 
 export type GraficoData = {

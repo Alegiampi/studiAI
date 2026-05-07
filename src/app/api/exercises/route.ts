@@ -60,7 +60,7 @@ export async function PATCH(req: NextRequest) {
 
   const { id, is_favorite, shared_id } = await req.json()
   
-  console.log('PATCH Exercise:', { id, is_favorite, shared_id, userId: user.id })
+
 
   const updates: any = {}
   if (is_favorite !== undefined) updates.is_favorite = is_favorite
@@ -79,10 +79,8 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (!data || data.length === 0) {
-    console.warn('PATCH Exercise: No rows updated. Check if ID and user_id match.')
     return NextResponse.json({ error: 'No exercise found or not authorized' }, { status: 404 })
   }
 
-  console.log('PATCH Exercise: Success', data[0])
   return NextResponse.json({ ok: true, data: data[0] })
 }
