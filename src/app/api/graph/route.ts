@@ -44,7 +44,11 @@ REGOLE ASSOLUTE:
 5. ESPRESSIONI ROBUSTE (OBBLIGATORIO):
    - Per potenze con base variabile (es. x^x, x^(1/x), (x+1)^x), usa SEMPRE la forma esponenziale: "exp(x*log(x))" o "exp((1/x)*log(x))".
    - Variabile: 'x'. Logaritmo naturale: 'log(x)'. Esponenziale: 'exp(x)'.
-6. COLORI: #FFD600 (principale), #00B894 (secondaria), #E84393 (punti), #A8B1FF (asintoti).
+6. COLORI DA USARE TASSATIVAMENTE:
+   - Funzione principale f(x): "#FFD600" (Giallo)
+   - Derivate (f', f''): "#38BDF8" (Azzurro) o "#818CF8" (Viola chiaro)
+   - Punti (flessi, zeri, ecc): "#F43F5E" (Rosso vivo)
+   - Asintoti: "#9CA3AF" (Grigio chiaro)
 7. DOMINIO E VISTA:
    - "domain": [min, max] è il dominio matematico reale.
    - "boundingBox": [xmin, xmax, ymin, ymax] definisce lo ZOOM INIZIALE. Centra sempre la vista sull'origine o sugli elementi chiave.
