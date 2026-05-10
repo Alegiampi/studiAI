@@ -7,6 +7,18 @@ Questo documento riassume lo stato attuale dell'architettura e dell'interfaccia 
 
 ## Log delle Modifiche (Storico)
 
+### 11 Maggio 2026 - UX Condivisione & Tutor AI Premium Area
+- **Pagina di Condivisione (Share Page)**:
+    - Ridisegnata completamente la pagina pubblica di condivisione (`s/[id]`) per riflettere l'estetica premium del progetto.
+    - Implementato un layout "Gated Content": il grafico interattivo e l'anteprima della chat del Tutor vengono mostrati sfocati (`backdrop-blur`) per creare un forte *Curiosity Gap*.
+    - Aggiunte CTA (Call to Action) strategiche ("Sblocca Chat Gratuita", "Sblocca Grafico") per massimizzare le conversioni degli utenti non registrati.
+    - Integrazione dell'uso di `ExplanationRenderer` per uniformare l'esperienza di lettura passo-passo.
+- **Tutor AI Area (Explanation Screen)**:
+    - Redesign massiccio della sezione "Tutor Personale AI" all'interno della schermata delle spiegazioni per renderla più "ariosa" e professionalmente distinta.
+    - Introdotto un **Separatore Elegante** con sfumature (`bg-gradient`) e un'etichetta centrale "AREA TUTOR" per dividere nettamente la zona di lettura passiva da quella di interazione attiva.
+    - Implementato l'indicatore animato di "Tutor che scrive..." (3 puntini rimbalzanti) al posto del classico spinner, aumentando la percezione di star chattando con un assistente reale.
+    - Rimosso lo sfondo invadente a favore di un layout pulito, con l'avatar del bot dotato di un sottile effetto glow (`blur-md` in background).
+
 ### 15 Maggio 2026 - Mafs Refactoring, AI Robustness & Fluid UI
 - **Mafs 3.5 (Interactive Graph Evolution)**:
     - **Refactoring**: Decoupled `GraficoMafs.tsx` into `FunctionLayer.tsx` and `GraphSidebar.tsx` for improved modularity.
