@@ -7,13 +7,14 @@ Questo documento riassume lo stato attuale dell'architettura e dell'interfaccia 
 
 ## Log delle Modifiche (Storico)
 
-### 10 Maggio 2026 - UX Potenziata e Controllo Grafico (GeoGebra Style)
-- **Nuovo Layout Sidebar**: Riprogettata l'interfaccia del grafico con una colonna di controllo laterale (stile Desmos/GeoGebra) per un'esperienza desktop professionale e mobile-friendly.
-- **Personalizzazione Colori Dinamica**: Implementata la possibilità per l'utente di cambiare il colore di ogni funzione/punto cliccando sul pallino della legenda (integrazione Color Picker di sistema).
-- **Controllo Visibilità Totale**: 
-    - Toggle interattivi per mostrare/nascondere singole funzioni.
-    - Pulsante globale "Mostra Tangente" (in giallo brandizzato) per attivare/disattivare l'analisi interattiva della derivata.
-- **Palette AI Ottimizzata**: Aggiornato il prompt dell'IA con una nuova palette colori (Giallo, Azzurro Cielo, Viola, Rosso Vivo) studiata per massimizzare il contrasto e la leggibilità.
+### 10 Maggio 2026 - Laboratorio Matematico Interattivo (Mafs 3.0)
+- **Inserimento Funzioni Utente**: Trasformato il grafico in uno strumento attivo dove l'utente può aggiungere le proprie funzioni cliccando su "+ Aggiungi funzione".
+- **Smart Notation & Sanitizzazione**: Implementato un pre-processore che corregge automaticamente le notazioni comuni (es. `sinx` -> `sin(x)`) per rendere l'input più naturale e meno "informatico".
+- **Supporto Funzioni Inverse ($x = f(y)$)**: Potenziato il rendering per supportare parabole orizzontali e relazioni dove la $x$ dipende dalla $y$ (es. `x = y^2`), con riconoscimento automatico della variabile.
+- **Gestione Funzioni Personalizzate**: Aggiunta possibilità di **modificare** (pencil icon) ed **eliminare** (trash icon) le funzioni aggiunte dall'utente direttamente dalla sidebar.
+- **Nuovo Layout Sidebar**: Riprogettata l'interfaccia del grafico con una colonna di controllo laterale professionale.
+- **Personalizzazione Colori**: Integrazione Color Picker di sistema per ogni elemento del grafico.
+- **Palette AI Ottimizzata**: Nuova palette colori ad alto contrasto generata via prompt engineering.
 
 ### 7 Maggio 2026 - Potenziamento Grafici e Analisi Interattiva
 - **Grafici 2.0 (Analisi Interattiva)**:
