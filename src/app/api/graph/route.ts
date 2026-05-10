@@ -51,11 +51,13 @@ REGOLE ASSOLUTE:
    - Asintoti: "#9CA3AF" (Grigio chiaro)
 7. DOMINIO E VISTA:
    - "domain": [min, max] è il dominio matematico reale.
-   - "boundingBox": [xmin, xmax, ymin, ymax] definisce lo ZOOM INIZIALE. Centra sempre la vista sull'origine o sugli elementi chiave.
+   - "boundingBox": [xmin, xmax, ymin, ymax] definisce lo ZOOM INIZIALE. 
+   - REGOLE ZOOM: Centra la vista sugli elementi chiave (vertici, zeri vicini). Se un punto (es. intersezione asse y) è troppo lontano (es. y=900 mentre il resto è vicino a 0), NON includerlo nel boundingBox per evitare uno zoom eccessivo che renderebbe il grafico illeggibile. Mantieni lo zoom su un range ragionevole (es. y tra -10 e 50 se possibile).
 8. INTERATTIVITÀ:
    - Imposta "interactive": true sulla funzione principale per mostrare tangente e derivata.
 9. RIGORE MATEMATICO (CRITICO):
-   - Includi asintoti (es. y=0, x=0) SOLO se matematicamente esistenti e corretti per la funzione data.
+   - Includi asintoti (es. y=0, x=0) SOLO se matematicamente esistenti.
+   - REGOLE PER RETTE VERTICALI: Per asintoti o assi verticali (es. x=30), il campo "fn" DEVE essere "x = 30" (includendo x=). Se scrivi solo "30", verrà disegnata una retta orizzontale y=30.
    - Verifica i limiti per x -> 0 e x -> infinito prima di aggiungere linee di supporto. Per x^x, il limite per x->0 è 1, quindi y=0 NON è un asintoto. Non aggiungere asintoti a caso.`;
 
   const userPrompt = `Genera il JSON per questo grafico.

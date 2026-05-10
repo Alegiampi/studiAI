@@ -9,12 +9,13 @@ Questo documento riassume lo stato attuale dell'architettura e dell'interfaccia 
 
 ### 10 Maggio 2026 - Laboratorio Matematico Interattivo (Mafs 3.0)
 - **Inserimento Funzioni Utente**: Trasformato il grafico in uno strumento attivo dove l'utente può aggiungere le proprie funzioni cliccando su "+ Aggiungi funzione".
-- **Smart Notation & Sanitizzazione**: Implementato un pre-processore che corregge automaticamente le notazioni comuni (es. `sinx` -> `sin(x)`) per rendere l'input più naturale e meno "informatico".
-- **Supporto Funzioni Inverse ($x = f(y)$)**: Potenziato il rendering per supportare parabole orizzontali e relazioni dove la $x$ dipende dalla $y$ (es. `x = y^2`), con riconoscimento automatico della variabile.
+- **Smart Notation & Sanitizzazione**: Implementato un pre-processore che corregge automaticamente le notazioni comuni (es. `sinx` -> `sin(x)`).
+- **Supporto Funzioni Inverse ($x = f(y)$)**: Potenziato il rendering per supportare parabole orizzontali e relazioni dove la $x$ dipende dalla $y$ (es. `x = y^2`), con riconoscimento automatico della variabile e supporto agli spazi (es. `x = y^2`).
+- **Heuristic Detection Rette Verticali**: Implementata una logica avanzata che riconosce se una funzione costante fornita dall'IA è una retta verticale analizzando la label (es. "Asse di simmetria x=30").
+- **Ottimizzazione Zoom AI**: Affinate le istruzioni dell'IA per il `boundingBox` per evitare zoom out eccessivi causati da punti di intersezione lontani (es. y=900), mantenendo la vista centrata sugli elementi chiave.
 - **Gestione Funzioni Personalizzate**: Aggiunta possibilità di **modificare** (pencil icon) ed **eliminare** (trash icon) le funzioni aggiunte dall'utente direttamente dalla sidebar.
 - **Nuovo Layout Sidebar**: Riprogettata l'interfaccia del grafico con una colonna di controllo laterale professionale.
 - **Personalizzazione Colori**: Integrazione Color Picker di sistema per ogni elemento del grafico.
-- **Palette AI Ottimizzata**: Nuova palette colori ad alto contrasto generata via prompt engineering.
 
 ### 7 Maggio 2026 - Potenziamento Grafici e Analisi Interattiva
 - **Grafici 2.0 (Analisi Interattiva)**:

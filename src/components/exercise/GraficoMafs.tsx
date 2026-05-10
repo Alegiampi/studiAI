@@ -8,7 +8,7 @@ import { compile, derivative } from 'mathjs'
 import { Eye, EyeOff, TrendingUp, Plus, Check, X, Pencil, Trash2 } from 'lucide-react'
 import type { GraficoData, ElementoGrafico } from '@/types'
 
-function FunctionLayer({ fnStr, color, domain, interactive }: { fnStr: string; color: string; domain?: [number, number]; interactive?: boolean }) {
+function FunctionLayer({ fnStr, color, domain, interactive, label }: { fnStr: string; color: string; domain?: [number, number]; interactive?: boolean; label?: string }) {
   const [t, setT] = useState(1)
 
   const domainKey = JSON.stringify(domain)
@@ -27,9 +27,15 @@ function FunctionLayer({ fnStr, color, domain, interactive }: { fnStr: string; c
     if (raw.includes('y') && !raw.includes('x')) {
       return { isY: true, cleanFn: raw }
     }
+
+    // Heuristic avanzata: se la label suggerisce una retta verticale "x = ..." 
+    // e la funzione è una costante, allora è una retta verticale.
+    if (label && /x\s*=/i.test(label) && !isNaN(Number(raw))) {
+      return { isY: true, cleanFn: raw }
+    }
     
     return { isY: false, cleanFn: raw }
-  }, [fnStr])
+  }, [fnStr, label])
 
   const evaluate = useMemo(() => {
     try {
@@ -398,7 +404,7 @@ export default function GraficoMafs({ data }: { data: GraficoData }) {
 
               if (e.type === 'function') {
                 const key = `fn-${i}-${e.fn}`
-                return <FunctionLayer key={key} fnStr={e.fn} color={displayColor} domain={e.domain} interactive={e.interactive && showTangent} />
+                return <FunctionLayer key={key} fnStr={e.fn} color={displayColor} domain={e.domain} interactive={e.interactive && showTangent} label={e.label} />
               }
               if (e.type === 'point') {
                 const key = `pt-${i}-${e.coords.join(',')}`
