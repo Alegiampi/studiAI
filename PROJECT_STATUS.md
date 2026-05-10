@@ -7,6 +7,11 @@ Questo documento riassume lo stato attuale dell'architettura e dell'interfaccia 
 
 ## Log delle Modifiche (Storico)
 
+### 10 Maggio 2026 - UX Potenziata e Controllo Grafico
+- **Visibilità Selettiva (GeoGebra Style)**:
+    - **Toggle Legenda**: La legenda del grafico è ora interattiva. Gli utenti possono mostrare/nascondere singole funzioni o punti cliccando sui pallini colorati.
+    - **Feedback Visivo**: Implementato stato visivo dinamico nella legenda (opacità ridotta e pallino vuoto per elementi nascosti) per una navigazione intuitiva simile a GeoGebra.
+
 ### 7 Maggio 2026 - Potenziamento Grafici e Analisi Interattiva
 - **Grafici 2.0 (Analisi Interattiva)**:
     - **Punto Tangente Dinamico**: Introdotto un punto mobile sulla funzione che calcola e visualizza istantaneamente la retta tangente e la pendenza ($m$) tramite `mathjs`. Ideale per spiegare il concetto di derivata.

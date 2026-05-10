@@ -87,7 +87,20 @@ function FunctionLayer({ fnStr, color, domain, interactive }: { fnStr: string; c
 export default function GraficoMafs({ data }: { data: GraficoData }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [mounted, setMounted] = useState(false)
+  const [hiddenIndices, setHiddenIndices] = useState<Set<number>>(new Set())
   
+  const toggleVisibility = (index: number) => {
+    setHiddenIndices(prev => {
+      const next = new Set(prev)
+      if (next.has(index)) {
+        next.delete(index)
+      } else {
+        next.add(index)
+      }
+      return next
+    })
+  }
+
   // Calcoliamo la vista iniziale (centrata) basata sui dati dell'AI
   const boxKey = JSON.stringify(data.boundingBox)
   const initialViewBox = useMemo(() => {
@@ -130,12 +143,34 @@ export default function GraficoMafs({ data }: { data: GraficoData }) {
           Grafico Interattivo
         </div>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          {data.espressioni.map((e, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: e.color }} />
-              <span style={{ fontSize: 11, color: '#888' }}>{e.label}</span>
-            </div>
-          ))}
+          {data.espressioni.map((e, i) => {
+            const isHidden = hiddenIndices.has(i)
+            return (
+              <div 
+                key={i} 
+                onClick={() => toggleVisibility(i)}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 5, 
+                  cursor: 'pointer',
+                  opacity: isHidden ? 0.4 : 1,
+                  transition: 'all 0.2s ease',
+                  userSelect: 'none'
+                }}
+              >
+                <div style={{ 
+                  width: 10, 
+                  height: 10, 
+                  borderRadius: '50%', 
+                  background: isHidden ? 'transparent' : e.color,
+                  border: `2px solid ${e.color}`,
+                  transition: 'all 0.2s ease'
+                }} />
+                <span style={{ fontSize: 11, color: '#888' }}>{e.label}</span>
+              </div>
+            )
+          })}
         </div>
       </div>
 
@@ -152,6 +187,8 @@ export default function GraficoMafs({ data }: { data: GraficoData }) {
           >
             <Coordinates.Cartesian subdivisions={5} />
             {data.espressioni.map((e: ElementoGrafico, i: number) => {
+              if (hiddenIndices.has(i)) return null
+
               if (e.type === 'function') {
                 const key = `fn-${i}-${e.fn}`
                 return <FunctionLayer key={key} fnStr={e.fn} color={e.color} domain={e.domain} interactive={e.interactive} />
