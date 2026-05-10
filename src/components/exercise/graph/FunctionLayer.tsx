@@ -1,0 +1,140 @@
+import { useState, useMemo } from 'react'
+import { Plot, Line, MovablePoint, Text } from 'mafs'
+import { compile, derivative } from 'mathjs'
+import { motion } from 'framer-motion'
+
+export function FunctionLayer({ 
+  fnStr, 
+  color, 
+  domain, 
+  interactive, 
+  label, 
+  lineStyle = 'solid',
+  isHidden = false
+}: { 
+  fnStr: string; 
+  color: string; 
+  domain?: [number, number]; 
+  interactive?: boolean; 
+  label?: string; 
+  lineStyle?: 'solid' | 'dashed';
+  isHidden?: boolean;
+}) {
+  const [t, setT] = useState(1)
+
+  const domainKey = JSON.stringify(domain)
+
+  const { isY, cleanFn } = useMemo(() => {
+    let raw = fnStr.trim()
+    const eqMatch = raw.match(/^([xy])\s*=\s*(.*)$/i)
+    if (eqMatch) {
+      const variable = eqMatch[1].toLowerCase()
+      return { isY: variable === 'x', cleanFn: eqMatch[2] }
+    }
+
+    // Fallback invincibili per asintoti generati dall'IA
+    if (label && /vertical/i.test(label)) {
+      return { isY: true, cleanFn: raw }
+    }
+    if (label && /orizzontal/i.test(label)) {
+      return { isY: false, cleanFn: raw }
+    }
+    
+    // Heuristic: se contiene y e non x, assumiamo sia x = f(y)
+    if (raw.includes('y') && !raw.includes('x')) {
+      return { isY: true, cleanFn: raw }
+    }
+
+    // Heuristic avanzata: se la label suggerisce una retta verticale "x = ..." 
+    // e la funzione è una costante, allora è una retta verticale.
+    if (label && /x\s*=/i.test(label) && !isNaN(Number(raw))) {
+      return { isY: true, cleanFn: raw }
+    }
+    
+    return { isY: false, cleanFn: raw }
+  }, [fnStr, label])
+
+  const evaluate = useMemo(() => {
+    let node: any
+    try {
+      node = compile(cleanFn)
+    } catch {
+      // Se l'IA ha scritto testo invece di una formula (es. "0 (asse x)"), estraiamo solo il numero
+      const match = cleanFn.match(/-?\d+(\.\d+)?/)
+      node = compile(match ? match[0] : '0')
+    }
+
+    return (val: number) => {
+      try {
+        const scope = isY ? { y: val } : { x: val }
+        const result = node.evaluate(scope)
+        if (typeof result !== 'number' || !isFinite(result)) return NaN
+        
+        // RIMOSSO CLAMPING A +/- 5000:
+        // Consentiamo a Mafs di gestire l'infinito ritornando valori enormi 
+        // finché sono finiti. Se è esattamente infinito, isFinite torna falso e restituisce NaN.
+        
+        return result
+      } catch (err) {
+        return NaN
+      }
+    }
+  }, [cleanFn, isY, label])
+
+  const df = useMemo(() => {
+    if (!interactive || isY) return null // Disabilitiamo derivata interattiva per funzioni di y per ora
+    try {
+      const dNode = derivative(cleanFn, 'x').compile()
+      return (x: number) => dNode.evaluate({ x })
+    } catch {
+      return null
+    }
+  }, [cleanFn, interactive, isY])
+
+  const yt = evaluate(t)
+
+  return (
+    <motion.g 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: isHidden ? 0 : 1 }}
+      transition={{ duration: 0.3 }}
+      className={lineStyle === 'dashed' ? 'custom-dashed-plot' : ''}
+    >
+      {isY ? (
+        <Plot.OfY x={evaluate} color={color} weight={3} style={lineStyle} />
+      ) : (
+        <Plot.OfX y={evaluate} color={color} weight={3} style={lineStyle} />
+      )}
+      {interactive && !isY && (
+        <>
+          {df && isFinite(yt) && (
+            <Line.PointSlope
+              point={[t, yt]}
+              slope={df(t)}
+              color={color}
+              weight={2}
+              style="dashed"
+            />
+          )}
+          <MovablePoint
+            point={[t, isFinite(yt) ? yt : 0]}
+            onMove={([newT]) => setT(newT)}
+            color={color}
+          />
+          {df && isFinite(yt) && (
+            <Text
+              x={t}
+              y={yt}
+              attach="ne"
+              attachDistance={15}
+              size={12}
+              color={color}
+            >
+              m = {df(t).toFixed(2)}
+            </Text>
+          )}
+        </>
+      )}
+    </motion.g>
+  )
+}

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import getCroppedImg from '@/utils/cropImage'
+import { copyToClipboard } from '@/utils/clipboard'
 import { GraficoData, ToastType } from '@/types'
 
 type ExerciseInput = {
@@ -214,39 +215,51 @@ export function useExercises(
   // Condivisione della spiegazione
   const handleShare = useCallback(async () => {
     setExerciseState(prev => ({ ...prev, shareLoading: true }))
-    const res = await fetch('/api/share', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        question: exerciseState.exercise?.text || '',
-        explanation: exerciseState.explanation,
-        scuola: profilo.scuola,
-        classe: profilo.classe,
-        grafico: exerciseState.grafico
-      })
-    })
-    const data = await res.json()
-    const url = window.location.origin + '/s/' + data.id
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Spiegazione theLemma',
-          text: 'Guarda questa spiegazione passo-passo su theLemma!',
-          url: url
+    try {
+      const res = await fetch('/api/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: exerciseState.exercise?.text || '',
+          explanation: exerciseState.explanation,
+          scuola: profilo.scuola,
+          classe: profilo.classe,
+          grafico: exerciseState.grafico
         })
-        setExerciseState(prev => ({ ...prev, shareLoading: false }))
-        return
-      } catch (err) {
-        try { await navigator.clipboard.writeText(url) } catch {}
-      }
-    } else {
-      try { await navigator.clipboard.writeText(url) } catch {}
-    }
+      })
+      
+      if (!res.ok) throw new Error('Errore API share')
+      
+      const data = await res.json()
+      const url = window.location.origin + '/s/' + data.id
 
-    setExerciseState(prev => ({ ...prev, shareUrl: url, shareLoading: false }))
-    setTimeout(() => setExerciseState(prev => ({ ...prev, shareUrl: null })), 3000)
-  }, [exerciseState.exercise, exerciseState.explanation, exerciseState.grafico, profilo])
+      // Copia robusta (funziona anche dopo il fetch asincrono)
+      await copyToClipboard(url)
+      
+      // Impostiamo shareUrl per attivare il toast e cambiare lo stato del pulsante
+      setExerciseState(prev => ({ ...prev, shareUrl: url, shareLoading: false }))
+
+      // Se disponibile, proviamo anche il menu di condivisione nativo (soprattutto su mobile)
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: 'Spiegazione theLemma',
+            text: 'Guarda questa spiegazione passo-passo su theLemma!',
+            url: url
+          })
+        } catch (err) {
+          // L'utente ha annullato o share non riuscito, non è un errore per noi
+        }
+      }
+
+      // Reset dello stato dopo 3 secondi per permettere una nuova condivisione
+      setTimeout(() => setExerciseState(prev => ({ ...prev, shareUrl: null })), 3000)
+    } catch (err) {
+      console.error('Errore durante la condivisione:', err)
+      showToast?.('Errore durante la condivisione. Riprova.', 'error')
+      setExerciseState(prev => ({ ...prev, shareLoading: false }))
+    }
+  }, [exerciseState.exercise, exerciseState.explanation, exerciseState.grafico, profilo, showToast])
 
   // Generazione del grafico
   const handleGrafico = useCallback(async () => {

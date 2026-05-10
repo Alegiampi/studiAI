@@ -48,7 +48,7 @@ REGOLE ASSOLUTE:
    - Funzione principale f(x): "#FFD600" (Giallo)
    - Derivate (f', f''): "#38BDF8" (Azzurro) o "#818CF8" (Viola chiaro)
    - Punti (flessi, zeri, ecc): "#F43F5E" (Rosso vivo)
-   - Asintoti: "#9CA3AF" (Grigio chiaro)
+   - Asintoti: "#F97316" (Arancione) o "#A855F7" (Viola)
 7. DOMINIO E VISTA:
    - "domain": [min, max] è il dominio matematico reale.
    - "boundingBox": [xmin, xmax, ymin, ymax] definisce lo ZOOM INIZIALE. 

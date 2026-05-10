@@ -7,6 +7,21 @@ Questo documento riassume lo stato attuale dell'architettura e dell'interfaccia 
 
 ## Log delle Modifiche (Storico)
 
+### 15 Maggio 2026 - Mafs Refactoring, AI Robustness & Fluid UI
+- **Mafs 3.5 (Interactive Graph Evolution)**:
+    - **Refactoring**: Decoupled `GraficoMafs.tsx` into `FunctionLayer.tsx` and `GraphSidebar.tsx` for improved modularity.
+    - **AI Robustness**: 
+        - Implemented fallback parsing for AI-generated mathematical strings (stripping text, enforcing number extraction).
+        - Heuristic-based detection of vertical lines via labels.
+        - Removed domain restrictions for asymptotes to ensure infinite rendering.
+    - **Visual Fidelity**:
+        - Fixed "straight line" artifacts at discontinuities by removing artificial value clamping.
+        - Enhanced visibility of $x=0/y=0$ asymptotes using distinct colors (Orange/Purple).
+        - Added smooth `framer-motion` animations for hiding/showing elements both in UI and on-graph.
+- **AI Assist Pipeline**:
+    - Optimized `api/graph/route.ts` prompt for better color choices and bounding box calculations.
+    - Implemented a more reliable context sharing between the graph state and the AI assist API.
+
 ### 10 Maggio 2026 - Laboratorio Matematico Interattivo (Mafs 3.0)
 - **Inserimento Funzioni Utente**: Trasformato il grafico in uno strumento attivo dove l'utente può aggiungere le proprie funzioni cliccando su "+ Aggiungi funzione".
 - **Smart Notation & Sanitizzazione**: Implementato un pre-processore che corregge automaticamente le notazioni comuni (es. `sinx` -> `sin(x)`).

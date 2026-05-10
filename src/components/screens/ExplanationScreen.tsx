@@ -371,28 +371,35 @@ export default function ExplanationScreen({
 
         {/* CHAT MESSAGES */}
         {explanation && !loading && (
-          <div className="mt-12 flex flex-col gap-6">
-            {/* Tutor Profile Section */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-primary/5 border border-primary/20 rounded-[32px] p-6 mb-4 flex items-center gap-5 relative overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 p-4 opacity-10">
-                <Sparkles size={80} className="text-primary" />
+          <div className="mt-20 relative">
+            {/* Elegant Separator */}
+            <div className="absolute top-0 inset-x-0 flex items-center justify-center">
+              <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-surface-border to-transparent" />
+              <div className="px-4 text-[11px] font-black uppercase tracking-[0.2em] text-foreground-subtle bg-background">
+                Area Tutor
               </div>
-              <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-background shadow-xl shadow-primary/20 shrink-0 relative z-10">
-                <Bot size={32} />
-              </div>
-              <div className="relative z-10">
-                <h3 className="text-lg font-black text-foreground mb-1">Tutor <span className="font-light opacity-60">the</span>Lemma</h3>
-                <p className="text-sm text-foreground-muted leading-snug">Il tuo assistente intelligente. Chiedimi qualsiasi cosa sulla spiegazione qui sopra!</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-success">Online ora</span>
+              <div className="h-[1px] flex-1 bg-gradient-to-r from-surface-border via-surface-border to-transparent" />
+            </div>
+
+            <div className="flex flex-col gap-6 pt-12">
+              {/* Tutor AI Section Header */}
+              <div className="flex items-center justify-between mb-2 px-2">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-md" />
+                    <div className="w-12 h-12 rounded-2xl bg-surface border border-surface-border flex items-center justify-center text-primary relative z-10 shadow-sm">
+                      <Bot size={24} />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-[19px] font-black text-foreground leading-tight">Tutor <span className="font-light opacity-60">the</span>Lemma</h3>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                      <span className="text-[11px] font-bold text-success uppercase tracking-widest">Online e pronto ad aiutarti</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </motion.div>
 
             {chatMessages.map((msg, idx) => (
               <motion.div 
@@ -424,14 +431,19 @@ export default function ExplanationScreen({
             ))}
             
             {chatLoading && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-                <div className="bg-surface border border-surface-border text-foreground rounded-2xl rounded-bl-none p-4 flex items-center gap-2 shadow-sm">
-                  <Loader2 size={16} className="text-primary animate-spin" />
-                  <span className="text-sm text-foreground-subtle italic font-medium">Il tutor sta elaborando...</span>
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start">
+                <div className="bg-surface border border-surface-border rounded-2xl rounded-bl-none p-4 text-[14px] text-foreground flex items-center gap-3 shadow-sm max-w-[85%]">
+                  <div className="flex gap-1">
+                    <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                    <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                    <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce" />
+                  </div>
+                  <span className="italic text-[13px] text-foreground-subtle">Il tutor sta scrivendo...</span>
                 </div>
               </motion.div>
             )}
           </div>
+        </div>
         )}
 
         {/* CHAT INPUT AREA */}

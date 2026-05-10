@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import ExplanationRenderer from '@/components/exercise/ExplanationRenderer'
+import { copyToClipboard } from '@/utils/clipboard'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, BookOpen, Clock, AlertCircle, Search, Star, Share2, Tag, Activity, Triangle, Divide, Calculator, FunctionSquare, LayoutGrid, Zap, Variable, Infinity, Link } from 'lucide-react'
 import { useToast } from '@/hooks/ToastContext'
@@ -136,12 +137,10 @@ export default function StoricoScreen({ onBack }: { onBack: () => void }) {
     }
 
     if (shareUrl) {
-      // Proviamo a copiare negli appunti in ogni caso come fallback sicuro
-      try {
-        await navigator.clipboard.writeText(shareUrl)
+      // Copia robusta negli appunti
+      const copied = await copyToClipboard(shareUrl)
+      if (copied) {
         showToast('Link copiato!', 'success')
-      } catch (err) {
-        console.error('Errore copia appunti:', err)
       }
 
       // Se disponibile, apriamo anche il menu di condivisione nativo (soprattutto su mobile)
