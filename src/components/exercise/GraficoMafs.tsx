@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { Mafs, Coordinates, Point } from 'mafs'
-import { motion } from 'framer-motion'
 import 'mafs/core.css'
 import 'mafs/font.css'
 import type { GraficoData } from '@/types'
@@ -59,19 +58,6 @@ export default function GraficoMafs({ data }: { data?: GraficoData }) {
 
   return (
     <div className="w-full flex flex-col md:flex-row gap-4">
-      <style>{`
-        .custom-dashed-plot path, .custom-dashed-plot line, .custom-dashed-plot polyline {
-          stroke-dasharray: 10, 10 !important;
-        }
-        
-        /* OVERRIDE PER RISOLVERE IL BUG DEGLI ASINTOTI INVISIBILI */
-        /* Questo forza tutti i path di Mafs (compresi gli asintoti) ad essere visibili e z-index */
-        .mafs-plot {
-          position: relative;
-          z-index: 10;
-        }
-      `}</style>
-
       <GraphSidebar
         allEspressioni={allEspressioni}
         userFunctions={userFunctions}
@@ -112,11 +98,8 @@ export default function GraficoMafs({ data }: { data?: GraficoData }) {
               }
               if (e.type === 'point') {
                 const key = `pt-${i}-${e.coords.join(',')}`
-                return (
-                  <motion.g key={key} animate={{ opacity: isHidden ? 0 : 1 }} transition={{ duration: 0.3 }}>
-                    <Point x={e.coords[0]} y={e.coords[1]} color={displayColor} />
-                  </motion.g>
-                )
+                if (isHidden) return null
+                return <Point key={key} x={e.coords[0]} y={e.coords[1]} color={displayColor} />
               }
               return null
             })}

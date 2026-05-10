@@ -279,7 +279,7 @@ export function useExercises(
       if (data.data) {
         setExerciseState(prev => ({ ...prev, grafico: data.data, graficoLoading: false }))
       } else {
-        showToast?.('Nessun grafico disponibile per questo esercizio.', 'info')
+        showToast?.(data.error || 'Nessun grafico disponibile per questo esercizio.', 'info')
         setExerciseState(prev => ({ ...prev, graficoLoading: false }))
       }
     } catch (e) {

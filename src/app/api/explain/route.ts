@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
         { role: 'system', content: 'Sei theLemma, un tutor italiano. Rispondi in modo breve e chiaro, max 80 parole, usando LaTeX $formula$ per le formule.' },
         { role: 'user', content: text }
       ]
-      explanationText = await callGroq('openai/gpt-oss-120b', messages, 400)
+      explanationText = await callGroq('llama-3.1-8b-instant', messages, 400)
 
     } else if (imageBase64) {
       // STAGE 1: Llama 4 Scout estrae il testo matematico dall'immagine
@@ -91,20 +91,20 @@ export async function POST(req: NextRequest) {
       ]
       const extractedText = await callGroq('meta-llama/llama-4-scout-17b-16e-instruct', extractMessages, 500)
 
-      // STAGE 2: GPT OSS 120B ragiona sul testo estratto e genera la spiegazione completa
+      // STAGE 2: Llama 3.3 70B ragiona sul testo estratto e genera la spiegazione completa
       const explainMessages = [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: `Spiega questo esercizio: ${extractedText}` }
       ]
-      explanationText = await callGroq('openai/gpt-oss-120b', explainMessages, 1500)
+      explanationText = await callGroq('llama-3.3-70b-versatile', explainMessages, 1500)
 
     } else {
-      // Testo diretto: GPT OSS 120B genera la spiegazione
+      // Testo diretto: Llama 3.3 70B genera la spiegazione
       const messages = [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: 'Spiega questo esercizio: ' + text }
       ]
-      explanationText = await callGroq('openai/gpt-oss-120b', messages, 1500)
+      explanationText = await callGroq('llama-3.3-70b-versatile', messages, 1500)
     }
 
     // Fallback: se il modello usa comunque \[ \] o \( \)

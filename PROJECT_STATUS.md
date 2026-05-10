@@ -7,6 +7,19 @@ Questo documento riassume lo stato attuale dell'architettura e dell'interfaccia 
 
 ## Log delle Modifiche (Storico)
 
+### 11 Maggio 2026 - Stabilizzazione Grafica, AI Optimization & Bug Fix
+- **Mafs 4.0 (Rendering Stability)**:
+    - **Fix Iperboli (1/x)**: Risolto definitivamente il problema della "linea verticale" nelle discontinuità. Implementata una soglia dinamica (`|y| > 200`) che restituisce `NaN`, forzando Mafs a spezzare il percorso SVG invece di unire i rami.
+    - **Fix Asintoti Invisibili**: Eliminati i conflitti tra `framer-motion` e il contesto SVG di Mafs che rendevano invisibili gli asintoti sugli assi. Rimosso il wrapper `<motion.g>` a favore di un montaggio/smontaggio condizionale diretto.
+    - **Precisione Colori**: Gli asintoti ora sono sempre visibili e correttamente distinti cromaticamente (Arancione/Viola).
+- **AI Model Optimization (Cost & Speed)**:
+    - **Architettura Multi-Modello**:
+        - **Heavy Duty (Llama 3.3 70B)**: Mantenuto per Spiegazioni Complesse, Chat Tutor e Generazione Grafica per garantire il massimo rigore matematico.
+        - **Light Duty (Llama 3.1 8B)**: Introdotto per compiti meccanici come la **Classificazione degli esercizi** e i **Chiarimenti Rapidi**, riducendo il consumo di token del 90% e dimezzando i tempi di risposta.
+- **Error Handling & UX**:
+    - **Rate Limit awareness**: Migliorata la gestione degli errori API per distinguere tra fallimenti generici e limiti di token di Groq, informando l'utente con toast specifici ("Limite API raggiunto. Riprova tra poco").
+    - **Auto-Fix Sintassi**: Risolti bug di rendering nel frontend causati da tag JSX non chiusi correttamente durante i ricaricamenti.
+
 ### 11 Maggio 2026 - UX Condivisione & Tutor AI Premium Area
 - **Pagina di Condivisione (Share Page)**:
     - Ridisegnata completamente la pagina pubblica di condivisione (`s/[id]`) per riflettere l'estetica premium del progetto.

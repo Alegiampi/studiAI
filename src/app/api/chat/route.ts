@@ -29,7 +29,7 @@ REGOLE DI FORMATTAZIONE:
       }))
     ]
 
-    const model = 'openai/gpt-oss-120b'
+    const model = 'llama-3.3-70b-versatile'
 
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',

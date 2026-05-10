@@ -69,11 +69,9 @@ export function FunctionLayer({
         const scope = isY ? { y: val } : { x: val }
         const result = node.evaluate(scope)
         if (typeof result !== 'number' || !isFinite(result)) return NaN
-        
-        // RIMOSSO CLAMPING A +/- 5000:
-        // Consentiamo a Mafs di gestire l'infinito ritornando valori enormi 
-        // finché sono finiti. Se è esattamente infinito, isFinite torna falso e restituisce NaN.
-        
+        // Restituiamo NaN per valori grandi per SPEZZARE la linea alle discontinuità.
+        // Abbassato a 200 per intercettare il campionamento di Mafs prima che tiri la riga.
+        if (Math.abs(result) > 200) return NaN
         return result
       } catch (err) {
         return NaN
@@ -93,17 +91,14 @@ export function FunctionLayer({
 
   const yt = evaluate(t)
 
+  if (isHidden) return null
+
   return (
-    <motion.g 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: isHidden ? 0 : 1 }}
-      transition={{ duration: 0.3 }}
-      className={lineStyle === 'dashed' ? 'custom-dashed-plot' : ''}
-    >
+    <>
       {isY ? (
-        <Plot.OfY x={evaluate} color={color} weight={3} style={lineStyle} />
+        <Plot.OfY x={evaluate} color={color} weight={lineStyle === 'dashed' ? 4 : 3} style={lineStyle} />
       ) : (
-        <Plot.OfX y={evaluate} color={color} weight={3} style={lineStyle} />
+        <Plot.OfX y={evaluate} color={color} weight={lineStyle === 'dashed' ? 4 : 3} style={lineStyle} />
       )}
       {interactive && !isY && (
         <>
@@ -135,6 +130,6 @@ export function FunctionLayer({
           )}
         </>
       )}
-    </motion.g>
+    </>
   )
 }

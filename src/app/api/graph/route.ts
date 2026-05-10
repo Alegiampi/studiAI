@@ -72,7 +72,15 @@ Rispondi SOLO con il JSON crudo.`;
     { role: 'user', content: userPrompt }
   ]);
 
-  if (!data.choices) return NextResponse.json({ error: 'Errore API' });
+  if (!data.choices) {
+    const errMsg = data.error?.message || 'Errore API'
+    console.error('[graph] Groq error:', errMsg)
+    // Se è un rate limit, informiamo il client
+    if (data.error?.code === 'rate_limit_exceeded') {
+      return NextResponse.json({ error: 'Limite API raggiunto. Riprova tra qualche minuto.' })
+    }
+    return NextResponse.json({ error: 'Errore API' })
+  }
 
   try {
     const text = data.choices[0].message.content.trim();
