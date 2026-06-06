@@ -466,8 +466,11 @@ export function healLaTeX(text: string): string {
 
   // 2. Normalize common LaTeX implication/arrow and other symbols that are missing their backslash
   // Prevent matching substrings of longer words by ensuring it's not preceded by a letter or backslash
-  const symbolRegex = /(?<![a-zA-Z\\])(Leftrightarrow|leftrightarrow|Rightarrow|rightarrow|Leftarrow|leftarrow|pm|neq|partial|mathbb|mathrm|mathbf|mathcal|mathsf|mathit|quad|qquad|forall|exists)/g
+  const symbolRegex = /(?<![a-zA-Z\\])(Leftrightarrow|leftrightarrow|Rightarrow|rightarrow|Leftarrow|leftarrow|partial|mathbb|mathrm|mathbf|mathcal|mathsf|mathit|quad|qquad|forall|exists)/g
   fixed = fixed.replace(symbolRegex, '\\$1')
+
+  const wordSymbolRegex = /(?<![a-zA-Z\\])(pm|neq|ge|cdot|sin|cos|tan|log|ln|lim|frac|sqrt)(?![a-zA-Z])/g
+  fixed = fixed.replace(wordSymbolRegex, '\\$1')
 
   // 3. Wrap standalone math commands (and their preceding sign if unary) in inline math delimiters $...$ if they are outside math blocks.
   const ranges = getMathRanges(fixed)

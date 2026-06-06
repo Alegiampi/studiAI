@@ -31,10 +31,11 @@ Rispondi SEMPRE con un oggetto JSON valido e nient'altro. Il formato esatto da r
 
 REGOLE FONDAMENTALI PER IL CONTENUTO DEI CAMPI:
 - Usa da 2 a 8 passi in base alla difficoltà e al livello dello studente.
-- Qualsiasi formula, equazione, variabile, numero isolato o simbolo matematico/logico (ad esempio le frecce di implicazione \\Rightarrow, \\rightarrow, \\Leftarrow, \\Leftrightarrow o operatori come \\le, \\ge, \\neq, \\pm o i simboli di infinito \\infty, +\\infty, -\\infty) deve essere SEMPRE racchiusa tra i delimitatori LaTeX $ (inline) o $$ (display). Non scrivere mai simboli o equazioni matematiche al di fuori di questi delimitatori. In particolare, non scrivere mai '+infinito' o '-infinito' come testo semplice, ma usa sempre $+ \\infty$ e $- \\infty$.
-  * Esempio CORRETTO: "Risolvendo l'equazione $x - 2 = 0 \\Rightarrow x = 2$, otteniamo..."
-  * Esempio ERRATO: "Risolvendo l'equazione x - 2 = 0 Rightarrow x = 2, otteniamo..."
-- Usa $$...$$ per formule importanti isolate su riga propria. Queste devono essere su una riga separata: scrivi \\n prima e dopo del blocco $$.
+- Qualsiasi formula, equazione, variabile, numero isolato o simbolo matematico/logico deve essere SEMPRE racchiusa tra i delimitatori LaTeX $ (inline) o $$ (display). Non scrivere mai simboli o equazioni matematiche al di fuori di questi delimitatori. In particolare, non scrivere mai '+infinito' o '-infinito' come testo semplice, ma usa sempre $+ \\infty$ e $- \\infty$.
+  * Esempio CORRETTO: "Assegniamo $x = 3$ e $y = 4$. Per risolvere l'esercizio, dobbiamo applicare la formula:"
+- Usa un linguaggio discorsivo, con frasi naturali e variabili inline testuali ($...$). 
+- Quando presenti una formula principale, un'equazione chiave o un risultato, usa SEMPRE il formato a blocco isolato $$...$$. Questo la posizionerà al centro, ben spaziata. 
+- Metti sempre un \`\\n\\n\` prima e dopo ogni blocco \`$$\` in modo che sia ben isolato dal testo.
 - Per equazioni multi-step usa SOLO il formato:
   $$\\begin{aligned}\\na &= b \\\\\\\\\\n&= c\\n\\end{aligned}$$
 - NON usare \\[ \\], \\( \\) o \\begin{equation}. Solo $ e $$.

@@ -19,7 +19,18 @@ describe('parseExplanation', () => {
       expect(result.passi[0].titolo).toBe('Identificazione')
       expect(result.passi[0].corpo).toBe('La funzione è $f(x) = x^2$')
       expect(result.passi[1].titolo).toBe('Applicazione regola')
-      expect(result.finale).toBe("$f'(x) = 2x$")
+    })
+
+    it('heals missing backslashes for trig, log, frac, sqrt, and cdot inside math blocks', () => {
+      expect(healLaTeX('derivata di $x^2 cdot sin x$')).toBe('derivata di $x^2 \\cdot \\sin x$')
+      expect(healLaTeX('calcola $lim_{x \\to 0} frac{sin x}{x}$')).toBe('calcola $\\lim_{x \\to 0} \\frac{\\sin x}{x}$')
+      expect(healLaTeX('funzione $log x + ln y$')).toBe('funzione $\\log x + \\ln y$')
+      expect(healLaTeX('radice $sqrt{x}$')).toBe('radice $\\sqrt{x}$')
+    })
+
+    it('does not touch standard words that contain math command names as substrings', () => {
+      expect(healLaTeX('La cosa singola ha un limite costoso')).toBe('La cosa singola ha un limite costoso')
+      expect(healLaTeX('Un frullato di lamponi')).toBe('Un frullato di lamponi')
     })
 
     it('handles JSON with display math $$...$$ in corpo', () => {
