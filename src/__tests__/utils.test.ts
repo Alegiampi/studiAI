@@ -634,6 +634,14 @@ describe('parseExplanation', () => {
         expect(healLaTeX('Il valore totale delle funzioni')).toBe('Il valore totale delle funzioni')
       })
 
+      it('does not corrupt Italian words with accented vowels that contain LaTeX command substrings', () => {
+        expect(healLaTeX('così otteniamo il risultato')).toBe('così otteniamo il risultato')
+        expect(healLaTeX('più precisamente si ha')).toBe('più precisamente si ha')
+        expect(healLaTeX('è necessario calcolare il limite')).toBe('è necessario calcolare il limite')
+        expect(healLaTeX('sarà utile ricordare che')).toBe('sarà utile ricordare che')
+        expect(healLaTeX('la funzione è così definita')).toBe('la funzione è così definita')
+      })
+
       it('heals calculus, integrals, and limits (with backslashes)', () => {
         expect(healLaTeX('calcola \\int x^2 dx')).toBe('calcola $\\int$ x^2 dx')
         expect(healLaTeX('integrale doppio \\iint_D f(x,y) dx dy')).toBe('integrale doppio $\\iint_D$ f(x,y) dx dy')

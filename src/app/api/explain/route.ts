@@ -3,9 +3,13 @@ import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { ExplainSchema } from '@/lib/schemas'
 import { checkDailyLimit, checkBurstLimit, incrementDailyUsage } from '@/lib/rate-limit'
 
+function sanitize(val: string): string {
+  return val.replace(/[\r\n]+/g, ' ').slice(0, 100)
+}
+
 function buildSystemPrompt(scuola?: string, classe?: string, materie?: string[]) {
-  const livello = scuola && classe ? `Lo studente frequenta ${classe} di ${scuola}.` : ''
-  const materieStr = materie && materie.length > 0 ? `Le sue materie difficili sono: ${materie.join(', ')}.` : ''
+  const livello = scuola && classe ? `Lo studente frequenta ${sanitize(classe)} di ${sanitize(scuola)}.` : ''
+  const materieStr = materie && materie.length > 0 ? `Le sue materie difficili sono: ${materie.map(sanitize).join(', ')}.` : ''
 
   return `Sei theLemma, un tutor italiano di matematica e fisica per studenti italiani.
 ${livello} ${materieStr}
@@ -16,31 +20,43 @@ REGOLE DI RAGIONAMENTO MATEMATICO:
 - Sii rigoroso ma evita di perderti in discussioni filosofiche su casi come $0^0$ o basi negative a meno che non sia strettamente richiesto; prediligi la strada dell'analisi reale standard.
 - Assicurati che i passaggi siano logicamente concatenati e che portino alla risposta finale in modo chiaro.
 
-Rispondi SEMPRE con un oggetto JSON valido e nient'altro. Il formato esatto da rispettare è:
+Rispondi SEMPRE con un oggetto JSON valido e nient'altro. NON aggiungere testo prima o dopo il JSON. Il formato esatto da rispettare è:
 
 {
-  "titolo": "descrizione breve del tipo di esercizio",
+  "titolo": "breve descrizione del tipo di esercizio (es. 'Derivata di una frazione', 'Limite notevole', 'Integrale per parti')",
   "passi": [
     {
-      "titolo": "titolo breve del passo",
-      "corpo": "spiegazione dettagliata del passo, usa \\n per i ritorni a capo"
+      "titolo": "titolo brevissimo del passo (max 8 parole), come se fosse il titolo di un paragrafo",
+      "corpo": "spiegazione dettagliata del passo. Usa \\n per andare a capo. Vedi sotto per la struttura."
     }
   ],
-  "finale": "risposta finale con LaTeX, può contenere \\n"
+  "finale": "risposta finale con LaTeX, centrata e in evidenza"
 }
 
-REGOLE FONDAMENTALI PER IL CONTENUTO DEI CAMPI:
+STRUTTURA DEL CORPO DI OGNI PASSO:
+Ogni passo deve seguire questa struttura chiara:
+1. Una frase che spiega COSA si sta facendo e PERCHÉ (es. "Per calcolare la derivata di una frazione applichiamo la regola del quoziente:")
+2. A capo, la formula generale in display mode ($$...$$) centrata e isolata, con \\n prima e dopo
+3. A capo, spieghi come applichi la formula al caso specifico: "Nel nostro caso chiamiamo f(x) = \\sin x e g(x) = x"
+4. Se necessario, un'altra formula centrata con il risultato dell'applicazione
+5. Concludi il passo con una frase di raccordo che spiega cosa si è ottenuto e cosa si farà dopo
+
+Esempio concreto di un passo ben strutturato:
+"Per prima cosa identifichiamo il tipo di funzione e la regola da applicare.\\n\\nSiamo di fronte a una funzione razionale fratta, quindi dobbiamo applicare la regola di derivazione del quoziente:\\n\\n$$\\frac{d}{dx}\\left[\\frac{f(x)}{g(x)}\\right] = \\frac{f'(x)g(x) - f(x)g'(x)}{[g(x)]^2}$$\\n\\nNel nostro caso abbiamo:\\n- $f(x) = \\sin x$, quindi $f'(x) = \\cos x$\\n- $g(x) = x$, quindi $g'(x) = 1$\\n\\nOra sostituiamo questi valori nella formula."
+
+REGOLE FONDAMENTALI PER IL CONTENUTO:
 - Usa da 2 a 8 passi in base alla difficoltà e al livello dello studente.
-- Qualsiasi formula, equazione, variabile, numero isolato o simbolo matematico/logico deve essere SEMPRE racchiusa tra i delimitatori LaTeX $ (inline) o $$ (display). Non scrivere mai simboli o equazioni matematiche al di fuori di questi delimitatori. In particolare, non scrivere mai '+infinito' o '-infinito' come testo semplice, ma usa sempre $+ \\infty$ e $- \\infty$.
-  * Esempio CORRETTO: "Assegniamo $x = 3$ e $y = 4$. Per risolvere l'esercizio, dobbiamo applicare la formula:"
-- Usa un linguaggio discorsivo, con frasi naturali e variabili inline testuali ($...$). 
-- Quando presenti una formula principale, un'equazione chiave o un risultato, usa SEMPRE il formato a blocco isolato $$...$$. Questo la posizionerà al centro, ben spaziata. 
-- Metti sempre un \`\\n\\n\` prima e dopo ogni blocco \`$$\` in modo che sia ben isolato dal testo.
-- Per equazioni multi-step usa SOLO il formato:
-  $$\\begin{aligned}\\na &= b \\\\\\\\\\n&= c\\n\\end{aligned}$$
-- NON usare \\[ \\], \\( \\) o \\begin{equation}. Solo $ e $$.
-- Il campo "finale" contiene la risposta definitiva con LaTeX, può essere multi-riga.
-- Tieni il testo arioso: paragrafi brevi separati da \\n\\n.`
+- OGNI simbolo matematico, formula, equazione, variabile, numero o operatore (\\Rightarrow, \\rightarrow, \\Leftarrow, \\Leftrightarrow, \\le, \\ge, \\neq, \\pm, \\infty, +\\infty, -\\infty, \\cdot, \\times, \\forall, \\exists, \\partial, \\nabla, \\approx, \\equiv) deve essere SEMPRE racchiuso tra delimitatori LaTeX $ (inline) o $$ (display). Non scrivere MAI simboli matematici come testo semplice.
+  * Esempio CORRETTO: "Risolvendo l'equazione $x - 2 = 0 \\Rightarrow x = 2$, otteniamo..."
+  * Esempio ERRATO: "Risolvendo l'equazione x - 2 = 0 => x = 2, otteniamo..."
+- NON scrivere mai '+infinito' o '-infinito' come testo. Usa sempre $+\\infty$ e $-\\infty$.
+- Usa $$...$$ per le formule importanti, centrate e isolate su una riga separata (con \\n prima e dopo).
+- Le formule display $$...$$ NON devono mai stare dentro un paragrafo di testo: devono sempre essere su una riga propria.
+- Per equazioni multi-step su più righe, usa SOLO il formato con \\begin{aligned}:
+  $$\\begin{aligned}\\na &= b \\\\\\\\\\n&= c \\\\\\\\\\n&= d\\n\\end{aligned}$$
+- Il campo "finale" deve contenere SOLO la risposta definitiva in LaTeX, preferibilmente in display mode $$...$$. Non aggiungere testo narrativo nel finale.
+- NON usare MAI i delimitatori \\[ \\], \\( \\) o \\begin{equation}. Usa solo $ e $$.
+- Tieni il testo arioso: paragrafi brevi separati da \\n\\n (doppio a capo).`
 }
 
 interface ChatMessagePayload {
@@ -150,7 +166,7 @@ async function streamOpenAI(
   maxTokens: number,
   jsonMode = false
 ): Promise<ReadableStream<Uint8Array>> {
-  const body: any = { model, max_tokens: maxTokens, messages, stream: true }
+  const body: { model: string; max_tokens: number; messages: ChatMessagePayload[]; stream: boolean; response_format?: { type: string } } = { model, max_tokens: maxTokens, messages, stream: true }
   if (jsonMode) body.response_format = { type: 'json_object' }
 
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -176,7 +192,7 @@ async function streamGroq(
   maxTokens: number,
   jsonMode = false
 ): Promise<ReadableStream<Uint8Array>> {
-  const body: any = { model, max_tokens: maxTokens, messages, stream: true }
+  const body: { model: string; max_tokens: number; messages: ChatMessagePayload[]; stream: boolean; response_format?: { type: string } } = { model, max_tokens: maxTokens, messages, stream: true }
   if (jsonMode) body.response_format = { type: 'json_object' }
 
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -196,23 +212,6 @@ async function streamGroq(
   return makeTransformerStream(res.body!)
 }
 
-/** Applica i fallback LaTeX (\[ \] → $$, \( \) → $) ricorsivamente in un oggetto JSON */
-function fixLatexInValue(value: unknown): unknown {
-  if (typeof value === 'string') {
-    return value
-      .replace(/\\\[/g, '$$').replace(/\\\]/g, '$$')
-      .replace(/\\\(/g, '$').replace(/\\\)/g, '$')
-  }
-  if (Array.isArray(value)) return value.map(fixLatexInValue)
-  if (value && typeof value === 'object') {
-    const result: Record<string, unknown> = {}
-    for (const key of Object.keys(value as object)) {
-      result[key] = fixLatexInValue((value as Record<string, unknown>)[key])
-    }
-    return result
-  }
-  return value
-}
 
 export async function POST(req: NextRequest) {
   const parsed = ExplainSchema.safeParse(await req.json())

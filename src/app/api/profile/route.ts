@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { ProfileSchema } from '@/lib/schemas'
+import { checkBurstLimit } from '@/lib/rate-limit'
 
 export async function GET() {
   const supabase = await createSupabaseServerClient()
@@ -36,6 +37,10 @@ export async function POST(req: NextRequest) {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 })
+
+  if (!checkBurstLimit(`profile:${user.id}`)) {
+    return NextResponse.json({ error: 'Troppe richieste.' }, { status: 429 })
+  }
 
   const updateData: {
     id: string

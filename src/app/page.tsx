@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, Bot, MessageCircle, Send, ChevronRight, ChevronDown, Check, Star, ArrowRight, ShieldCheck, Zap, Maximize2, Sliders, Play, Activity } from 'lucide-react'
+import { Sparkles, Bot, Send, ChevronRight, ChevronDown, Check, Star, ArrowRight, Zap, Maximize2, Sliders, Play, Activity } from 'lucide-react'
 import AuthModal from '@/components/AuthModal'
 import { createClient } from '@/lib/supabase'
 import ReactMarkdown from 'react-markdown'
@@ -37,10 +37,6 @@ export default function PublicLandingPage() {
   const [isAnimatingLimit, setIsAnimatingLimit] = useState<boolean>(false)
   const svgRef = useRef<SVGSVGElement>(null)
 
-  useEffect(() => {
-    setHoveredStep(null)
-  }, [activeTab])
-  
   // Stati per la Chat Simulata con il Tutor
   const [chatHistory, setChatHistory] = useState<Array<{ id: string; sender: 'user' | 'bot'; text: string }>>([
     { 
@@ -227,7 +223,7 @@ export default function PublicLandingPage() {
   // Effetto animazione di convergenza
   useEffect(() => {
     if (!isAnimatingLimit) return
-    let startTime = performance.now()
+    const startTime = performance.now()
     const duration = 2000 // 2 secondi
     const startH = 4.0
     const endH = 0.02
@@ -254,12 +250,12 @@ export default function PublicLandingPage() {
   const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId)
     setIsDragging(true)
-    updatePointFromCoords(e.clientX, e.clientY)
+    updatePointFromCoords(e.clientX)
   }
 
   const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
     if (!isDragging) return
-    updatePointFromCoords(e.clientX, e.clientY)
+    updatePointFromCoords(e.clientX)
   }
 
   const handlePointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
@@ -267,7 +263,7 @@ export default function PublicLandingPage() {
     setIsDragging(false)
   }
 
-  const updatePointFromCoords = (clientX: number, clientY: number) => {
+  const updatePointFromCoords = (clientX: number) => {
     const svg = svgRef.current
     if (!svg) return
     const rect = svg.getBoundingClientRect()
@@ -289,7 +285,7 @@ export default function PublicLandingPage() {
       x = Math.max(-2.8, Math.min(2.8, x))
       setTangentX(x)
     } else if (activeTab === 'limit') {
-      let x = ((localX - 40) / 320) * 12 - 6
+      const x = ((localX - 40) / 320) * 12 - 6
       let h = Math.abs(x)
       h = Math.max(0.01, Math.min(5.0, h))
       setLimitH(h)
@@ -509,7 +505,10 @@ export default function PublicLandingPage() {
               <button
                 key={tab}
                 id={`tab-${tab}`}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => {
+                  setActiveTab(tab)
+                  setHoveredStep(null)
+                }}
                 className={`flex-1 py-2.5 px-4 rounded-xl text-[13px] font-black transition-all cursor-pointer ${
                   activeTab === tab 
                     ? 'bg-primary text-background shadow-md shadow-primary/10' 
@@ -814,7 +813,7 @@ export default function PublicLandingPage() {
                       <line x1={mapXDeriv(0)} y1="190" x2={mapXDeriv(0)} y2="290" stroke="#2a2a2a" strokeWidth="1.5" />
                       <line x1="15" y1={mapYDerivPrime(0)} x2="385" y2={mapYDerivPrime(0)} stroke="#2a2a2a" strokeWidth="1.5" />
 
-                      <text x="20" y="202" fill="#888" fontSize="8" fontWeight="bold">GRAFICO DERIVATA: f'(x) = 3x² - 3</text>
+                      <text x="20" y="202" fill="#888" fontSize="8" fontWeight="bold">GRAFICO DERIVATA: f&apos;(x) = 3x² - 3</text>
 
                       {/* Derivative Parabola */}
                       <path d={derivPrimePathD} fill="none" stroke="#60A5FA" strokeWidth="2" opacity="0.8" />
@@ -914,7 +913,7 @@ export default function PublicLandingPage() {
                 {activeTab === 'eq' && (
                   <div className="flex flex-col gap-3">
                     <div className="text-center p-3 bg-background rounded-xl border border-surface-border text-foreground-muted text-xs leading-relaxed font-medium">
-                      🎯 <strong>Esercizio Pratico:</strong> Trascina il punto giallo lungo la parabola. Cerca di allinearlo con l'asse X per trovare le radici dell'equazione ($x=2$ o $x=3$).
+                      🎯 <strong>Esercizio Pratico:</strong> Trascina il punto giallo lungo la parabola. Cerca di allinearlo con l&apos;asse X per trovare le radici dell&apos;equazione ($x=2$ o $x=3$).
                     </div>
                     <div className="flex items-center justify-between mt-1 px-1">
                       <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-foreground-subtle hover:text-foreground transition-colors select-none">
@@ -935,7 +934,7 @@ export default function PublicLandingPage() {
                   <div className="bg-background p-4 rounded-2xl border border-surface-border">
                     <div className="flex justify-between items-center text-xs font-bold mb-2.5">
                       <span>Coordinata X: {tangentX.toFixed(2)}</span>
-                      <span className="text-primary font-black">Derivata f'(x) = m = {tangentPoints.m.toFixed(2)}</span>
+                      <span className="text-primary font-black">Derivata f&apos;(x) = m = {tangentPoints.m.toFixed(2)}</span>
                     </div>
                     <input 
                       id="slider-derivative-tangent"
@@ -1132,7 +1131,7 @@ export default function PublicLandingPage() {
                 </div>
                 <h3 className="text-lg font-black mb-2">OCR di Formule Scritte a Mano</h3>
                 <p className="text-[14px] text-foreground-muted leading-relaxed">
-                  Scatta la foto del tuo quaderno. L'IA decodifica istantaneamente formule, integrali o sistemi complessi con altissima precisione.
+                  Scatta la foto del tuo quaderno. L&apos;IA decodifica istantaneamente formule, integrali o sistemi complessi con altissima precisione.
                 </p>
               </div>
             </div>
@@ -1158,7 +1157,7 @@ export default function PublicLandingPage() {
                 </div>
                 <h3 className="text-lg font-black mb-2">Tutor Personale Chiarificatore</h3>
                 <p className="text-[14px] text-foreground-muted leading-relaxed">
-                  Fai clic su un passaggio e fai domande mirate per toglierti qualsiasi dubbio. Il tutor risponde all'istante e con spiegazioni alternative.
+                  Fai clic su un passaggio e fai domande mirate per toglierti qualsiasi dubbio. Il tutor risponde all&apos;istante e con spiegazioni alternative.
                 </p>
               </div>
             </div>
@@ -1184,7 +1183,7 @@ export default function PublicLandingPage() {
                 </div>
                 <h3 className="text-lg font-black mb-2">Supporto Scientifico Multidisciplinare</h3>
                 <p className="text-[14px] text-foreground-muted leading-relaxed">
-                  L'IA copre l'algebra, la trigonometria, l'analisi matematica, la geometria piana e dello spazio, nonché i principali problemi di fisica generale e chimica inorganica.
+                  L&apos;IA copre l&apos;algebra, la trigonometria, l&apos;analisi matematica, la geometria piana e dello spazio, nonché i principali problemi di fisica generale e chimica inorganica.
                 </p>
               </div>
             </div>
@@ -1222,7 +1221,7 @@ export default function PublicLandingPage() {
                 </tr>
                 <tr>
                   <td className="p-5 font-bold">Tutor Chat Dedicato</td>
-                  <td className="p-5 text-primary bg-primary/5 border-x border-surface-border/40 font-bold">Sì, fa domande sull'esercizio</td>
+                  <td className="p-5 text-primary bg-primary/5 border-x border-surface-border/40 font-bold">Sì, fa domande sull&apos;esercizio</td>
                   <td className="p-5 text-foreground-muted">No</td>
                   <td className="p-5 text-foreground-muted">Sì, ma dimentica la struttura del calcolo</td>
                 </tr>
@@ -1256,7 +1255,7 @@ export default function PublicLandingPage() {
           <div className="text-center mb-16">
             <h2 className="text-[32px] font-black text-foreground mb-4">Domande Frequenti</h2>
             <p className="text-[15px] text-foreground-muted font-medium">
-              Tutto quello che c'è da sapere per iniziare a studiare con theLemma.
+              Tutto quello che c&apos;è da sapere per iniziare a studiare con theLemma.
             </p>
           </div>
 

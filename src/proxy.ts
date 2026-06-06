@@ -5,6 +5,16 @@ const publicPaths = ['/', '/s/', '/auth/']
 
 const publicApiPaths = ['/api/stripe/webhook']
 
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "connect-src 'self' https://*.supabase.co https://api.openai.com https://api.groq.com",
+  "font-src 'self'",
+  "frame-ancestors 'none'",
+].join('; ')
+
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
   const { pathname } = request.nextUrl
@@ -52,10 +62,8 @@ export async function proxy(request: NextRequest) {
   supabaseResponse.headers.set('X-Content-Type-Options', 'nosniff')
   supabaseResponse.headers.set('X-Frame-Options', 'DENY')
   supabaseResponse.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
-  supabaseResponse.headers.set(
-    'Permissions-Policy',
-    'camera=(), microphone=(), geolocation=()',
-  )
+  supabaseResponse.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  supabaseResponse.headers.set('Content-Security-Policy-Report-Only', CSP)
 
   if (process.env.NODE_ENV === 'production') {
     supabaseResponse.headers.set(

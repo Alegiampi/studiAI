@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { ExerciseCreateSchema, ExerciseUpdateSchema } from '@/lib/schemas'
+import { checkBurstLimit } from '@/lib/rate-limit'
 
 export async function GET() {
   const supabase = await createSupabaseServerClient()
@@ -29,6 +30,10 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'not logged in' }, { status: 401 })
 
+  if (!checkBurstLimit(`exercises:${user.id}`)) {
+    return NextResponse.json({ error: 'Troppe richieste.' }, { status: 429 })
+  }
+
   const { data } = await supabase.from('exercises').insert({
     user_id: user.id,
     question,
@@ -49,6 +54,10 @@ export async function PATCH(req: NextRequest) {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'not logged in' }, { status: 401 })
+
+  if (!checkBurstLimit(`exercises:${user.id}`)) {
+    return NextResponse.json({ error: 'Troppe richieste.' }, { status: 429 })
+  }
 
   const updates: { is_favorite?: boolean; shared_id?: string } = {}
   if (is_favorite !== undefined) updates.is_favorite = is_favorite

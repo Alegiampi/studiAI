@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { ClassifySchema } from '@/lib/schemas'
+import { checkBurstLimit } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
   const parsed = ClassifySchema.safeParse(await req.json())
@@ -12,6 +13,10 @@ export async function POST(req: NextRequest) {
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 })
+
+  if (!checkBurstLimit(`classify:${user.id}`)) {
+    return NextResponse.json({ graficoUtile: false, tipo: 'altro' }, { status: 429 })
+  }
 
   try {
     const hasOpenAI = !!process.env.OPENAI_API_KEY

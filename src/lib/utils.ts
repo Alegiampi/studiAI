@@ -466,10 +466,11 @@ export function healLaTeX(text: string): string {
 
   // 2. Normalize common LaTeX implication/arrow and other symbols that are missing their backslash
   // Prevent matching substrings of longer words by ensuring it's not preceded by a letter or backslash
-  const symbolRegex = /(?<![a-zA-Z\\])(Leftrightarrow|leftrightarrow|Rightarrow|rightarrow|Leftarrow|leftarrow|partial|mathbb|mathrm|mathbf|mathcal|mathsf|mathit|quad|qquad|forall|exists)/g
+  const symbolRegex = /(?<![a-zA-Z\\])(Leftrightarrow|leftrightarrow|Rightarrow|rightarrow|Leftarrow|leftarrow|partial|mathbb|mathrm|mathbf|mathcal|mathsf|mathit|quad|qquad|forall|exists|infty|nabla|approx|simeq|equiv|propto|emptyset|otimes|oplus|subseteq|supseteq|notin)/g
   fixed = fixed.replace(symbolRegex, '\\$1')
 
-  const wordSymbolRegex = /(?<![a-zA-Z\\])(pm|neq|ge|cdot|sin|cos|tan|log|ln|lim|frac|sqrt)(?![a-zA-Z])/g
+  // Include greek letters and standard math functions, but strictly omit collisions with Italian words (like "le" and "in").
+  const wordSymbolRegex = /(?<![a-zA-Z\\])(pm|neq|ge|cdot|sin|cos|tan|cot|sec|csc|log|ln|lim|frac|sqrt|int|sum|prod|oint|iint|iiint|alpha|beta|gamma|delta|epsilon|theta|lambda|sigma|omega|Gamma|Delta|Theta|Lambda|Pi|Sigma|Omega|max|min|sup|inf|det|dim|ker|arg|left|right)(?![a-zA-Z\u00C0-\u024F])/g
   fixed = fixed.replace(wordSymbolRegex, '\\$1')
 
   // 3. Wrap standalone math commands (and their preceding sign if unary) in inline math delimiters $...$ if they are outside math blocks.
@@ -489,6 +490,7 @@ export function healLaTeX(text: string): string {
     'oint', 'text', 'cong', 'odot', 'neq', 'pm', 'ge', 'le',
     'ni', 'mu', 'pi', 'in', 'div', 'sim', 'cup', 'cap', 'ln',
     'to', 'neg', 'land', 'lor', 'bar', 'vec',
+    'left', 'right',
   ].sort((a, b) => b.length - a.length)
   const regex = new RegExp('(?<!\\\\)((?<![a-zA-Z0-9\\\\])[+-]\\s*)?\\\\((' + [...new Set(knownCmds)].join('|') + '))', 'gi')
   

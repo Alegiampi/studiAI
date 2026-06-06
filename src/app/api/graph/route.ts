@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { GraphSchema } from '@/lib/schemas'
-import { checkBurstLimit } from '@/lib/rate-limit'
+import { checkBurstLimit, checkDailyLimit, incrementDailyUsage } from '@/lib/rate-limit'
 
 async function callAI(messages: { role: string; content: string }[]) {
   const hasOpenAI = !!process.env.OPENAI_API_KEY
@@ -38,6 +38,11 @@ export async function POST(req: NextRequest) {
 
   if (!checkBurstLimit(`graph:${user.id}`)) {
     return NextResponse.json({ error: 'Troppe richieste. Riprova tra qualche minuto.' }, { status: 429 })
+  }
+
+  const limitCheck = await checkDailyLimit(supabase, user.id, user.email)
+  if (!limitCheck.allowed) {
+    return NextResponse.json({ error: 'Hai raggiunto il limite giornaliero. Passa a premium per continuare.' }, { status: 429 })
   }
 
   const systemPrompt = `Sei un esperto di matematica. Il tuo unico compito è generare i dati per plottare il grafico dell'esercizio usando 'mathjs'.
@@ -114,6 +119,7 @@ Rispondi SOLO con il JSON crudo.`;
     const text = data.choices[0].message.content.trim();
     const clean = text.replace(/\`\`\`json|\`\`\`/g, '').trim();
     const graficoData = JSON.parse(clean);
+    await incrementDailyUsage(supabase, user.id)
     return NextResponse.json({ data: graficoData });
   } catch {
     return NextResponse.json({ error: 'JSON non valido' }, { status: 502 });

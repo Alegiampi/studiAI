@@ -52,6 +52,7 @@ export default function ExplanationScreen() {
   const [chatInput, setChatInput] = useState('')
   const [currentStep, setCurrentStep] = useState(0)
   const [showFAB, setShowFAB] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   // Scroll handler for FAB
   useEffect(() => {
@@ -360,22 +361,42 @@ export default function ExplanationScreen() {
         {explanation && !loading && graficoUtile && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-8 mb-4">
             {grafico ? (
-              <GraficoMafs data={grafico} />
+              <GraficoMafs
+                data={grafico}
+                sidebarCollapsed={sidebarCollapsed}
+                onToggleSidebar={() => setSidebarCollapsed(prev => !prev)}
+              />
             ) : (
               <button 
                 onClick={handleGrafico} 
                 disabled={graficoLoading} 
-                className={`w-full p-4 rounded-2xl text-[15px] font-bold transition-all flex items-center justify-center gap-2 border ${
+                className={`w-full p-5 rounded-2xl transition-all flex items-center gap-4 border relative overflow-hidden group ${
                   graficoLoading 
-                  ? 'bg-surface-active border-surface-border text-foreground-muted cursor-default' 
-                  : 'bg-primary/10 border-primary/30 text-primary hover:bg-primary/20 cursor-pointer shadow-sm'
+                    ? 'bg-surface-active border-surface-border cursor-default' 
+                    : 'bg-primary/5 border-primary/20 hover:bg-primary/10 hover:border-primary/40 cursor-pointer shadow-sm'
                 }`}
               >
-                {graficoLoading ? (
-                  <><Loader2 size={18} className="animate-spin" /> Generazione in corso...</>
-                ) : (
-                  <><BarChart2 size={18} /> Visualizza Grafico Interattivo</>
+                {!graficoLoading && (
+                  <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 )}
+                <div className="relative shrink-0">
+                  <div className="absolute inset-0 bg-primary/10 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                  {graficoLoading ? (
+                    <Loader2 size={32} className="animate-spin text-primary/60" />
+                  ) : (
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <BarChart2 size={24} className="text-primary" />
+                    </div>
+                  )}
+                </div>
+                <div className="relative flex-1 text-left">
+                  <div className="text-[15px] font-bold text-foreground mb-0.5">
+                    {graficoLoading ? 'Generazione in corso...' : 'Grafico Interattivo'}
+                  </div>
+                  <div className="text-[13px] text-foreground-subtle leading-snug">
+                    {graficoLoading ? 'L\'IA sta preparando il grafico...' : 'Visualizza la rappresentazione grafica della funzione'}
+                  </div>
+                </div>
               </button>
             )}
           </motion.div>

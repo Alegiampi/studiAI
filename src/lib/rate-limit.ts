@@ -64,24 +64,5 @@ export async function checkDailyLimit(
 }
 
 export async function incrementDailyUsage(supabase: SupabaseClient, userId: string) {
-  const today = new Date().toISOString().split('T')[0]
-
-  const { data: existing } = await supabase
-    .from('daily_usage')
-    .select('count')
-    .eq('user_id', userId)
-    .eq('date', today)
-    .single()
-
-  if (existing) {
-    await supabase
-      .from('daily_usage')
-      .update({ count: existing.count + 1 })
-      .eq('user_id', userId)
-      .eq('date', today)
-  } else {
-    await supabase
-      .from('daily_usage')
-      .insert({ user_id: userId, date: today, count: 1 })
-  }
+  await supabase.rpc('increment_daily_usage', { p_user_id: userId })
 }
