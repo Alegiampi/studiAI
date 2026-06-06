@@ -4,10 +4,12 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Zap, Sparkles, MessagesSquare, LineChart, BookOpen } from 'lucide-react'
 import { useStore } from '@/store/useStore'
+import { useToast } from '@/hooks/ToastContext'
 
 export default function OnboardingScreen() {
   const [step, setStep] = useState(0)
   const { fetchProfile } = useStore()
+  const { showToast } = useToast()
   
   const steps = [
     { 
@@ -72,10 +74,11 @@ export default function OnboardingScreen() {
         } else {
           const errorData = await res.json()
           console.error('Failed to update onboarding:', errorData)
-          alert('Errore nel salvataggio del profilo. Controlla le policy RLS su Supabase.')
+          showToast('Errore salvataggio profilo. Riprova.', 'error')
         }
       } catch (e) {
         console.error('Failed to update onboarding:', e)
+        showToast('Errore di connessione. Riprova.', 'error')
       }
     }
   }
@@ -163,7 +166,7 @@ export default function OnboardingScreen() {
                 if (res?.ok) {
                   await fetchProfile()
                 } else {
-                  alert('Errore nel salvataggio. Controlla le policy RLS.');
+                  showToast('Errore salvataggio. Riprova.', 'error');
                 }
               }} 
               className="bg-transparent border-none text-foreground-subtle text-[14px] font-bold cursor-pointer py-2 hover:text-foreground transition-colors"

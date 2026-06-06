@@ -93,7 +93,7 @@ export function GraphSidebar({
               const isHidden = hiddenIndices.has(i)
               const displayColor = customColors[i] || e.color
               
-              const defaultStyle = e.label?.toLowerCase().includes('asintoto') ? 'dashed' : 'solid'
+              const defaultStyle = (e.type === 'derivative' || e.label?.toLowerCase().includes('asintoto')) ? 'dashed' : 'solid'
               const displayStyle = customStyles[i] || defaultStyle
 
               return (
@@ -164,7 +164,7 @@ export function GraphSidebar({
                           {e.label}
                         </span>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {e.type === 'function' && (
+                          {(e.type === 'function' || e.type === 'derivative') && (
                             <button 
                               onClick={(evt) => {
                                 evt.stopPropagation()

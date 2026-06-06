@@ -27,6 +27,7 @@ export default function RootLayout({
       className={`${outfit.variable} h-full antialiased dark`}
     >
       <body className="min-h-full flex flex-col font-sans bg-background text-foreground selection:bg-[#FFD600] selection:text-[#1A1A1A]">
+        <script dangerouslySetInnerHTML={{ __html: `history.scrollRestoration='manual';window.scrollTo(0,0)` }} />
         <ToastProvider>
           <RouteGuard>
             {children}

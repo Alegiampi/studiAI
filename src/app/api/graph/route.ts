@@ -56,26 +56,28 @@ REGOLE ASSOLUTE:
       "domain": [0.01, 1000],
       "interactive": true
     },
+    { "type": "derivative", "fn": "2*x", "color": "#38BDF8", "label": "f'(x)" },
     { "type": "point", "coords": [1, 1], "color": "#E84393", "label": "Punto (1,1)" }
   ]
 }
 3. MASSIMO 5-6 elementi in "espressioni". Includi la funzione principale, derivate se utili, e i punti critici (zeri, max/min, flessi).
-4. NON DUPLICARE: Se usi exp(x*log(x)) per x^x, NON aggiungere anche x^x. Scegline UNA.
-5. ESPRESSIONI ROBUSTE (OBBLIGATORIO):
+4. type "derivative": usa questo type per le derivate. Il campo fn deve contenere l'espressione della derivata GIÀ CALCOLATA (es. se f(x) = x², fn = "2*x"). Non impostare interactive: la derivata non interattiva.
+5. NON DUPLICARE: Se usi exp(x*log(x)) per x^x, NON aggiungere anche x^x. Scegline UNA.
+6. ESPRESSIONI ROBUSTE (OBBLIGATORIO):
    - Per potenze con base variabile (es. x^x, x^(1/x), (x+1)^x), usa SEMPRE la forma esponenziale: "exp(x*log(x))" o "exp((1/x)*log(x))".
    - Variabile: 'x'. Logaritmo naturale: 'log(x)'. Esponenziale: 'exp(x)'.
-6. COLORI DA USARE TASSATIVAMENTE:
+7. COLORI DA USARE TASSATIVAMENTE:
    - Funzione principale f(x): "#FFD600" (Giallo)
    - Derivate (f', f''): "#38BDF8" (Azzurro) o "#818CF8" (Viola chiaro)
    - Punti (flessi, zeri, ecc): "#F43F5E" (Rosso vivo)
    - Asintoti: "#F97316" (Arancione) o "#A855F7" (Viola)
-7. DOMINIO E VISTA:
+8. DOMINIO E VISTA:
    - "domain": [min, max] è il dominio matematico reale.
    - "boundingBox": [xmin, xmax, ymin, ymax] definisce lo ZOOM INIZIALE. 
    - REGOLE ZOOM: Centra la vista sugli elementi chiave (vertici, zeri vicini). Se un punto (es. intersezione asse y) è troppo lontano (es. y=900 mentre il resto è vicino a 0), NON includerlo nel boundingBox per evitare uno zoom eccessivo che renderebbe il grafico illeggibile. Mantieni lo zoom su un range ragionevole (es. y tra -10 e 50 se possibile).
-8. INTERATTIVITÀ:
+9. INTERATTIVITÀ:
    - Imposta "interactive": true sulla funzione principale per mostrare tangente e derivata.
-9. RIGORE MATEMATICO (CRITICO):
+10. RIGORE MATEMATICO (CRITICO):
    - Includi asintoti (es. y=0, x=0) SOLO se matematicamente esistenti.
    - REGOLE PER RETTE VERTICALI: Per asintoti o assi verticali (es. x=30), il campo "fn" DEVE essere "x = 30" (includendo x=). Se scrivi solo "30", verrà disegnata una retta orizzontale y=30.
    - Verifica i limiti per x -> 0 e x -> infinito prima di aggiungere linee di supporto. Per x^x, il limite per x->0 è 1, quindi y=0 NON è un asintoto. Non aggiungere asintoti a caso.`;

@@ -111,3 +111,25 @@ body {
   color: var(--color-foreground);
   font-weight: 700;
 }
+
+/* ── Step Body Math Override (per far risaltare il LaTeX bianco su testo grigio più scuro e piccolo) ── */
+.step-body-math {
+  color: #A3A3A3 !important; /* Testo grigio più scuro del LaTeX */
+  font-size: 14px !important;
+}
+.step-body-math strong {
+  color: #D4D4D4 !important; /* Testo in grassetto un po' più scuro del LaTeX, ma comunque evidenziato rispetto al testo normale */
+}
+.step-body-math .katex {
+  color: #FFFFFF !important; /* LaTeX bianco puro che risalta */
+  font-size: 1.25em !important; /* LaTeX visibilmente più grande del testo */
+  font-weight: 600;
+}
+.step-body-math .katex-display {
+  margin: 0.7rem 0 !important;
+}
+.step-body-math .katex-display .katex {
+  color: #FFFFFF !important;
+  font-size: 1.35em !important;
+}
+

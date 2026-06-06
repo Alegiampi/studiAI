@@ -211,8 +211,12 @@ export const useStore = create<AppState>((set, get) => ({
   incrementUsage: async () => {
     const { user } = get()
     if (user) {
-      await fetch('/api/usage', { method: 'POST' }).catch(err => console.error(err))
-      await get().fetchUsage()
+      try {
+        const res = await fetch('/api/usage', { method: 'POST' })
+        if (res.ok) await get().fetchUsage()
+      } catch (err) {
+        console.error(err)
+      }
     }
   },
   handleCheckout: async (priceId) => {
@@ -679,12 +683,15 @@ export const useStore = create<AppState>((set, get) => ({
     showToast(newFav ? 'Aggiunto ai preferiti!' : 'Rimosso dai preferiti', 'success')
 
     try {
-      await fetch('/api/exercises', {
+      const res = await fetch('/api/exercises', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: currentExerciseId, is_favorite: newFav })
       })
+      if (!res.ok) throw new Error('Server error')
     } catch (err) {
+      set({ isFavorite })
+      showToast('Errore salvataggio preferito', 'error')
       console.error('Error toggling favorite:', err)
     }
   }

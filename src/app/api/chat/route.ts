@@ -62,7 +62,10 @@ REGOLE DI FORMATTAZIONE:
         })
       })
       const data = await res.json()
-      if (!data.choices) return NextResponse.json({ reply: 'Si è verificato un errore di connessione col tutor.' })
+      if (!res.ok || !data.choices) {
+        const errMsg = data.error?.message || 'Errore di connessione col tutor.'
+        return NextResponse.json({ reply: errMsg }, { status: res.status || 502 })
+      }
       replyText = data.choices[0].message.content || ''
     } else {
       const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -78,7 +81,10 @@ REGOLE DI FORMATTAZIONE:
         })
       })
       const data = await res.json()
-      if (!data.choices) return NextResponse.json({ reply: 'Si è verificato un errore di connessione col tutor.' })
+      if (!res.ok || !data.choices) {
+        const errMsg = data.error?.message || 'Errore di connessione col tutor.'
+        return NextResponse.json({ reply: errMsg }, { status: res.status || 502 })
+      }
       replyText = data.choices[0].message.content || ''
     }
 

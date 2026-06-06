@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Plot, Line, MovablePoint, Text } from 'mafs'
 import { compile, derivative, EvalFunction } from 'mathjs'
 
@@ -89,12 +89,14 @@ export function FunctionLayer({
 
   if (isHidden) return null
 
+  const dashProps = lineStyle === 'dashed' ? { svgPathProps: { style: { strokeDasharray: '8, 8' } as React.CSSProperties } } : {}
+
   return (
     <>
       {isY ? (
-        <Plot.OfY x={evaluate} color={color} weight={lineStyle === 'dashed' ? 4 : 3} style={lineStyle} />
+        <Plot.OfY x={evaluate} color={color} weight={lineStyle === 'dashed' ? 4 : 3} style={lineStyle} {...dashProps} />
       ) : (
-        <Plot.OfX y={evaluate} color={color} weight={lineStyle === 'dashed' ? 4 : 3} style={lineStyle} />
+        <Plot.OfX y={evaluate} color={color} weight={lineStyle === 'dashed' ? 4 : 3} style={lineStyle} {...dashProps} />
       )}
       {interactive && !isY && (
         <>

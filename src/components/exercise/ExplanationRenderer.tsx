@@ -54,15 +54,13 @@ function ExplanationRenderer({
 
   return (
     <div className="w-full">
-
-      
       {parsed.titolo && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-[20px] font-extrabold text-primary mb-8 leading-snug tracking-tight">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-[21px] font-extrabold text-primary mb-8 leading-snug tracking-tight">
           <MD>{parsed.titolo}</MD>
         </motion.div>
       )}
 
-      <div className="space-y-6">
+      <div className="space-y-4">
         {parsed.passi.map((passo, i) => {
           const isFocused = focusedIndex === i
           const isDimmed = focusedIndex !== null && !isFocused
@@ -74,7 +72,7 @@ function ExplanationRenderer({
               layout
               initial={{ opacity: 0, y: 10 }} 
               animate={{ 
-                opacity: isDimmed ? 0.4 : 1,
+                opacity: isDimmed ? 0.45 : 1,
                 scale: isFocused ? 1.01 : 1,
                 y: 0 
               }} 
@@ -86,18 +84,39 @@ function ExplanationRenderer({
                 layout: { duration: 0.4, ease: "easeInOut" }
               }}
               onClick={() => setFocusedIndex(isFocused ? null : i)}
-              className={`flex gap-3 cursor-pointer transition-all duration-300 ${isFocused ? 'z-10' : 'z-0'} scroll-mt-24`}
+              className={`flex gap-4 p-3.5 rounded-2xl border cursor-pointer transition-all duration-300 ${isFocused ? 'z-10' : 'z-0'} scroll-mt-24 ${
+                isFocused 
+                  ? 'bg-surface-hover/80 border-primary/20 shadow-lg shadow-black/10' 
+                  : 'bg-surface/30 border-transparent hover:bg-surface/50'
+              }`}
             >
-              <div className={`w-[2px] rounded-full shrink-0 transition-all duration-500 ${isFocused ? 'bg-primary shadow-[0_0_10px_rgba(255,214,0,0.3)]' : 'bg-surface-active/50'}`} />
-              <div className="flex-1">
-                <div className={`bg-surface border transition-all duration-500 rounded-[24px] overflow-hidden shadow-sm ${isFocused ? 'border-primary/50 shadow-[0_10px_40px_rgba(0,0,0,0.2)]' : 'border-surface-border'}`}>
-                  <div className={`px-5 py-4 border-b font-bold text-[14px] flex items-center gap-3 flex-wrap transition-colors duration-500 ${isFocused ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface-active/50 border-surface-border text-foreground'}`}>
-                    <span className={`font-extrabold uppercase tracking-widest text-[10px] px-2 py-1 rounded-lg transition-colors duration-500 ${isFocused ? 'bg-primary text-background' : 'bg-background/50 text-foreground-subtle'}`}>Passo {i + 1}</span>
+              {/* Barretta laterale fine con puntino in cima */}
+              <div className={`w-[2px] rounded-full shrink-0 flex flex-col items-center transition-colors duration-500 ${
+                isFocused ? 'bg-primary' : 'bg-primary/20'
+              }`}>
+                <div className={`w-1.5 h-1.5 rounded-full -mt-0.5 transition-colors duration-500 ${
+                  isFocused ? 'bg-primary shadow-[0_0_8px_rgba(255,214,0,0.5)]' : 'bg-primary/50'
+                }`} />
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className={`font-extrabold uppercase tracking-widest text-[10px] px-2 py-0.5 rounded transition-colors duration-500 ${
+                    isFocused ? 'bg-primary text-background font-black' : 'bg-background/50 text-foreground-subtle'
+                  }`}>
+                    Passo {i + 1}
+                  </span>
+                  <div className={`text-[15px] font-black tracking-tight transition-colors duration-500 ${
+                    isFocused ? 'text-primary' : 'text-foreground'
+                  }`}>
                     <MD>{passo.titolo}</MD>
                   </div>
-                  <div className={`md-content px-6 py-5 text-[15px] leading-relaxed transition-colors duration-500 ${isFocused ? 'text-foreground' : 'text-foreground-muted'}`}>
-                    <MD>{passo.corpo}</MD>
-                  </div>
+                </div>
+
+                <div className={`md-content text-[14px] leading-relaxed transition-colors duration-500 step-body-math ${
+                  isFocused ? 'text-foreground' : 'text-foreground-muted'
+                }`}>
+                  <MD>{passo.corpo}</MD>
                 </div>
 
                 <AnimatePresence>

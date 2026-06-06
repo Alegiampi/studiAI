@@ -41,8 +41,11 @@ export default function StoricoScreen() {
   const [sharingId, setSharingId] = useState<number | null>(null)
 
   useEffect(() => {
-    fetch('/api/exercises').then(r => r.json()).then(data => { setExercises(data); setLoading(false) })
-  }, [])
+    fetch('/api/exercises')
+      .then(r => r.json())
+      .then(data => { setExercises(data); setLoading(false) })
+      .catch(() => { setLoading(false); showToast('Errore caricamento storico', 'error') })
+  }, [showToast])
 
   const subjects = useMemo(() => {
     const subs = new Set<string>()
@@ -100,17 +103,21 @@ export default function StoricoScreen() {
   async function toggleFavorite(e: React.MouseEvent, id: number, currentFav: boolean) {
     e.stopPropagation()
     const newFav = !currentFav
-    
-    // Aggiornamento ottimistico
+
     setExercises(prev => prev.map(ex => ex.id === id ? { ...ex, is_favorite: newFav } : ex))
-    
+
     showToast(newFav ? 'Aggiunto ai preferiti!' : 'Rimosso dai preferiti', 'success')
 
-    await fetch('/api/exercises', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, is_favorite: newFav })
-    })
+    try {
+      await fetch('/api/exercises', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, is_favorite: newFav })
+      })
+    } catch {
+      setExercises(prev => prev.map(ex => ex.id === id ? { ...ex, is_favorite: currentFav } : ex))
+      showToast('Errore salvataggio preferito', 'error')
+    }
   }
 
   async function handleShareExercise(e: React.MouseEvent, exercise: StoricoExercise) {
@@ -122,27 +129,28 @@ export default function StoricoScreen() {
     if (exercise.shared_id) {
       shareUrl = window.location.origin + '/s/' + exercise.shared_id
     } else {
-      // Crea nuovo share
-      const res = await fetch('/api/share', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          question: exercise.question || '', 
-          explanation: exercise.explanation 
-        })
-      })
-      const data = await res.json()
-      
-      if (data.id) {
-        shareUrl = window.location.origin + '/s/' + data.id
-        // Salva l'id generato nel db
-        await fetch('/api/exercises', {
-          method: 'PATCH',
+      try {
+        const res = await fetch('/api/share', {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: exercise.id, shared_id: data.id })
+          body: JSON.stringify({ 
+            question: exercise.question || '', 
+            explanation: exercise.explanation 
+          })
         })
-        // Aggiorna lo stato locale
-        setExercises(prev => prev.map(ex => ex.id === exercise.id ? { ...ex, shared_id: data.id } : ex))
+        const data = await res.json()
+        
+        if (data.id) {
+          shareUrl = window.location.origin + '/s/' + data.id
+          await fetch('/api/exercises', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: exercise.id, shared_id: data.id })
+          })
+          setExercises(prev => prev.map(ex => ex.id === exercise.id ? { ...ex, shared_id: data.id } : ex))
+        }
+      } catch {
+        showToast('Errore condivisione', 'error')
       }
     }
 

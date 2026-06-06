@@ -98,12 +98,13 @@ export default function GraficoMafs({ data }: { data?: GraficoData }) {
               const isHidden = hiddenIndices.has(i)
               const displayColor = customColors[i] || e.color
               
-              const defaultStyle = e.label?.toLowerCase().includes('asintoto') ? 'dashed' : 'solid'
+              const defaultStyle = (e.type === 'derivative' || e.label?.toLowerCase().includes('asintoto')) ? 'dashed' : 'solid'
               const displayStyle = customStyles[i] || defaultStyle
 
-              if (e.type === 'function') {
-                const key = `fn-${i}-${e.fn || ''}`
-                return <FunctionLayer key={key} isHidden={isHidden} fnStr={e.fn || ''} color={displayColor} domain={e.domain} interactive={e.interactive && showTangent} label={e.label} lineStyle={displayStyle} />
+              if (e.type === 'function' || e.type === 'derivative') {
+                const key = `${e.type}-${i}-${e.fn || ''}`
+                const isDerivative = e.type === 'derivative'
+                return <FunctionLayer key={key} isHidden={isHidden} fnStr={e.fn || ''} color={displayColor} domain={e.domain} interactive={isDerivative ? false : (e.interactive && showTangent)} label={e.label} lineStyle={isDerivative ? 'dashed' : displayStyle} />
               }
               if (e.type === 'point' && e.coords) {
                 const key = `pt-${i}-${e.coords.join(',')}`

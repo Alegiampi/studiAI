@@ -4,10 +4,15 @@ import { motion } from 'framer-motion'
 import { CheckCircle2, Crown, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useStore, DAILY_LIMIT } from '@/store/useStore'
+import { useToast } from '@/hooks/ToastContext'
 
 export default function PaywallScreen() {
   const router = useRouter()
+  const { showToast } = useToast()
   const { usedToday, handleCheckout } = useStore()
+
+  const mensilePrice = process.env.NEXT_PUBLIC_STRIPE_PRICE_MENSILE
+  const annualePrice = process.env.NEXT_PUBLIC_STRIPE_PRICE_ANNUALE
 
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
@@ -34,7 +39,10 @@ export default function PaywallScreen() {
         >
           <motion.div 
             whileHover={{ y: -4 }}
-            onClick={() => handleCheckout(process.env.NEXT_PUBLIC_STRIPE_PRICE_MENSILE!)} 
+            onClick={() => {
+              if (!mensilePrice) { showToast('Errore configurazione pagamenti', 'error'); return }
+              handleCheckout(mensilePrice)
+            }} 
             className="flex-1 border border-surface-border rounded-3xl p-6 text-center bg-surface cursor-pointer hover:border-primary/50 transition-all shadow-md group"
           >
             <div className="text-sm font-bold text-foreground-muted uppercase tracking-widest mb-3 group-hover:text-foreground transition-colors">Mensile</div>
@@ -44,7 +52,10 @@ export default function PaywallScreen() {
 
           <motion.div 
             whileHover={{ y: -4 }}
-            onClick={() => handleCheckout(process.env.NEXT_PUBLIC_STRIPE_PRICE_ANNUALE!)} 
+            onClick={() => {
+              if (!annualePrice) { showToast('Errore configurazione pagamenti', 'error'); return }
+              handleCheckout(annualePrice)
+            }} 
             className="flex-1 border-2 border-primary rounded-3xl p-6 text-center bg-surface cursor-pointer shadow-[0_8px_30px_rgba(255,214,0,0.15)] relative group mt-3 sm:mt-0"
           >
             <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50 rounded-t-3xl" />
