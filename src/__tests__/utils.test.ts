@@ -551,7 +551,7 @@ describe('parseExplanation', () => {
       expect(healLaTeX('quando x o pm infinito')).toBe('quando x o $\\pm$ $\\infty$')
       expect(healLaTeX('se x o pm infty')).toBe('se x o $\\pm$ $\\infty$')
       expect(healLaTeX('valore neq 0')).toBe('valore $\\neq$ 0')
-      expect(healLaTeX('se a le b e b ge c')).toBe('se a $\\le$ b e b $\\ge$ c')
+      expect(healLaTeX('se a \\le b e b \\ge c')).toBe('se a $\\le$ b e b $\\ge$ c')
       expect(healLaTeX('quando $x \\to \\pm \\infty$')).toBe('quando $x \\to \\pm \\infty$')
     })
 
@@ -596,7 +596,7 @@ describe('parseExplanation', () => {
     describe('comprehensive mathematical domains', () => {
       it('heals algebra, set theory, and logic symbols with and without backslashes', () => {
         // Unescaped symbols that get healed with backslashes and wrapped
-        expect(healLaTeX('se a le b e b ge c allora a pm c')).toBe('se a $\\le$ b e b $\\ge$ c allora a $\\pm$ c')
+        expect(healLaTeX('se a \\le b e b \\ge c allora a pm c')).toBe('se a $\\le$ b e b $\\ge$ c allora a $\\pm$ c')
         expect(healLaTeX('x neq y')).toBe('x $\\neq$ y')
         expect(healLaTeX('derivata partial')).toBe('derivata $\\partial$')
         
@@ -615,6 +615,12 @@ describe('parseExplanation', () => {
         expect(healLaTeX('tende a +infinito')).toBe('tende a $+\\infty$')
         expect(healLaTeX('tende a -infty')).toBe('tende a $-\\infty$')
         expect(healLaTeX('\\nabla f = 0')).toBe('$\\nabla$ f = 0')
+      })
+
+      it('does not corrupt Italian common words like le, ge, to, or words containing them', () => {
+        expect(healLaTeX('Considerando le restrizioni analizzate')).toBe('Considerando le restrizioni analizzate')
+        expect(healLaTeX('Benvenuti a torino')).toBe('Benvenuti a torino')
+        expect(healLaTeX('Il valore totale delle funzioni')).toBe('Il valore totale delle funzioni')
       })
 
       it('heals calculus, integrals, and limits (with backslashes)', () => {
