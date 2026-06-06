@@ -1,16 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { ClassifySchema } from '@/lib/schemas'
 
 export async function POST(req: NextRequest) {
-  const { text, scuola, classe } = await req.json()
+  const parsed = ClassifySchema.safeParse(await req.json())
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Richiesta non valida', details: parsed.error.issues }, { status: 400 })
+  }
+  const { text, scuola, classe } = parsed.data
 
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 })
+
+  const hasOpenAI = !!process.env.OPENAI_API_KEY
+  const url = hasOpenAI ? 'https://api.openai.com/v1/chat/completions' : 'https://api.groq.com/openai/v1/chat/completions'
+  const key = hasOpenAI ? process.env.OPENAI_API_KEY : process.env.GROQ_API_KEY
+  const model = hasOpenAI ? 'gpt-4o-mini' : 'llama-3.1-8b-instant'
+
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+      'Authorization': `Bearer ${key}`
     },
     body: JSON.stringify({
-      model: 'llama-3.1-8b-instant',
+      model,
       max_tokens: 60,
       temperature: 0,
       messages: [

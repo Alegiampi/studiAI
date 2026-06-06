@@ -1,14 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { GraphAssistSchema } from '@/lib/schemas'
+import { checkBurstLimit } from '@/lib/rate-limit'
 
-async function callGroq(messages: any[]) {
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+async function callAI(messages: { role: string; content: string }[]) {
+  const hasOpenAI = !!process.env.OPENAI_API_KEY
+  const url = hasOpenAI ? 'https://api.openai.com/v1/chat/completions' : 'https://api.groq.com/openai/v1/chat/completions'
+  const key = hasOpenAI ? process.env.OPENAI_API_KEY : process.env.GROQ_API_KEY
+  const model = hasOpenAI ? 'gpt-4o' : 'llama-3.3-70b-versatile'
+
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+      'Authorization': `Bearer ${key}`
     },
     body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
+      model,
       max_tokens: 800,
       temperature: 0.1,
       messages
@@ -18,9 +26,21 @@ async function callGroq(messages: any[]) {
 }
 
 export async function POST(req: NextRequest) {
-  try {
-    const { prompt, context } = await req.json()
+  const parsed = GraphAssistSchema.safeParse(await req.json())
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Richiesta non valida', details: parsed.error.issues }, { status: 400 })
+  }
+  const { prompt, context } = parsed.data
 
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 })
+
+  if (!checkBurstLimit(`graph-assist:${user.id}`)) {
+    return NextResponse.json({ error: 'Troppe richieste. Riprova tra qualche minuto.' }, { status: 429 })
+  }
+
+  try {
     const systemPrompt = `Sei l'Assistente AI del Grafico Interattivo. Il tuo compito è rispondere alle richieste dell'utente aggiungendo nuovi elementi matematici (funzioni o punti) al grafico.
 
 CONTESTO ATTUALE (elementi già presenti sul grafico):
@@ -49,7 +69,7 @@ REGOLE ASSOLUTE:
       { role: 'user', content: userPrompt }
     ]
 
-    const result = await callGroq(messages)
+    const result = await callAI(messages)
     
     if (!result.choices?.[0]?.message?.content) {
       throw new Error('Risposta API non valida')

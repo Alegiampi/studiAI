@@ -1,15 +1,9 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { ExerciseCreateSchema, ExerciseUpdateSchema } from '@/lib/schemas'
 
 export async function GET() {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return cookieStore.getAll() }, setAll(c) { c.forEach(({ name, value, options }) => cookieStore.set(name, value, options)) } } }
-  )
-
+  const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json([])
 
@@ -25,48 +19,42 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return cookieStore.getAll() }, setAll(c) { c.forEach(({ name, value, options }) => cookieStore.set(name, value, options)) } } }
-  )
+  const parsed = ExerciseCreateSchema.safeParse(await req.json())
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Richiesta non valida', details: parsed.error.issues }, { status: 400 })
+  }
+  const { question, explanation, subject } = parsed.data
 
+  const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'not logged in' })
 
-  const { question, explanation, subject } = await req.json()
-
-  const { data, error } = await supabase.from('exercises').insert({ 
-    user_id: user.id, 
-    question, 
+  const { data } = await supabase.from('exercises').insert({
+    user_id: user.id,
+    question,
     explanation,
-    subject: subject || 'Altro'
+    subject: subject || 'Altro',
   }).select().single()
 
   return NextResponse.json({ ok: true, data })
 }
 
 export async function PATCH(req: NextRequest) {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return cookieStore.getAll() }, setAll(c) { c.forEach(({ name, value, options }) => cookieStore.set(name, value, options)) } } }
-  )
+  const parsed = ExerciseUpdateSchema.safeParse(await req.json())
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Richiesta non valida', details: parsed.error.issues }, { status: 400 })
+  }
+  const { id, is_favorite, shared_id } = parsed.data
 
+  const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'not logged in' }, { status: 401 })
 
-  const { id, is_favorite, shared_id } = await req.json()
-  
-
-
-  const updates: any = {}
+  const updates: { is_favorite?: boolean; shared_id?: string } = {}
   if (is_favorite !== undefined) updates.is_favorite = is_favorite
   if (shared_id !== undefined) updates.shared_id = shared_id
 
-  const { data, error, count } = await supabase
+  const { data, error } = await supabase
     .from('exercises')
     .update(updates)
     .eq('id', id)

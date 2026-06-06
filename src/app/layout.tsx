@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 };
 
 import { ToastProvider } from "@/hooks/ToastContext";
+import RouteGuard from "@/components/RouteGuard";
 
 export default function RootLayout({
   children,
@@ -27,7 +28,9 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col font-sans bg-background text-foreground selection:bg-[#FFD600] selection:text-[#1A1A1A]">
         <ToastProvider>
-          {children}
+          <RouteGuard>
+            {children}
+          </RouteGuard>
         </ToastProvider>
       </body>
     </html>

@@ -1,17 +1,25 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { DAILY_LIMIT } from '@/lib/rate-limit'
+
+function getAdminEmails(): string[] {
+  return process.env.ADMIN_EMAILS?.split(',').map((e) => e.trim()) || []
+}
 
 export async function GET() {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return cookieStore.getAll() }, setAll(c) { c.forEach(({ name, value, options }) => cookieStore.set(name, value, options)) } } }
-  )
-
+  const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ count: 0 })
+  if (!user) return NextResponse.json({ count: 0, isPremium: false, isAdmin: false, isLimited: false })
+
+  const isAdmin = getAdminEmails().includes(user.email ?? '')
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('is_premium')
+    .eq('id', user.id)
+    .single()
+
+  const isPremium = profile?.is_premium ?? false
 
   const today = new Date().toISOString().split('T')[0]
   const { data } = await supabase
@@ -21,17 +29,14 @@ export async function GET() {
     .eq('date', today)
     .single()
 
-  return NextResponse.json({ count: data?.count || 0 })
+  const count = data?.count ?? 0
+  const isLimited = !isAdmin && !isPremium && count >= DAILY_LIMIT
+
+  return NextResponse.json({ count, isPremium, isAdmin, isLimited })
 }
 
 export async function POST() {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return cookieStore.getAll() }, setAll(c) { c.forEach(({ name, value, options }) => cookieStore.set(name, value, options)) } } }
-  )
-
+  const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ count: 0 })
 
@@ -52,7 +57,7 @@ export async function POST() {
       .eq('date', today)
       .select('count')
       .single()
-    return NextResponse.json({ count: updated?.count || 0 })
+    return NextResponse.json({ count: updated?.count ?? 0 })
   } else {
     await supabase
       .from('daily_usage')

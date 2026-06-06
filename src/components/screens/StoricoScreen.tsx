@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
-import ExplanationRenderer from '@/components/exercise/ExplanationRenderer'
+import { useState, useEffect, useMemo, ComponentType } from 'react'
+import { useRouter } from 'next/navigation'
 import { copyToClipboard } from '@/utils/clipboard'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, ChevronRight, BookOpen, Clock, AlertCircle, Search, Star, Share2, Tag, Activity, Triangle, Divide, Calculator, FunctionSquare, LayoutGrid, Zap, Variable, Infinity, Link } from 'lucide-react'
+import { ChevronLeft, ChevronRight, BookOpen, Clock, AlertCircle, Search, Star, Share2, Tag, Triangle, Divide, Calculator, FunctionSquare, LayoutGrid, Zap, Variable, Infinity } from 'lucide-react'
 import { useToast } from '@/hooks/ToastContext'
 
-const SUBJECT_STYLES: Record<string, { color: string, icon: any, label: string }> = {
+const SUBJECT_STYLES: Record<string, { color: string, icon: ComponentType<{ size?: number; fill?: string; className?: string }>, label: string }> = {
   'derivata': { color: 'bg-blue-500/10 text-blue-600 border-blue-200', icon: Zap, label: 'Derivata' },
   'integrale': { color: 'bg-indigo-500/10 text-indigo-600 border-indigo-200', icon: FunctionSquare, label: 'Integrale' },
   'funzione': { color: 'bg-cyan-500/10 text-cyan-600 border-cyan-200', icon: Variable, label: 'Funzione' },
@@ -17,15 +17,25 @@ const SUBJECT_STYLES: Record<string, { color: string, icon: any, label: string }
   'algebra': { color: 'bg-sky-500/10 text-sky-600 border-sky-200', icon: Divide, label: 'Algebra' },
   'equazione': { color: 'bg-emerald-500/10 text-emerald-600 border-emerald-200', icon: Calculator, label: 'Equazione' },
   'altro': { color: 'bg-slate-500/10 text-slate-600 border-slate-200', icon: BookOpen, label: 'Altro' },
-  'Tutti': { color: 'bg-primary text-white border-primary', icon: LayoutGrid, label: 'Tutti' },
+  'Tutti': { color: 'bg-primary text-background border-primary', icon: LayoutGrid, label: 'Tutti' },
   'Preferiti': { color: 'bg-yellow-500/10 text-yellow-600 border-yellow-200', icon: Star, label: 'Preferiti' }
 }
 
-export default function StoricoScreen({ onBack }: { onBack: () => void }) {
+interface StoricoExercise {
+  id: number
+  question?: string
+  explanation: string
+  created_at: string
+  subject: string
+  is_favorite: boolean
+  shared_id?: string | null
+}
+
+export default function StoricoScreen() {
+  const router = useRouter()
   const { showToast } = useToast()
-  const [exercises, setExercises] = useState<any[]>([])
+  const [exercises, setExercises] = useState<StoricoExercise[]>([])
   const [loading, setLoading] = useState(true)
-  const [selected, setSelected] = useState<any | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedSubject, setSelectedSubject] = useState<string>('Tutti')
   const [sharingId, setSharingId] = useState<number | null>(null)
@@ -70,7 +80,7 @@ export default function StoricoScreen({ onBack }: { onBack: () => void }) {
   }, [exercises])
 
   const groupedExercises = useMemo(() => {
-    const groups: Record<string, any[]> = {}
+    const groups: Record<string, StoricoExercise[]> = {}
     
     // Raggruppamento per materia
     filteredExercises.forEach(ex => {
@@ -103,7 +113,7 @@ export default function StoricoScreen({ onBack }: { onBack: () => void }) {
     })
   }
 
-  async function handleShareExercise(e: React.MouseEvent, exercise: any) {
+  async function handleShareExercise(e: React.MouseEvent, exercise: StoricoExercise) {
     e.stopPropagation()
     setSharingId(exercise.id)
 
@@ -151,7 +161,7 @@ export default function StoricoScreen({ onBack }: { onBack: () => void }) {
             text: 'Guarda questa spiegazione passo-passo su theLemma!',
             url: shareUrl
           })
-        } catch (err) {
+        } catch {
           // L'utente potrebbe aver annullato la condivisione, non è un errore critico
         }
       }
@@ -159,45 +169,11 @@ export default function StoricoScreen({ onBack }: { onBack: () => void }) {
     setSharingId(null)
   }
 
-  if (selected) return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="sticky top-0 z-10 px-4 py-4 bg-surface/80 backdrop-blur-xl border-b border-surface-border flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <button onClick={() => setSelected(null)} className="p-2 -ml-2 rounded-xl bg-transparent border-none text-foreground-muted cursor-pointer hover:bg-surface-active hover:text-foreground transition-colors flex-shrink-0">
-            <ChevronLeft size={24} />
-          </button>
-          <div className="text-[17px] font-bold text-foreground truncate">{selected.question || 'Esercizio'}</div>
-        </div>
-        <button 
-          onClick={(e) => handleShareExercise(e, selected)}
-          disabled={sharingId === selected.id}
-          className="p-2 rounded-xl bg-primary/10 text-primary cursor-pointer hover:bg-primary/20 transition-colors flex-shrink-0"
-        >
-          {sharingId === selected.id ? <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /> : <Share2 size={20} />}
-        </button>
-      </header>
-      <main className="flex-1 overflow-y-auto p-5 max-w-[720px] mx-auto w-full">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-surface border border-surface-border rounded-[20px] p-5 mb-8 shadow-sm">
-          <div className="flex items-center gap-2 text-primary font-bold text-[13px] uppercase tracking-wider mb-3">
-            <BookOpen size={16} /> Domanda
-          </div>
-          <div className="text-[15px] text-foreground leading-relaxed">
-            {selected.question || <span className="text-foreground-muted italic">Immagine inviata senza testo</span>}
-          </div>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <ExplanationRenderer text={selected.explanation} esercizio={selected.question} />
-        </motion.div>
-      </main>
-    </div>
-  )
-
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
       <header className="sticky top-0 z-20 px-4 py-4 bg-surface/80 backdrop-blur-xl border-b border-surface-border flex flex-col gap-4">
         <div className="flex items-center gap-3">
-          <button onClick={onBack} className="p-2 -ml-2 rounded-xl bg-transparent border-none text-foreground-muted cursor-pointer hover:bg-surface-active hover:text-foreground transition-colors">
+          <button onClick={() => router.push('/home')} className="p-2 -ml-2 rounded-xl bg-transparent border-none text-foreground-muted cursor-pointer hover:bg-surface-active hover:text-foreground transition-colors">
             <ChevronLeft size={24} />
           </button>
           <div className="text-[17px] font-bold text-foreground">Il tuo Storico</div>
@@ -227,7 +203,7 @@ export default function StoricoScreen({ onBack }: { onBack: () => void }) {
                       onClick={() => setSelectedSubject(sub)}
                       className={`flex-shrink-0 px-4 py-1.5 rounded-full text-[13px] font-semibold transition-all border flex items-center gap-2 ${
                         isSelected 
-                          ? 'bg-primary text-white border-primary shadow-sm shadow-primary/20' 
+                          ? 'bg-primary text-background border-primary shadow-sm shadow-primary/20' 
                           : 'bg-surface border-surface-border text-foreground-muted hover:border-primary/30'
                       }`}
                     >
@@ -279,7 +255,7 @@ export default function StoricoScreen({ onBack }: { onBack: () => void }) {
                       {recentExercises.map((ex) => (
                         <div 
                           key={`recent-${ex.id}`}
-                          onClick={() => setSelected(ex)}
+                          onClick={() => router.push(`/explain/${ex.id}`)}
                           className="flex-shrink-0 w-[200px] bg-surface/50 backdrop-blur-sm border border-surface-border rounded-2xl p-4 cursor-pointer hover:border-primary/40 transition-all hover:bg-surface"
                         >
                           <div className="text-[13px] text-foreground font-semibold line-clamp-3 leading-snug mb-3 h-[48px]">
@@ -308,7 +284,7 @@ export default function StoricoScreen({ onBack }: { onBack: () => void }) {
                     <motion.div 
                       key={ex.id || i} 
                       variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
-                      onClick={() => setSelected(ex)} 
+                      onClick={() => router.push(`/explain/${ex.id}`)} 
                       className="bg-surface border border-surface-border rounded-2xl p-4 mb-3 cursor-pointer flex flex-col group hover:border-primary/30 transition-all hover:shadow-md relative overflow-hidden"
                     >
                       {/* Preferiti evidenziazione sfondo leggera */}

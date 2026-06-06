@@ -28,5 +28,5 @@ export default async function SharedPage({ params }: Props) {
     </div>
   )
 
-  return <SharedExplanation data={data} id={id} />
+  return <SharedExplanation data={data} />
 }

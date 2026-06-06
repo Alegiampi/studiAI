@@ -5,33 +5,13 @@ import AuthModal from '@/components/AuthModal'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, BookOpen, User, LogOut, Camera, Crown, Sparkles, Zap, Trash2, RotateCcw, Pencil } from 'lucide-react'
 import CropModal from '@/components/CropModal'
+import { useRouter } from 'next/navigation'
+import { useToast } from '@/hooks/ToastContext'
+import { useStore, DAILY_LIMIT } from '@/store/useStore'
+import { createClient } from '@/lib/supabase'
+import { User as SupabaseUser } from '@supabase/supabase-js'
 
-const DAILY_LIMIT = 5
-
-interface HomeScreenProps {
-  user: any
-  showAuth: boolean
-  setShowAuth: (v: boolean) => void
-  supabase: any
-  setScreen: (s: 'home' | 'explanation' | 'paywall' | 'storico' | 'profilo') => void
-  logout: () => void
-  isLimited: boolean
-  remaining: number
-  image: string | null
-  setImage: (v: string | null) => void
-  imageBase64: string | null
-  setImageBase64: (v: string | null) => void
-  dragging: boolean
-  setDragging: (v: boolean) => void
-  handleFile: (file: File) => void
-  text: string
-  setText: (v: string) => void
-  handleSubmit: () => void
-  usedToday: number
-  isPremium: boolean
-}
-
-function getUserDisplayName(user: any): string {
+function getUserDisplayName(user: SupabaseUser | null): string {
   const meta = user?.user_metadata
   if (meta?.full_name) return meta.full_name.split(' ')[0]
   if (meta?.name) return meta.name.split(' ')[0]
@@ -50,16 +30,33 @@ const PLACEHOLDERS = [
   "Calcola l'accelerazione di un corpo di 5kg con forza 20N...",
 ]
 
-export default function HomeScreen({
-  user, showAuth, setShowAuth, supabase, setScreen, logout,
-  isLimited, remaining, image, setImage, imageBase64, setImageBase64,
-  dragging, setDragging, handleFile, text, setText, handleSubmit, usedToday,
-  isPremium,
-  }: HomeScreenProps) {
+export default function HomeScreen() {
+  const router = useRouter()
+  const { showToast } = useToast()
+  const supabase = createClient()
+  
+  const {
+    user,
+    logout,
+    isLimited,
+    remaining,
+    usedToday,
+    isPremium,
+    inputText: text,
+    setInputText: setText,
+    inputImage: image,
+    setInputImage: setImage,
+    inputImageBase64: imageBase64,
+    setInputImageBase64: setImageBase64,
+    handleSubmit: storeHandleSubmit
+  } = useStore()
+
+  const [showAuth, setShowAuth] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [dragging, setDragging] = useState(false)
 
   const [history, setHistory] = useState<string[]>([])
   const [historyIndex, setHistoryIndex] = useState(-1)
@@ -84,7 +81,7 @@ export default function HomeScreen({
       return newHistory
     })
     setHistoryIndex(prev => Math.min(prev + 1, MAX_HISTORY - 1))
-  }, [setText, historyIndex])
+  }, [setText, historyIndex, skipHistoryRef])
 
   const undo = useCallback(() => {
     if (historyIndex <= 0) return
@@ -93,7 +90,7 @@ export default function HomeScreen({
     setText(prevText)
     setHistoryIndex(prev => prev - 1)
     setTimeout(() => { skipHistoryRef.current = false }, 0)
-  }, [history, historyIndex, setText])
+  }, [history, historyIndex, setText, skipHistoryRef])
 
   const redo = useCallback(() => {
     if (historyIndex >= history.length - 1) return
@@ -102,7 +99,7 @@ export default function HomeScreen({
     setText(nextText)
     setHistoryIndex(prev => prev + 1)
     setTimeout(() => { skipHistoryRef.current = false }, 0)
-  }, [history, historyIndex, setText])
+  }, [history, historyIndex, setText, skipHistoryRef])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -142,23 +139,14 @@ export default function HomeScreen({
     return () => clearInterval(interval)
   }, [])
 
-  // Quando il toast scade senza undo, revoca l'URL per evitare memory leak
-  useEffect(() => {
-    if (!showUndoToast && deletedImage?.url) {
-      // Se il toast è sparito e non abbiamo annullato, revoca definitivamente
-      URL.revokeObjectURL(deletedImage.url)
-      if (shieldedUrlRef.current === deletedImage.url) {
-        shieldedUrlRef.current = null
-      }
-      setDeletedImage(null)
-    }
-  }, [showUndoToast, deletedImage])
-
+  // handleDeleteImage modificata per revocare asintoticamente l'URL ed evitare effetti collaterali sincroni
   function handleDeleteImage(e: React.MouseEvent) {
     e.stopPropagation()
     if (!image) return
+    const urlToDelete = image
+    const base64ToDelete = imageBase64
     // Salva i dati per undo
-    setDeletedImage({ url: image, base64: imageBase64 })
+    setDeletedImage({ url: urlToDelete, base64: base64ToDelete })
     if (shieldedUrlRef.current && shieldedUrlRef.current !== image) {
       URL.revokeObjectURL(shieldedUrlRef.current)
     }
@@ -175,6 +163,10 @@ export default function HomeScreen({
     undoTimerRef.current = setTimeout(() => {
       setShowUndoToast(false)
       setDeletedImage(null)
+      URL.revokeObjectURL(urlToDelete)
+      if (shieldedUrlRef.current === urlToDelete) {
+        shieldedUrlRef.current = null
+      }
     }, 4000)
   }
 
@@ -287,8 +279,8 @@ export default function HomeScreen({
               {user ? (
                 <div className="space-y-1 px-3">
                   {[
-                    { icon: <BookOpen size={20} />, label: 'I miei esercizi', action: () => { setScreen('storico'); setMenuOpen(false) } },
-                    { icon: <User size={20} />, label: 'Profilo', action: () => { setScreen('profilo'); setMenuOpen(false) } },
+                    { icon: <BookOpen size={20} />, label: 'I miei esercizi', action: () => { router.push('/history'); setMenuOpen(false) } },
+                    { icon: <User size={20} />, label: 'Profilo', action: () => { router.push('/profile'); setMenuOpen(false) } },
                   ].map((item, i) => (
                     <button
                       key={i}
@@ -310,7 +302,7 @@ export default function HomeScreen({
                       </div>
                       <div className="text-xs text-foreground-muted mb-3 leading-relaxed">Esercizi illimitati, grafici interattivi e molto altro.</div>
                       <button
-                        onClick={() => { setScreen('paywall'); setMenuOpen(false) }}
+                        onClick={() => { router.push('/paywall'); setMenuOpen(false) }}
                         className="w-full py-2.5 bg-primary hover:bg-primary-hover text-background border-none rounded-xl text-sm font-bold cursor-pointer transition-colors"
                       >
                         Scopri i piani →
@@ -333,7 +325,7 @@ export default function HomeScreen({
             {user && (
               <div className="border-t border-surface-border p-3">
                 <button
-                  onClick={() => { logout(); setMenuOpen(false) }}
+                  onClick={() => { logout().then(() => router.replace('/')); setMenuOpen(false) }}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors hover:bg-danger/10 text-foreground-subtle hover:text-danger font-medium text-[14px]"
                 >
                   <LogOut size={20} /> Esci
@@ -362,7 +354,7 @@ export default function HomeScreen({
           ) : (
             <motion.div
               whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-              onClick={() => setScreen('paywall')}
+              onClick={() => router.push('/paywall')}
               className={`text-xs font-bold px-3.5 py-1.5 rounded-full cursor-pointer whitespace-nowrap shadow-sm transition-colors ${
                 isLimited ? 'bg-primary text-background' : 'bg-surface-hover border border-surface-border text-foreground-muted hover:text-foreground'
               }`}
@@ -404,6 +396,7 @@ export default function HomeScreen({
         >
           {image ? (
              <>
+               {/* eslint-disable-next-line @next/next/no-img-element */}
                <img src={image ?? undefined} alt="esercizio" className="w-full max-h-[280px] object-contain bg-black/20 backdrop-blur-md" />
                 <div className="absolute top-4 right-4 flex gap-2">
                   <button
@@ -425,8 +418,8 @@ export default function HomeScreen({
               <div className="w-16 h-16 rounded-full bg-surface-active flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 group-hover:bg-primary/20 group-hover:text-primary text-foreground-muted">
                 <Camera size={28} />
               </div>
-              <div className="text-[15px] font-bold text-foreground mb-1">Carica una foto dell'esercizio</div>
-              <div className="text-[13px] text-foreground-subtle">Trascina qui o clicca per esplorare</div>
+              <div className="text-[15px] font-bold text-foreground mb-1">{"Carica una foto dell'esercizio"}</div>
+              <div className="text-[13px] text-foreground-subtle">{"Trascina qui o clicca per esplorare"}</div>
             </div>
           )}
         </motion.div>
@@ -501,8 +494,7 @@ export default function HomeScreen({
           onClick={async () => {
             if (submitting || (!text.trim() && !image)) return
             setSubmitting(true)
-            await new Promise(r => setTimeout(r, 650))
-            handleSubmit()
+            await storeHandleSubmit(router, showToast)
             setSubmitting(false)
           }}
           disabled={!text.trim() && !image}
@@ -598,6 +590,7 @@ export default function HomeScreen({
             <div className="p-4 flex items-center gap-4">
               {/* Thumbnail dell'immagine eliminata */}
               <div className="w-12 h-12 rounded-lg overflow-hidden bg-black/40 flex-shrink-0 border border-white/10 shadow-inner flex items-center justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img 
                   src={deletedImage.base64 ? `data:image/jpeg;base64,${deletedImage.base64}` : (deletedImage.url || undefined)} 
                   alt="deleted" 

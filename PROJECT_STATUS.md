@@ -7,6 +7,36 @@ Questo documento riassume lo stato attuale dell'architettura e dell'interfaccia 
 
 ## Log delle Modifiche (Storico)
 
+### 5 Giugno 2026 - Migrazione da Llama a GPT per Query Non-Visual
+- **Switch di Modello**: Abilitato l'uso di modelli OpenAI GPT per tutte le rotte non-visual (testo diretto, chat, classificazione e grafici), sostituendo `llama-3.3-70b-versatile` con `gpt-4o` e `llama-3.1-8b-instant` con `gpt-4o-mini` per maggiore precisione logica e velocità.
+- **Meccanismo di Fallback Robusto**: Le API rilevano dinamicamente la presenza di `OPENAI_API_KEY`. Se non configurata, ricadono in automatico sui modelli Llama via Groq, evitando disservizi in locale o produzione.
+- **Pipeline Visual Intatta**: Il vision model `llama-4-scout-17b-16e-instruct` rimane attivo per il riconoscimento ottico (Stage 1 OCR) delle immagini caricate, mentre lo Stage 2 (generazione spiegazione testuale) sfrutta GPT.
+
+### 4 Giugno 2026 - Spostamento Stili KaTeX e Fix text-background in StoricoScreen (Alta Priorità)
+- **Centralizzazione CSS**: Spostati tutti gli stili `.katex` e `.md-content` inline da `ExplanationRenderer.tsx` e `ExplanationScreen.tsx` nel file CSS globale `globals.css` per migliorare le performance ed eliminare la duplicazione di codice.
+- **Fix Contrasti Colore**: Sostituite le occorrenze di `text-white` con `text-background` in `StoricoScreen.tsx` (sia nello stato attivo del filtro materie sia in `SUBJECT_STYLES`), risolvendo un problema di accessibilità visiva sul pulsante primario giallo (`#FFD600`).
+- **Verifica TypeScript**: Confermato il superamento del typechecking con zero errori in compilazione.
+
+### 4 Giugno 2026 - Migrazione Formato Spiegazioni: Testo-Regex → JSON Strutturato
+- **Root Cause Fix LaTeX**: Eliminato il parsing regex instabile di `parseExplanation` che causava troncamenti di formule multi-riga (`\begin{aligned}`, `RISPOSTA FINALE:` su più righe).
+- **Nuovo Formato API**: `api/explain/route.ts` ora istruisce l'AI (llama-3.3-70b) a produrre JSON strutturato `{ titolo, passi: [{titolo, corpo}], finale }` con `response_format: json_object` (Groq JSON mode).
+- **Parser Intelligente** (`lib/utils.ts`): `parseExplanation` rileva automaticamente JSON (nuovo formato) vs testo-con-marker (formato legacy). Fallback garantisce retrocompatibilità totale con spiegazioni già nel DB.
+- **Fix Bug Legacy**: Il parser vecchio ora accumula correttamente anche `RISPOSTA FINALE:` multi-riga (era un bug silenzioso).
+- **Invarianza Architetturale**: Nessuna modifica a `ExplanationRenderer`, `ExplanationScreen`, store Zustand o DB — il cambio è trasparente al rendering.
+
+### 22 Maggio 2026 - Completamento Migliorie Architetturali & Routing
+- **Routing Nativo App Router**: Migrata la navigazione condizionale virtuale ad una struttura a rotte reali su Next.js (`/home`, `/explain/[id]`, `/history`, `/profile`, `/paywall`, `/onboarding`, `/personalize`).
+- **Stato Centralizzato Zustand**: Rimosso il prop-drilling collegando tutti gli schermi ad uno store globale Zustand (`useStore`).
+- **Protezione Accesso con RouteGuard**: Introdotto un middleware client-side `RouteGuard` per forzare redirect su login, onboarding o personalizzazione in base allo stato dell'utente.
+- **Clean-up Codebase**: Cancellati i vecchi file di hook obsoleti (`useAuth`, `useExercises`, `usePayments`, `useProfile`, `useNavigation`).
+
+### 22 Maggio 2026 - Pianificazione Migliorie Architetturali, IA & Performance
+- **Architettura & Routing**: Progettata l'adozione di Zustand per centralizzare lo stato dell'esercizio/chat e l'introduzione di rotte Next.js reali per ogni schermata.
+- **Robustezza IA & Schema Validation**: Pianificato l'uso di Groq JSON Mode e Zod per convalidare le risposte di classificazione e grafici. Proposto un formato JSON strutturato per le spiegazioni passo-passo al fine di evitare errori di parsing regex.
+- **Ottimizzazioni & Performance**: Progettata la cache per i compilati di `mathjs` per velocizzare il drag della tangente ed evitare ricalcoli eccessivi.
+- **TypeScript & Type Safety**: Pianificata la rimozione dei tipi `any` tramite interfacce rigorose e auto-generazione dei tipi di Supabase.
+- **Nuove Feature UX**: Proposta l'integrazione dello snapping magnetico sui punti notevoli del grafico Mafs (zeri, massimi, minimi), l'esportazione in PDF e mini-quiz interattivi.
+
 ### 11 Maggio 2026 - Stabilizzazione Grafica, AI Optimization & Bug Fix
 - **Mafs 4.0 (Rendering Stability)**:
     - **Fix Iperboli (1/x)**: Risolto definitivamente il problema della "linea verticale" nelle discontinuità. Implementata una soglia dinamica (`|y| > 200`) che restituisce `NaN`, forzando Mafs a spezzare il percorso SVG invece di unire i rami.
@@ -127,6 +157,22 @@ Questo documento riassume lo stato attuale dell'architettura e dell'interfaccia 
 
 ## Prossimi Passi
 
+- [x] **Migliorie Architetturali & Routing**:
+    - Centralizzazione dello stato con Zustand / React Context.
+    - Passaggio a rotte Next.js reali (`/home`, `/explain`, `/profile`, `/history`, `/paywall`) per migliorare navigazione e SEO.
+- [ ] **Ottimizzazione API & Robustezza IA**:
+    - Abilitare JSON Mode su Groq per `/api/classify`, `/api/graph` e `/api/graph/assist` con validazione Zod.
+    - Convertire il formato di spiegazione in JSON strutturato per eliminare il parsing regex instabile.
+    - Unificazione dei passaggi di classificazione e spiegazione in un'unica pipeline Groq.
+- [ ] **Performance & Math Rendering**:
+    - Introdurre cache di compilazione `mathjs` in `FunctionLayer.tsx` per ottimizzare le interazioni.
+    - Aggiungere il pulsante "Reset Zoom" su Mafs.
+- [ ] **Type Safety (TypeScript)**:
+    - Rimozione dei tipi `any` a favore di interfacce rigorose e auto-generazione dei tipi Supabase.
+- [ ] **Nuove Funzionalità Educational & UX**:
+    - Snapping magnetico del punto tangente sui punti notevoli (zeri, massimi, minimi) con etichetta.
+    - Esportazione PDF delle spiegazioni completa di screenshot statico del grafico.
+    - Mini-quiz interattivo a fine spiegazione per testare l'apprendimento.
 - [ ] **Modalità Giochi (Tabelline & Progressi)**: Mini-giochi interattivi per l'allenamento rapido.
     - *Tabelline Speed-Run*: Record di tempo su 20 domande.
     - *Il Duello delle Equazioni*: Risoluzione rapida di equazioni semplici.
@@ -135,6 +181,3 @@ Questo documento riassume lo stato attuale dell'architettura e dell'interfaccia 
     - *Vero o Falso Scientifico*: Quiz rapidi di cultura generale/scienze.
 - [ ] **Generatore di Esercizi Smart**: Creazione di varianti (più facili/difficili) partendo dallo storico.
 - [ ] **Allenati con il Prof (Simulazione Interrogazione)**: Simulatore di esame orale con feedback in tempo reale.
-- [ ] **Domanda di Controllo (Mini-Quiz)**: Verifica della comprensione a fine spiegazione.
-- [ ] **Esportazione PDF**: Generazione di file PDF completi di grafici per la stampa.
-- [ ] **Miglioramento TypeScript**: Rimozione degli ultimi tipi `any` a favore di interfacce rigorose.

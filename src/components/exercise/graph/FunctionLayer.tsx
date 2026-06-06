@@ -1,12 +1,10 @@
 import { useState, useMemo } from 'react'
 import { Plot, Line, MovablePoint, Text } from 'mafs'
-import { compile, derivative } from 'mathjs'
-import { motion } from 'framer-motion'
+import { compile, derivative, EvalFunction } from 'mathjs'
 
 export function FunctionLayer({ 
   fnStr, 
   color, 
-  domain, 
   interactive, 
   label, 
   lineStyle = 'solid',
@@ -22,10 +20,8 @@ export function FunctionLayer({
 }) {
   const [t, setT] = useState(1)
 
-  const domainKey = JSON.stringify(domain)
-
   const { isY, cleanFn } = useMemo(() => {
-    let raw = fnStr.trim()
+    const raw = fnStr.trim()
     const eqMatch = raw.match(/^([xy])\s*=\s*(.*)$/i)
     if (eqMatch) {
       const variable = eqMatch[1].toLowerCase()
@@ -55,7 +51,7 @@ export function FunctionLayer({
   }, [fnStr, label])
 
   const evaluate = useMemo(() => {
-    let node: any
+    let node: EvalFunction
     try {
       node = compile(cleanFn)
     } catch {
@@ -73,11 +69,11 @@ export function FunctionLayer({
         // Abbassato a 200 per intercettare il campionamento di Mafs prima che tiri la riga.
         if (Math.abs(result) > 200) return NaN
         return result
-      } catch (err) {
+      } catch {
         return NaN
       }
     }
-  }, [cleanFn, isY, label])
+  }, [cleanFn, isY])
 
   const df = useMemo(() => {
     if (!interactive || isY) return null // Disabilitiamo derivata interattiva per funzioni di y per ora

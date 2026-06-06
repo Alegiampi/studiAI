@@ -9,8 +9,15 @@ export default function TestDesmos() {
     script.src = 'https://www.desmos.com/api/v1.9/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6'
     script.onload = () => {
       if (!ref.current) return
-      const calc = (window as any).Desmos.GraphingCalculator(ref.current)
-      calc.setExpression({ id: 'f', latex: 'x^2', color: '#FFD600' })
+      interface CustomWindow extends Window {
+        Desmos?: {
+          GraphingCalculator: (el: HTMLElement) => {
+            setExpression: (expr: { id: string; latex: string; color?: string }) => void
+          }
+        }
+      }
+      const calc = (window as unknown as CustomWindow).Desmos?.GraphingCalculator(ref.current)
+      calc?.setExpression({ id: 'f', latex: 'x^2', color: '#FFD600' })
     }
     document.head.appendChild(script)
   }, [])

@@ -1,21 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { CheckoutSchema } from '@/lib/schemas'
 
 export async function POST(req: NextRequest) {
+  const parsed = CheckoutSchema.safeParse(await req.json())
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Richiesta non valida', details: parsed.error.issues }, { status: 400 })
+  }
+  const { priceId } = parsed.data
+
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-04-22.dahlia' })
 
-  const { priceId } = await req.json()
-
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return cookieStore.getAll() }, setAll(c) { c.forEach(({ name, value, options }) => cookieStore.set(name, value, options)) } } }
-  )
-
+  const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 })
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
@@ -23,8 +22,8 @@ export async function POST(req: NextRequest) {
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${process.env.NEXT_PUBLIC_APP_URL}/?checkout=success`,
     cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/?checkout=cancelled`,
-    ...(user?.email ? { customer_email: user.email } : {}),
-    metadata: { user_id: user?.id || '' },
+    customer_email: user.email,
+    metadata: { user_id: user.id },
   })
 
   return NextResponse.json({ url: session.url })

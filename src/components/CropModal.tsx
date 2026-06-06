@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState, useRef, useEffect, useCallback } from 'react'
-import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop } from 'react-image-crop'
+import React, { useState, useRef, useEffect } from 'react'
+import ReactCrop, { Crop, PixelCrop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
 import { X, Check, RotateCw } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -13,12 +13,6 @@ interface CropModalProps {
   onConfirm: (croppedImage: string, croppedBase64: string) => void
 }
 
-interface Area {
-  x: number
-  y: number
-  width: number
-  height: number
-}
 
 export default function CropModal({ image, onClose, onConfirm }: CropModalProps) {
   const [crop, setCrop] = useState<Crop>()
@@ -126,8 +120,8 @@ export default function CropModal({ image, onClose, onConfirm }: CropModalProps)
         </div>
 
         <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none whitespace-nowrap">
-          <span className="text-white font-bold text-[15px]">Inquadra l'esercizio</span>
-          <span className="text-[9px] text-white/50 uppercase tracking-widest font-medium">Trascina gli angoli per regolare</span>
+          <span className="text-white font-bold text-[15px]">{"Inquadra l'esercizio"}</span>
+          <span className="text-[9px] text-white/50 uppercase tracking-widest font-medium">{"Trascina gli angoli per regolare"}</span>
         </div>
 
         <div className="flex-1 flex justify-end">
@@ -166,6 +160,7 @@ export default function CropModal({ image, onClose, onConfirm }: CropModalProps)
                 display: 'block'
             }}
           >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               ref={imgRef}
               alt="Crop me"
@@ -194,7 +189,7 @@ export default function CropModal({ image, onClose, onConfirm }: CropModalProps)
         </div>
         
         <p className="text-center text-white/40 text-[13px] font-medium italic">
-          Suggerimento: Inquadra solo il testo dell'esercizio per una spiegazione più precisa.
+          Suggerimento: Inquadra solo il testo {"dell'esercizio"} per una spiegazione più precisa.
         </p>
       </div>
     </motion.div>

@@ -2,10 +2,12 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Camera, BrainCircuit, Zap, Sparkles, MessagesSquare, LineChart, BookOpen } from 'lucide-react'
+import { Zap, Sparkles, MessagesSquare, LineChart, BookOpen } from 'lucide-react'
+import { useStore } from '@/store/useStore'
 
-export default function OnboardingScreen({ onDone }: { onDone: () => void }) {
+export default function OnboardingScreen() {
   const [step, setStep] = useState(0)
+  const { fetchProfile } = useStore()
   
   const steps = [
     { 
@@ -66,7 +68,7 @@ export default function OnboardingScreen({ onDone }: { onDone: () => void }) {
           body: JSON.stringify({ onboarding_done: true }) 
         })
         if (res.ok) {
-          onDone()
+          await fetchProfile()
         } else {
           const errorData = await res.json()
           console.error('Failed to update onboarding:', errorData)
@@ -159,7 +161,7 @@ export default function OnboardingScreen({ onDone }: { onDone: () => void }) {
               onClick={async () => { 
                 const res = await fetch('/api/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ onboarding_done: true }) }).catch(e => { console.error(e); return null; });
                 if (res?.ok) {
-                  onDone();
+                  await fetchProfile()
                 } else {
                   alert('Errore nel salvataggio. Controlla le policy RLS.');
                 }

@@ -2,18 +2,13 @@
 
 import { motion } from 'framer-motion'
 import { CheckCircle2, Crown, Sparkles } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useStore, DAILY_LIMIT } from '@/store/useStore'
 
-export default function PaywallScreen({ 
-  usedToday, 
-  DAILY_LIMIT, 
-  handleCheckout, 
-  onBack 
-}: { 
-  usedToday: number; 
-  DAILY_LIMIT: number; 
-  handleCheckout: (priceId: string) => void; 
-  onBack: () => void;
-}) {
+export default function PaywallScreen() {
+  const router = useRouter()
+  const { usedToday, handleCheckout } = useStore()
+
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
       {/* Background glow effects */}
@@ -80,7 +75,7 @@ export default function PaywallScreen({
 
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="flex flex-col items-center gap-4">
           <button 
-            onClick={onBack} 
+            onClick={() => router.push('/home')} 
             className="w-full sm:w-auto px-8 py-3.5 bg-transparent border border-surface-border rounded-2xl text-foreground font-bold cursor-pointer hover:bg-surface-hover transition-colors"
           >
             Continua gratis ({DAILY_LIMIT} esercizi/giorno)

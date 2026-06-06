@@ -1,14 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { GraphSchema } from '@/lib/schemas'
+import { checkBurstLimit } from '@/lib/rate-limit'
 
-async function callGroq(messages: any[]) {
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+async function callAI(messages: { role: string; content: string }[]) {
+  const hasOpenAI = !!process.env.OPENAI_API_KEY
+  const url = hasOpenAI ? 'https://api.openai.com/v1/chat/completions' : 'https://api.groq.com/openai/v1/chat/completions'
+  const key = hasOpenAI ? process.env.OPENAI_API_KEY : process.env.GROQ_API_KEY
+  const model = hasOpenAI ? 'gpt-4o' : 'llama-3.3-70b-versatile'
+
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+      'Authorization': `Bearer ${key}`
     },
     body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
+      model,
       max_tokens: 800,
       temperature: 0.1,
       messages
@@ -18,7 +26,19 @@ async function callGroq(messages: any[]) {
 }
 
 export async function POST(req: NextRequest) {
-  const { esercizio, spiegazione } = await req.json()
+  const parsed = GraphSchema.safeParse(await req.json())
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Richiesta non valida', details: parsed.error.issues }, { status: 400 })
+  }
+  const { esercizio, spiegazione } = parsed.data
+
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 })
+
+  if (!checkBurstLimit(`graph:${user.id}`)) {
+    return NextResponse.json({ error: 'Troppe richieste. Riprova tra qualche minuto.' }, { status: 429 })
+  }
 
   const systemPrompt = `Sei un esperto di matematica. Il tuo unico compito è generare i dati per plottare il grafico dell'esercizio usando 'mathjs'.
 
@@ -67,7 +87,7 @@ Spiegazione: ${spiegazione}
 
 Rispondi SOLO con il JSON crudo.`;
 
-  const data = await callGroq([
+  const data = await callAI([
     { role: 'system', content: systemPrompt },
     { role: 'user', content: userPrompt }
   ]);

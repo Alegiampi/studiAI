@@ -14,7 +14,17 @@ export default function TestJSXGraph() {
     script.src = 'https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraphcore.js'
     script.onload = () => {
       if (!ref.current) return
-      const JXG = (window as any).JXG
+      interface CustomWindow extends Window {
+        JXG?: {
+          JSXGraph: {
+            initBoard: (id: string, options: Record<string, unknown>) => {
+              create: (type: string, definition: unknown[], options: Record<string, unknown>) => void
+            }
+          }
+        }
+      }
+      const JXG = (window as unknown as CustomWindow).JXG
+      if (!JXG) return
       const board = JXG.JSXGraph.initBoard(ref.current.id, {
         boundingbox: [-5, 5, 5, -5],
         axis: true,

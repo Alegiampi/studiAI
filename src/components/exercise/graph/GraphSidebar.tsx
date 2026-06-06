@@ -3,10 +3,30 @@ import { Eye, EyeOff, TrendingUp, Plus, Check, X, Pencil, Trash2, Bot, Loader2, 
 import { compile } from 'mathjs'
 import { motion, AnimatePresence } from 'framer-motion'
 
+interface UserFunction {
+  type: 'function' | 'point'
+  fn?: string
+  coords?: [number, number]
+  color: string
+  label?: string
+}
+
+interface ExpressionItem {
+  type: string
+  fn?: string
+  coords?: [number, number]
+  color: string
+  label?: string
+  domain?: [number, number]
+  interactive?: boolean
+  isUser: boolean
+  userIdx?: number
+}
+
 interface GraphSidebarProps {
-  allEspressioni: any[];
-  userFunctions: any[];
-  setUserFunctions: React.Dispatch<React.SetStateAction<any[]>>;
+  allEspressioni: ExpressionItem[];
+  userFunctions: UserFunction[];
+  setUserFunctions: React.Dispatch<React.SetStateAction<UserFunction[]>>;
   hiddenIndices: Set<number>;
   setHiddenIndices: React.Dispatch<React.SetStateAction<Set<number>>>;
   showTangent: boolean;
@@ -141,7 +161,7 @@ export function GraphSidebar({
                           />
                         </div>
                         <span className={`text-xs font-medium flex-1 truncate transition-colors duration-300 ${isHidden ? 'text-[#555]' : 'text-[#EAEAEA]'}`}>
-                          {(e as any).label}
+                          {e.label}
                         </span>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           {e.type === 'function' && (
@@ -165,8 +185,8 @@ export function GraphSidebar({
                                 <button 
                                   onClick={(evt) => {
                                     evt.stopPropagation()
-                                    setEditingUserIdx((e as any).userIdx)
-                                    setEditInput((e as any).fn)
+                                    setEditingUserIdx(e.userIdx ?? null)
+                                    setEditInput(e.fn || '')
                                   }}
                                   className="p-1 hover:bg-[#333] rounded text-[#888] hover:text-[#EAEAEA]"
                                   title="Modifica"
@@ -177,7 +197,7 @@ export function GraphSidebar({
                               <button 
                                 onClick={(evt) => {
                                   evt.stopPropagation()
-                                  setUserFunctions(prev => prev.filter((_, idx) => idx !== (e as any).userIdx))
+                                  setUserFunctions(prev => prev.filter((_, idx) => idx !== e.userIdx))
                                 }}
                                 className="p-1 hover:bg-[#333] rounded text-[#888] hover:text-[#F43F5E]"
                                 title="Elimina"
@@ -233,7 +253,7 @@ export function GraphSidebar({
                   onClick={() => setIsAIAssistMode(true)}
                   className="flex-1 flex items-center justify-center gap-2 text-[#EAB308] hover:text-[#FDE047] text-xs font-medium px-3 py-2 transition-colors border border-dashed border-[#EAB308]/30 hover:border-[#EAB308]/60 rounded-xl bg-[#EAB308]/10"
                 >
-                  <Bot size={14} /> Chiedi all'IA
+                  <Bot size={14} /> {"Chiedi all'IA"}
                 </button>
               </motion.div>
             ) : isAddingMode ? (
@@ -313,7 +333,7 @@ export function GraphSidebar({
                     
                     setUserFunctions(prev => [
                       ...prev,
-                      ...newElements.map((el: any) => ({
+                      ...newElements.map((el: { type: 'function' | 'point'; fn?: string; coords?: [number, number]; color?: string; label?: string }) => ({
                         type: el.type,
                         fn: el.fn,
                         coords: el.coords,

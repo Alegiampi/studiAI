@@ -3,12 +3,14 @@
 import ExplanationRenderer from '@/components/exercise/ExplanationRenderer'
 import GraficoMafs from '@/components/exercise/GraficoMafs'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, Share2, Copy, Plus, BarChart2, Loader2, CheckCircle2, Crown, Send, Bot, Star, Link, Sparkles, Brain, Search, Layout, Lightbulb, Calculator, Zap } from 'lucide-react'
+import { ChevronLeft, Share2, Plus, BarChart2, Loader2, CheckCircle2, Crown, Send, Bot, Star, Sparkles, Brain, Search, Layout, Lightbulb, Calculator } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import { useToast } from '@/hooks/ToastContext'
+import { useRouter } from 'next/navigation'
+import { useStore } from '@/store/useStore'
 
 export const AI_STEPS = [
   { label: "Analisi dell'input...", icon: <Search size={18} /> },
@@ -19,50 +21,35 @@ export const AI_STEPS = [
   { label: "Finalizzazione...", icon: <Sparkles size={18} /> },
 ]
 
-export default function ExplanationScreen({
-  exercise,
-  loading,
-  explanation,
-  graficoUtile,
-  grafico,
-  graficoLoading,
-  shareUrl,
-  shareLoading,
-  quoteIndex,
-  onBack,
-  handleGrafico,
-  handleShare,
-  isPremium,
-  chatMessages,
-  chatLoading,
-  handleChatSubmit,
-  setScreen,
-  exerciseId
-}: {
-  exerciseId?: number | null
-  exercise: any
-  loading: boolean
-  explanation: string
-  graficoUtile: boolean | null
-  grafico: any
-  graficoLoading: boolean
-  shareUrl: string | null
-  shareLoading: boolean
-  quoteIndex: number
-  onBack: () => void
-  handleGrafico: () => void
-  handleShare: () => void
-  isPremium: boolean
-  chatMessages: { role: 'user' | 'assistant', text: string }[]
-  chatLoading: boolean
-  handleChatSubmit: (msg: string) => void
-  setScreen: (screen: 'paywall') => void
-}) {
+export default function ExplanationScreen() {
+  const router = useRouter()
   const { showToast } = useToast()
+  
+  const {
+    exercise,
+    loading,
+    explanation,
+    graficoUtile,
+    grafico,
+    graficoLoading,
+    shareUrl,
+    shareLoading,
+    isPremium,
+    chatMessages,
+    chatLoading,
+    currentExerciseId: exerciseId,
+    isFavorite,
+    handleGrafico: storeHandleGrafico,
+    handleShare: storeHandleShare,
+    handleChatSubmit: storeHandleChatSubmit,
+    toggleFavorite: storeToggleFavorite,
+    resetExercise,
+    rotateQuote
+  } = useStore()
+
   const chatRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const [chatInput, setChatInput] = useState('')
-  const [isFavorite, setIsFavorite] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
   const [showFAB, setShowFAB] = useState(false)
 
@@ -86,34 +73,60 @@ export default function ExplanationScreen({
     }
   }, [loading, explanation])
 
-  useEffect(() => {
+  const [prevLoading, setPrevLoading] = useState(loading)
+  if (loading !== prevLoading) {
+    setPrevLoading(loading)
     if (!loading) {
       setCurrentStep(0)
-      return
     }
+  }
+
+  useEffect(() => {
+    if (!loading) return
     const interval = setInterval(() => {
       setCurrentStep(prev => (prev + 1) % AI_STEPS.length)
     }, 2500)
     return () => clearInterval(interval)
   }, [loading])
 
+  // Rotazione quote motivazionali
+  useEffect(() => {
+    if (!loading) return
+    const interval = setInterval(() => {
+      rotateQuote()
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [loading, rotateQuote])
+
   useEffect(() => {
     if (shareUrl) {
       showToast('Link copiato!', 'success')
     }
-  }, [shareUrl])
+  }, [shareUrl, showToast])
 
-  async function toggleFavorite() {
-    if (!exerciseId) return
-    const newFav = !isFavorite
-    setIsFavorite(newFav)
-    showToast(newFav ? 'Aggiunto ai preferiti!' : 'Rimosso dai preferiti', 'success')
-    
-    await fetch('/api/exercises', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: exerciseId, is_favorite: newFav })
-    })
+  const onBack = () => {
+    resetExercise()
+    router.push('/home')
+  }
+
+  const setScreen = (screen: string) => {
+    router.push('/' + screen)
+  }
+
+  const toggleFavorite = () => {
+    storeToggleFavorite(showToast)
+  }
+
+  const handleGrafico = () => {
+    storeHandleGrafico(showToast)
+  }
+
+  const handleShare = () => {
+    storeHandleShare(showToast)
+  }
+
+  const handleChatSubmit = (msg: string) => {
+    storeHandleChatSubmit(msg, showToast)
   }
 
   const submitChat = () => {
@@ -133,7 +146,7 @@ export default function ExplanationScreen({
     }
   }, [chatInput])
 
-  const onAskTutor = (stepTitle: string, stepBody: string) => {
+  const onAskTutor = (stepTitle: string) => {
     const question = `Non mi è chiaro il passaggio "${stepTitle}". Puoi spiegarmelo meglio?`
     setChatInput(question)
     // Scroll to chat input
@@ -170,23 +183,6 @@ export default function ExplanationScreen({
           opacity: 0.7;
           font-weight: 300;
         }
-        .md-content { line-height: 1.55; text-align: left; hyphens: none; }
-        .md-content p { margin-bottom: 0.8rem; }
-        .md-content p:last-child { margin-bottom: 0; }
-        .md-content ul, .md-content ol { padding-left: 1.4rem; margin-bottom: 0.8rem; }
-        .md-content ul { list-style-type: disc; }
-        .md-content ol { list-style-type: decimal; }
-        .md-content li { margin-bottom: 0.4rem; }
-        .md-content strong { color: var(--color-foreground); font-weight: 700; }
-        .katex { color: var(--color-foreground) !important; font-size: 1.15em; font-weight: 500; }
-        .katex-display { 
-          margin: 1.2rem 0 !important; 
-          padding: 0.4rem 0; 
-          overflow-x: auto; 
-          text-align: center;
-          width: 100%;
-        }
-        .katex-display .katex { color: var(--color-foreground) !important; font-size: 1.25em; }
       `}</style>
       <header className="sticky top-0 z-20 px-4 py-4 bg-surface/80 backdrop-blur-xl border-b border-surface-border flex items-center gap-3">
         <button onClick={onBack} className="p-2 -ml-2 rounded-xl bg-transparent border-none text-foreground-muted cursor-pointer hover:bg-surface-active hover:text-foreground transition-colors">
@@ -249,6 +245,7 @@ export default function ExplanationScreen({
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
           {exercise?.imagePreview && (
             <div className="rounded-[20px] overflow-hidden border border-surface-border mb-4 shadow-sm">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={exercise.imagePreview} alt="esercizio" className="w-full object-cover" />
             </div>
           )}
@@ -259,91 +256,106 @@ export default function ExplanationScreen({
           )}
         </motion.div>
 
-        {loading ? (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-6 relative">
-            {/* Thinking Glow Background */}
-            <div className="absolute inset-0 -top-20 pointer-events-none z-0">
-              <motion.div
-                animate={{ 
-                  scale: [1, 1.1, 1],
-                  opacity: [0.15, 0.3, 0.15]
-                }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute top-0 left-1/2 -translate-x-1/2 w-[300px] h-[300px] bg-primary/20 blur-[80px] rounded-full"
-              />
-            </div>
-
-            {/* AI Status Indicator — theLemma Hero */}
-            <div className="flex flex-col items-center justify-center py-6 mb-2 relative z-10">
-              {/* Glow halo */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <AnimatePresence mode="wait">
+          {loading ? (
+            <motion.div
+              key="loading-skeleton"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="flex flex-col gap-6 relative"
+            >
+              {/* Thinking Glow Background */}
+              <div className="absolute inset-0 -top-20 pointer-events-none z-0">
                 <motion.div
-                  animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.45, 0.2] }}
-                  transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                  className="w-[260px] h-[120px] bg-primary/30 blur-[60px] rounded-full"
+                  animate={{ 
+                    scale: [1, 1.1, 1],
+                    opacity: [0.15, 0.3, 0.15]
+                  }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute top-0 left-1/2 -translate-x-1/2 w-[300px] h-[300px] bg-primary/20 blur-[80px] rounded-full"
                 />
               </div>
 
-              {/* Logo shimmer gigante */}
-              <div className="flex items-center gap-3 mb-6 relative">
+              {/* AI Status Indicator — theLemma Hero */}
+              <div className="flex flex-col items-center justify-center py-6 mb-2 relative z-10">
+                {/* Glow halo */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.45, 0.2] }}
+                    transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+                    className="w-[260px] h-[120px] bg-primary/30 blur-[60px] rounded-full"
+                  />
+                </div>
+
+                {/* Logo shimmer gigante */}
+                <div className="flex items-center gap-3 mb-6 relative">
+                  <motion.div
+                    animate={{ rotate: [0, 20, -20, 0], scale: [1, 1.4, 1] }}
+                    transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+                  >
+                    <Sparkles size={24} className="text-primary" />
+                  </motion.div>
+                  <span className="text-[52px] font-extrabold tracking-tight leading-none">
+                    <span className="logo-shimmer logo-shimmer-the">the</span><span className="logo-shimmer">Lemma</span>
+                  </span>
+                  <motion.div
+                    animate={{ rotate: [0, -20, 20, 0], scale: [1, 1.4, 1] }}
+                    transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
+                  >
+                    <Sparkles size={18} className="text-primary/60" />
+                  </motion.div>
+                </div>
+
+                {/* Step corrente come pill */}
                 <motion.div
-                  animate={{ rotate: [0, 20, -20, 0], scale: [1, 1.4, 1] }}
-                  transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+                  key={currentStep}
+                  initial={{ opacity: 0, y: 8, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-full px-4 py-2 text-primary font-semibold text-[13px] shadow-sm"
                 >
-                  <Sparkles size={24} className="text-primary" />
-                </motion.div>
-                <span className="text-[52px] font-extrabold tracking-tight leading-none">
-                  <span className="logo-shimmer logo-shimmer-the">the</span><span className="logo-shimmer">Lemma</span>
-                </span>
-                <motion.div
-                  animate={{ rotate: [0, -20, 20, 0], scale: [1, 1.4, 1] }}
-                  transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
-                >
-                  <Sparkles size={18} className="text-primary/60" />
+                  {AI_STEPS[currentStep].icon}
+                  <span>{AI_STEPS[currentStep].label}</span>
                 </motion.div>
               </div>
 
-              {/* Step corrente come pill */}
-              <motion.div
-                key={currentStep}
-                initial={{ opacity: 0, y: 8, scale: 0.9 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.3 }}
-                className="flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-full px-4 py-2 text-primary font-semibold text-[13px] shadow-sm"
-              >
-                {AI_STEPS[currentStep].icon}
-                <span>{AI_STEPS[currentStep].label}</span>
-              </motion.div>
-            </div>
-
-            {/* Skeleton passi */}
-            <div className="space-y-4 relative z-10">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="flex gap-4 opacity-40">
-                  <div className="w-1.5 bg-surface-active rounded-full shrink-0" />
-                  <div className="flex-1 bg-surface/50 border border-surface-border rounded-[24px] overflow-hidden backdrop-blur-sm">
-                    <div className="bg-surface-active/50 px-5 py-4 border-b border-surface-border/50">
-                      <div className="h-4 bg-surface-active rounded-md w-1/3 animate-pulse" />
-                    </div>
-                    <div className="px-6 py-5 space-y-3">
-                      <div className="h-3 bg-surface-active rounded-full w-full animate-pulse" />
-                      <div className="h-3 bg-surface-active rounded-full w-[92%] animate-pulse [animation-delay:200ms]" />
-                      <div className="h-3 bg-surface-active rounded-full w-[85%] animate-pulse [animation-delay:400ms]" />
+              {/* Skeleton passi */}
+              <div className="space-y-6 relative z-10">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="flex gap-3 opacity-40">
+                    <div className="w-[2px] bg-surface-active/50 rounded-full shrink-0" />
+                    <div className="flex-1 bg-surface border border-surface-border rounded-[24px] overflow-hidden shadow-sm">
+                      <div className="px-5 py-4 border-b border-surface-border bg-surface-active/50 flex items-center gap-3">
+                        <div className="bg-background/50 h-[22px] w-[60px] rounded-lg animate-pulse" />
+                        <div className="h-4 bg-surface-active rounded-md w-1/3 animate-pulse" />
+                      </div>
+                      <div className="px-6 py-5 space-y-3">
+                        <div className="h-3 bg-surface-active rounded-full w-full animate-pulse" />
+                        <div className="h-3 bg-surface-active rounded-full w-[92%] animate-pulse [animation-delay:200ms]" />
+                        <div className="h-3 bg-surface-active rounded-full w-[85%] animate-pulse [animation-delay:400ms]" />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        ) : explanation ? (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <ExplanationRenderer 
-              text={explanation} 
-              esercizio={exercise?.text || ''} 
-              onAskTutor={onAskTutor}
-            />
-          </motion.div>
-        ) : null}
+                ))}
+              </div>
+            </motion.div>
+          ) : explanation ? (
+            <motion.div
+              key="explanation-content"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+            >
+              <ExplanationRenderer 
+                text={explanation} 
+                onAskTutor={onAskTutor}
+              />
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
 
         {explanation && !loading && graficoUtile && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-8 mb-4">
@@ -419,7 +431,10 @@ export default function ExplanationScreen({
                   )}
                   <div className="leading-relaxed whitespace-pre-wrap md-content katex-display-chat">
                     {msg.role === 'assistant' ? (
-                      <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkMath]} 
+                        rehypePlugins={[[rehypeKatex, { throwOnError: false, errorColor: '#cc0000' }]]}
+                      >
                         {msg.text}
                       </ReactMarkdown>
                     ) : (

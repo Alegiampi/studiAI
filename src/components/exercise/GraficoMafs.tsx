@@ -26,7 +26,8 @@ export default function GraficoMafs({ data }: { data?: GraficoData }) {
   }[]>([])
 
   useEffect(() => {
-    setMounted(true)
+    const timer = setTimeout(() => setMounted(true), 0)
+    return () => clearTimeout(timer)
   }, [])
 
   const initialViewBox = useMemo(() => {
@@ -85,7 +86,15 @@ export default function GraficoMafs({ data }: { data?: GraficoData }) {
             zoom={true}
           >
             <Coordinates.Cartesian subdivisions={5} />
-            {allEspressioni.map((e: any, i: number) => {
+            {allEspressioni.map((e: {
+              type: string
+              fn?: string
+              coords?: [number, number]
+              color: string
+              label?: string
+              domain?: [number, number]
+              interactive?: boolean
+            }, i: number) => {
               const isHidden = hiddenIndices.has(i)
               const displayColor = customColors[i] || e.color
               
@@ -93,10 +102,10 @@ export default function GraficoMafs({ data }: { data?: GraficoData }) {
               const displayStyle = customStyles[i] || defaultStyle
 
               if (e.type === 'function') {
-                const key = `fn-${i}-${e.fn}`
-                return <FunctionLayer key={key} isHidden={isHidden} fnStr={e.fn} color={displayColor} domain={e.domain} interactive={e.interactive && showTangent} label={e.label} lineStyle={displayStyle} />
+                const key = `fn-${i}-${e.fn || ''}`
+                return <FunctionLayer key={key} isHidden={isHidden} fnStr={e.fn || ''} color={displayColor} domain={e.domain} interactive={e.interactive && showTangent} label={e.label} lineStyle={displayStyle} />
               }
-              if (e.type === 'point') {
+              if (e.type === 'point' && e.coords) {
                 const key = `pt-${i}-${e.coords.join(',')}`
                 if (isHidden) return null
                 return <Point key={key} x={e.coords[0]} y={e.coords[1]} color={displayColor} />

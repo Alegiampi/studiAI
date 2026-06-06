@@ -4,7 +4,9 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { X, Loader2 } from 'lucide-react'
 
-function AuthModal({ onClose, supabase, isEmbedded = false }: { onClose?: () => void; supabase: any; isEmbedded?: boolean }) {
+import { SupabaseClient } from '@supabase/supabase-js'
+
+function AuthModal({ onClose, supabase, isEmbedded = false }: { onClose?: () => void; supabase: SupabaseClient; isEmbedded?: boolean }) {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -32,7 +34,7 @@ function AuthModal({ onClose, supabase, isEmbedded = false }: { onClose?: () => 
       const { error } = await supabase.auth.signUp({ 
         email, 
         password,
-        options: { redirectTo }
+        options: { emailRedirectTo: redirectTo }
       })
       if (error) setMsg(error.message)
       else setMsg('Controlla la tua email per confermare la registrazione.')

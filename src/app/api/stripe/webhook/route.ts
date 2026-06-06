@@ -34,8 +34,10 @@ export async function POST(req: NextRequest) {
 
   // Rinnovo mensile/annuale → mantieni premium attivo
   if (event.type === 'invoice.payment_succeeded') {
-    const invoice = event.data.object as Stripe.Invoice
-    const subscriptionId = (invoice as any).subscription as string
+    const invoice = event.data.object as Stripe.Invoice & { subscription?: string | Stripe.Subscription | null }
+    const subscriptionId = typeof invoice.subscription === 'string'
+      ? invoice.subscription
+      : invoice.subscription?.id
     if (subscriptionId) {
       await supabase.from('profiles')
         .update({ is_premium: true })
@@ -45,8 +47,10 @@ export async function POST(req: NextRequest) {
 
   // Pagamento fallito → rimuovi premium
   if (event.type === 'invoice.payment_failed') {
-    const invoice = event.data.object as Stripe.Invoice
-    const subscriptionId = (invoice as any).subscription as string
+    const invoice = event.data.object as Stripe.Invoice & { subscription?: string | Stripe.Subscription | null }
+    const subscriptionId = typeof invoice.subscription === 'string'
+      ? invoice.subscription
+      : invoice.subscription?.id
     if (subscriptionId) {
       await supabase.from('profiles')
         .update({ is_premium: false })

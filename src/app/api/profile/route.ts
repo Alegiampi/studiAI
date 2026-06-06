@@ -1,15 +1,9 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { ProfileSchema } from '@/lib/schemas'
 
 export async function GET() {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return cookieStore.getAll() }, setAll(c) { c.forEach(({ name, value, options }) => cookieStore.set(name, value, options)) } } }
-  )
-
+  const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ onboarding_done: false })
 
@@ -24,36 +18,40 @@ export async function GET() {
   }
 
   return NextResponse.json({
-  onboarding_done: data?.onboarding_done ?? false,
-  scuola: data?.scuola || null,
-  classe: data?.classe || null,
-  materie: data?.materie || [],
-  is_premium: data?.is_premium || false  // ← aggiungi
-})
+    onboarding_done: data?.onboarding_done ?? false,
+    scuola: data?.scuola || null,
+    classe: data?.classe || null,
+    materie: data?.materie || [],
+    is_premium: data?.is_premium || false,
+  })
 }
 
 export async function POST(req: NextRequest) {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return cookieStore.getAll() }, setAll(c) { c.forEach(({ name, value, options }) => cookieStore.set(name, value, options)) } } }
-  )
+  const parsed = ProfileSchema.safeParse(await req.json())
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Richiesta non valida', details: parsed.error.issues }, { status: 400 })
+  }
+  const body = parsed.data
 
+  const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ ok: false })
 
-  const body = await req.json()
-  
-  const updateData: any = { id: user.id }
+  const updateData: {
+    id: string
+    onboarding_done?: boolean
+    scuola?: string
+    classe?: string
+    materie?: string[]
+  } = { id: user.id }
   if (body.onboarding_done !== undefined) updateData.onboarding_done = body.onboarding_done
-  else updateData.onboarding_done = true // Default to true if calling POST to profile without specific value
-  
+  else updateData.onboarding_done = true
+
   if (body.scuola !== undefined) updateData.scuola = body.scuola
   if (body.classe !== undefined) updateData.classe = body.classe
   if (body.materie !== undefined) updateData.materie = body.materie
 
-  const { data: result, error } = await supabase
+  const { error } = await supabase
     .from('profiles')
     .upsert(updateData, { onConflict: 'id' })
     .select()

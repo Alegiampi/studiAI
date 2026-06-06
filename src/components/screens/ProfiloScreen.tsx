@@ -1,32 +1,33 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
+import { useStore } from '@/store/useStore'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, User, School, Book, CheckCircle2, CreditCard, ExternalLink } from 'lucide-react'
 
-export default function ProfiloScreen({ 
-  onBack, 
-  profiloAttuale, 
-  onSave, 
-  user, 
-  isPremium, 
-  onManageSubscription 
-}: { 
-  onBack: () => void; 
-  profiloAttuale: { scuola?: string; classe?: string; materie?: string[] }; 
-  onSave: (p: any) => void; 
-  user?: any;
-  isPremium?: boolean;
-  onManageSubscription?: () => void;
-}) {
-  const [nome, setNome] = useState(user?.user_metadata?.full_name || user?.user_metadata?.name || '')
-  const [scuola, setScuola] = useState(profiloAttuale.scuola || '')
-  const [classe, setClasse] = useState(profiloAttuale.classe || '')
-  const [materie, setMaterie] = useState<string[]>(profiloAttuale.materie || [])
+export default function ProfiloScreen() {
+  const router = useRouter()
+  const { user, profilo, isPremium, saveProfile, handlePortal } = useStore()
+  
+  const [nome, setNome] = useState('')
+  const [scuola, setScuola] = useState('')
+  const [classe, setClasse] = useState('')
+  const [materie, setMaterie] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
   const [portalLoading, setPortalLoading] = useState(false)
+
+  const [prevUser, setPrevUser] = useState(user)
+  const [prevProfilo, setPrevProfilo] = useState(profilo)
+  if (user !== prevUser || profilo !== prevProfilo) {
+    setPrevUser(user)
+    setPrevProfilo(profilo)
+    setNome(user?.user_metadata?.full_name || user?.user_metadata?.name || '')
+    setScuola(profilo.scuola || '')
+    setClasse(profilo.classe || '')
+    setMaterie(profilo.materie || [])
+  }
 
   function toggleMateria(m: string) {
     setMaterie(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m])
@@ -34,27 +35,26 @@ export default function ProfiloScreen({
 
   async function salva() {
     setLoading(true)
-
-    if (nome.trim() && nome.trim() !== (user?.user_metadata?.full_name || user?.user_metadata?.name)) {
-      const supabase = createClient()
-      await supabase.auth.updateUser({ data: { full_name: nome.trim() } })
+    try {
+      await saveProfile(nome, { scuola, classe, materie, onboarding_done: true })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch (e) {
+      console.error('Error saving profile:', e)
+    } finally {
+      setLoading(false)
     }
-
-    await fetch('/api/profile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ scuola, classe, materie, onboarding_done: true })
-    })
-    onSave({ scuola, classe, materie })
-    setLoading(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
   }
 
-  async function handlePortal() {
+  async function gestisciPortal() {
     setPortalLoading(true)
-    if (onManageSubscription) await onManageSubscription()
-    setPortalLoading(false)
+    try {
+      await handlePortal()
+    } catch (e) {
+      console.error('Error opening Stripe portal:', e)
+    } finally {
+      setPortalLoading(false)
+    }
   }
 
   const scuole = ['Liceo Scientifico', 'Liceo Classico', 'Istituto Tecnico', 'Scuola Media', 'Altro']
@@ -68,7 +68,7 @@ export default function ProfiloScreen({
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="sticky top-0 z-10 px-4 py-4 bg-surface/80 backdrop-blur-xl border-b border-surface-border flex items-center gap-3">
-        <button onClick={onBack} className="p-2 -ml-2 rounded-xl bg-transparent border-none text-foreground-muted cursor-pointer hover:bg-surface-active hover:text-foreground transition-colors">
+        <button onClick={() => router.push('/home')} className="p-2 -ml-2 rounded-xl bg-transparent border-none text-foreground-muted cursor-pointer hover:bg-surface-active hover:text-foreground transition-colors">
           <ChevronLeft size={24} />
         </button>
         <div className="text-[17px] font-bold text-foreground">Il tuo profilo</div>
@@ -140,7 +140,7 @@ export default function ProfiloScreen({
                 <CreditCard size={16} /> Abbonamento
               </div>
               <button 
-                onClick={handlePortal}
+                onClick={gestisciPortal}
                 disabled={portalLoading}
                 className="w-full bg-surface-active border border-surface-border rounded-xl px-4 py-4 text-[15px] text-foreground font-semibold flex items-center justify-between hover:bg-surface-hover transition-all group"
               >

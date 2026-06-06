@@ -1,14 +1,26 @@
+'use client'
+
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
 import { User, School, Book, Sparkles, GraduationCap } from 'lucide-react'
+import { useStore } from '@/store/useStore'
 
-export default function PersonalizzazioneScreen({ onDone, user }: { onDone: (data: { scuola: string; classe: string; materie: string[] }) => void, user?: any }) {
-  const [nome, setNome] = useState(user?.user_metadata?.full_name || user?.user_metadata?.name || '')
+export default function PersonalizzazioneScreen() {
+  const { user, saveProfile, setShowOnboarding, setShowPersonalizzazione } = useStore()
+  
+  const [nome, setNome] = useState('')
   const [scuola, setScuola] = useState('')
   const [classe, setClasse] = useState('')
   const [materie, setMaterie] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
+
+  const [prevUser, setPrevUser] = useState(user)
+  if (user !== prevUser) {
+    setPrevUser(user)
+    if (user) {
+      setNome(user?.user_metadata?.full_name || user?.user_metadata?.name || '')
+    }
+  }
 
   function toggleMateria(m: string) {
     setMaterie(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m])
@@ -16,19 +28,32 @@ export default function PersonalizzazioneScreen({ onDone, user }: { onDone: (dat
 
   async function salva() {
     setLoading(true)
-
-    if (nome.trim() && nome.trim() !== (user?.user_metadata?.full_name || user?.user_metadata?.name)) {
-      const supabase = createClient()
-      await supabase.auth.updateUser({ data: { full_name: nome.trim() } })
+    try {
+      await saveProfile(nome, { scuola, classe, materie, onboarding_done: true })
+    } catch (e) {
+      console.error('Error saving profile:', e)
+    } finally {
+      setLoading(false)
     }
+  }
 
-    await fetch('/api/profile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ scuola, classe, materie, onboarding_done: true })
-    })
-    setLoading(false)
-    onDone({ scuola, classe, materie })
+  async function salta() {
+    setLoading(true)
+    try {
+      // Salva solo onboarding_done sul database
+      await fetch('/api/profile', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ onboarding_done: true }) 
+      })
+      // Disabilita localmente le schermate di onboarding e personalizzazione per far passare l'utente
+      setShowOnboarding(false)
+      setShowPersonalizzazione(false)
+    } catch (e) {
+      console.error('Error skipping personalization:', e)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const scuole = ['Liceo Scientifico', 'Liceo Classico', 'Istituto Tecnico', 'Scuola Media', 'Altro']
@@ -142,11 +167,9 @@ export default function PersonalizzazioneScreen({ onDone, user }: { onDone: (dat
           </motion.button>
           
           <button 
-            onClick={async () => { 
-              await fetch('/api/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ onboarding_done: true }) }).catch(e => console.error(e)); 
-              onDone({ scuola: '', classe: '', materie: [] }) 
-            }} 
-            className="w-full p-3 bg-transparent border-none text-foreground-subtle text-[14px] font-bold cursor-pointer hover:text-foreground transition-colors"
+            onClick={salta}
+            disabled={loading}
+            className="w-full p-3 bg-transparent border-none text-foreground-subtle text-[14px] font-bold cursor-pointer hover:text-foreground transition-colors disabled:opacity-50"
           >
             Salta per ora
           </button>

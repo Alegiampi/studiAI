@@ -6,7 +6,19 @@ import { Sparkles, ChevronRight, Crown, Bot, MessageCircle, BarChart2, MousePoin
 import GraficoMafs from '@/components/exercise/GraficoMafs'
 import ExplanationRenderer from '@/components/exercise/ExplanationRenderer'
 
-export default function SharedExplanation({ data, id }: { data: any; id: string }) {
+import Link from 'next/link'
+import type { GraficoData } from '@/types'
+
+type SharedData = {
+  question?: string
+  explanation: string
+  grafico?: GraficoData
+  scuola?: string
+  classe?: string
+  created_at?: string
+}
+
+export default function SharedExplanation({ data }: { data: SharedData }) {
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-x-hidden">
       <style>{`
@@ -47,12 +59,12 @@ export default function SharedExplanation({ data, id }: { data: any; id: string 
           </span>
         </div>
         
-        <a 
+        <Link 
           href="/" 
           className="bg-primary text-background px-4 py-2 rounded-xl text-[13px] font-black no-underline shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5"
         >
           Prova Gratis <ChevronRight size={14} />
-        </a>
+        </Link>
       </header>
 
       <main className="flex-1 max-w-[720px] mx-auto w-full px-5 pt-8 pb-24 relative z-10">
@@ -69,7 +81,6 @@ export default function SharedExplanation({ data, id }: { data: any; id: string 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <ExplanationRenderer 
             text={data.explanation} 
-            esercizio={data.question || ''} 
             onAskTutor={() => window.location.href = '/'}
           />
         </motion.div>
@@ -94,12 +105,12 @@ export default function SharedExplanation({ data, id }: { data: any; id: string 
                 <p className="text-[14px] text-foreground-muted max-w-xs mb-6 font-medium leading-relaxed">
                   Esplora questa funzione matematicamente! Iscriviti per sbloccare la visualizzazione dinamica e interagire con i punti chiave.
                 </p>
-                <a 
+                <Link 
                   href="/" 
                   className="bg-primary text-background px-8 py-3.5 rounded-2xl text-[15px] font-black no-underline shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
                 >
                   <MousePointer2 size={18} /> Sblocca Grafico
-                </a>
+                </Link>
               </div>
               <div className="opacity-30 grayscale blur-sm pointer-events-none">
                 <GraficoMafs data={data.grafico} />
@@ -151,12 +162,12 @@ export default function SharedExplanation({ data, id }: { data: any; id: string 
                   Iscriviti gratuitamente per chattare con il tutor, chiedere chiarimenti infiniti e risolvere ogni incertezza in pochi secondi.
                 </p>
                 
-                <a 
+                <Link 
                   href="/" 
                   className="w-full bg-primary text-background px-6 py-4 rounded-2xl text-[15px] font-black no-underline shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                 >
                   Sblocca Chat Gratuita <ChevronRight size={18} />
-                </a>
+                </Link>
               </motion.div>
             </div>
             
@@ -175,7 +186,7 @@ export default function SharedExplanation({ data, id }: { data: any; id: string 
                     <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Tutor theLemma</span>
                   </div>
                   <div className="bg-surface border border-surface-border rounded-2xl rounded-bl-none p-4 text-[14px] text-foreground leading-relaxed max-w-[85%] shadow-sm">
-                    Ottima domanda! Per trovare il discriminante ($\Delta$) dell'equazione $ax^2 + bx + c = 0$, usiamo la formula:
+                    Ottima domanda! Per trovare il discriminante ($\Delta$) {"dell'equazione"} $ax^2 + bx + c = 0$, usiamo la formula:
                     <div className="my-2 bg-background/50 p-2 rounded-lg text-center font-mono italic">
                       $\Delta = b^2 - 4ac$
                     </div>
@@ -228,14 +239,14 @@ export default function SharedExplanation({ data, id }: { data: any; id: string 
             Pronto a prendere <span className="text-primary">10</span> in matematica?
           </h2>
           <p className="text-foreground-muted text-[16px] mb-10 max-w-md mx-auto font-medium">
-            Registrati oggi e ottieni il tuo piano di studio personalizzato assistito dall'intelligenza artificiale.
+            Registrati oggi e ottieni il tuo piano di studio personalizzato assistito {"dall'intelligenza"} artificiale.
           </p>
-          <a 
+          <Link 
             href="/" 
             className="inline-flex items-center gap-3 bg-primary text-background px-10 py-4 rounded-[20px] text-[18px] font-black no-underline shadow-2xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all group"
           >
             Inizia Ora <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
-          </a>
+          </Link>
           <p className="mt-6 text-[12px] text-foreground-subtle font-medium">
             Nessuna carta richiesta • 5 esercizi gratis ogni giorno
           </p>
