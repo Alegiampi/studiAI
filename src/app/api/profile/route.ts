@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
 
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ ok: false })
+  if (!user) return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 })
 
   const updateData: {
     id: string

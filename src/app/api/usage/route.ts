@@ -36,32 +36,38 @@ export async function GET() {
 }
 
 export async function POST() {
-  const supabase = await createSupabaseServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ count: 0 })
+  try {
+    const supabase = await createSupabaseServerClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ count: 0 })
 
-  const today = new Date().toISOString().split('T')[0]
+    const today = new Date().toISOString().split('T')[0]
 
-  const { data: existing } = await supabase
-    .from('daily_usage')
-    .select('count')
-    .eq('user_id', user.id)
-    .eq('date', today)
-    .single()
-
-  if (existing) {
-    const { data: updated } = await supabase
+    const { data: existing } = await supabase
       .from('daily_usage')
-      .update({ count: existing.count + 1 })
+      .select('count')
       .eq('user_id', user.id)
       .eq('date', today)
-      .select('count')
       .single()
-    return NextResponse.json({ count: updated?.count ?? 0 })
-  } else {
-    await supabase
-      .from('daily_usage')
-      .insert({ user_id: user.id, date: today, count: 1 })
-    return NextResponse.json({ count: 1 })
+
+    if (existing) {
+      const { data: updated } = await supabase
+        .from('daily_usage')
+        .update({ count: existing.count + 1 })
+        .eq('user_id', user.id)
+        .eq('date', today)
+        .select('count')
+        .single()
+      return NextResponse.json({ count: updated?.count ?? 0 })
+    } else {
+      await supabase
+        .from('daily_usage')
+        .insert({ user_id: user.id, date: today, count: 1 })
+      return NextResponse.json({ count: 1 })
+    }
+  } catch (e: unknown) {
+    const errMsg = e instanceof Error ? e.message : String(e)
+    console.error('[usage POST]', errMsg)
+    return NextResponse.json({ count: 0 })
   }
 }

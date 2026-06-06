@@ -90,6 +90,6 @@ REGOLE DI FORMATTAZIONE:
 
   } catch (e: unknown) {
     const errMsg = e instanceof Error ? e.message : String(e)
-    return NextResponse.json({ reply: 'Errore: ' + errMsg })
+    return NextResponse.json({ reply: 'Errore: ' + errMsg }, { status: 502 })
   }
 }

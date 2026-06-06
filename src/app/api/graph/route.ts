@@ -87,19 +87,25 @@ Spiegazione: ${spiegazione}
 
 Rispondi SOLO con il JSON crudo.`;
 
-  const data = await callAI([
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: userPrompt }
-  ]);
+  let data
+  try {
+    data = await callAI([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ])
+  } catch (e: unknown) {
+    const errMsg = e instanceof Error ? e.message : String(e)
+    console.error('[graph] fetch error:', errMsg)
+    return NextResponse.json({ error: 'Errore di connessione.' }, { status: 502 })
+  }
 
   if (!data.choices) {
     const errMsg = data.error?.message || 'Errore API'
     console.error('[graph] Groq error:', errMsg)
-    // Se è un rate limit, informiamo il client
     if (data.error?.code === 'rate_limit_exceeded') {
-      return NextResponse.json({ error: 'Limite API raggiunto. Riprova tra qualche minuto.' })
+      return NextResponse.json({ error: 'Limite API raggiunto. Riprova tra qualche minuto.' }, { status: 429 })
     }
-    return NextResponse.json({ error: 'Errore API' })
+    return NextResponse.json({ error: 'Errore API' }, { status: 502 })
   }
 
   try {
@@ -108,6 +114,6 @@ Rispondi SOLO con il JSON crudo.`;
     const graficoData = JSON.parse(clean);
     return NextResponse.json({ data: graficoData });
   } catch {
-    return NextResponse.json({ error: 'JSON non valido' });
+    return NextResponse.json({ error: 'JSON non valido' }, { status: 502 });
   }
 }

@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
   const supabase = await createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'not logged in' })
+  if (!user) return NextResponse.json({ error: 'not logged in' }, { status: 401 })
 
   const { data } = await supabase.from('exercises').insert({
     user_id: user.id,

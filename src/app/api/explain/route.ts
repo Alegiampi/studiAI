@@ -312,6 +312,6 @@ export async function POST(req: NextRequest) {
 
   } catch (e: unknown) {
     const errMsg = e instanceof Error ? e.message : String(e)
-    return NextResponse.json({ explanation: 'Errore: ' + errMsg })
+    return NextResponse.json({ explanation: 'Errore: ' + errMsg }, { status: 500 })
   }
 }

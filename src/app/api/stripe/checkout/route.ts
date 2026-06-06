@@ -16,15 +16,21 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 })
 
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ['card'],
-    mode: 'subscription',
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/?checkout=success`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/?checkout=cancelled`,
-    customer_email: user.email,
-    metadata: { user_id: user.id },
-  })
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'subscription',
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/?checkout=success`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/?checkout=cancelled`,
+      customer_email: user.email,
+      metadata: { user_id: user.id },
+    })
 
-  return NextResponse.json({ url: session.url })
+    return NextResponse.json({ url: session.url })
+  } catch (e: unknown) {
+    const errMsg = e instanceof Error ? e.message : String(e)
+    console.error('[stripe/checkout]', errMsg)
+    return NextResponse.json({ error: 'Errore di connessione col gestore pagamenti.' }, { status: 502 })
+  }
 }
