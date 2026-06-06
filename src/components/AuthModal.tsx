@@ -10,6 +10,7 @@ function AuthModal({ onClose, supabase, isEmbedded = false }: { onClose?: () => 
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState('')
 
@@ -23,6 +24,10 @@ function AuthModal({ onClose, supabase, isEmbedded = false }: { onClose?: () => 
 
   async function handleEmail() {
     if (!email || !password) return
+    if (mode === 'signup' && password !== confirmPassword) {
+      setMsg('Le password non coincidono.')
+      return
+    }
     setLoading(true)
     setMsg('')
     if (mode === 'login') {
@@ -87,11 +92,21 @@ function AuthModal({ onClose, supabase, isEmbedded = false }: { onClose?: () => 
         <input 
           value={password} 
           onChange={e => setPassword(e.target.value)} 
-          placeholder="Scegli una password" 
+          placeholder={mode === 'login' ? 'La tua password' : 'Crea una password'} 
           type="password" 
           onKeyDown={e => e.key === 'Enter' && handleEmail()} 
           className="w-full py-3.5 px-4 bg-background border border-surface-border rounded-[14px] text-[15px] text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder:text-foreground-muted" 
         />
+        {mode === 'signup' && (
+          <input 
+            value={confirmPassword} 
+            onChange={e => setConfirmPassword(e.target.value)} 
+            placeholder="Conferma password" 
+            type="password" 
+            onKeyDown={e => e.key === 'Enter' && handleEmail()} 
+            className="w-full py-3.5 px-4 bg-background border border-surface-border rounded-[14px] text-[15px] text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder:text-foreground-muted" 
+          />
+        )}
       </div>
 
       {msg && (
@@ -102,7 +117,7 @@ function AuthModal({ onClose, supabase, isEmbedded = false }: { onClose?: () => 
 
       <button 
         onClick={handleEmail} 
-        disabled={loading || !email || !password} 
+        disabled={loading || !email || !password || (mode === 'signup' && !confirmPassword)} 
         className="w-full py-3.5 px-4 bg-primary text-background border-none rounded-[14px] text-[15px] font-extrabold cursor-pointer hover:bg-primary-hover transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20 flex justify-center items-center gap-2 mb-6"
       >
         {loading ? <><Loader2 size={18} className="animate-spin" /> Attendere...</> : mode === 'login' ? 'Accedi' : 'Registrati'}
@@ -111,7 +126,7 @@ function AuthModal({ onClose, supabase, isEmbedded = false }: { onClose?: () => 
       <div className="text-center text-[14px] text-foreground-muted font-medium">
         {mode === 'login' ? 'Non hai un account? ' : 'Hai già un account? '}
         <button 
-          onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setMsg('') }} 
+          onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setMsg(''); setConfirmPassword('') }} 
           className="text-primary font-bold hover:underline bg-transparent border-none cursor-pointer"
         >
           {mode === 'login' ? 'Registrati ora' : 'Accedi'}
