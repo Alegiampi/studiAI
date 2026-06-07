@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect, useCallback, useRef as useRefOrig } from 'react'
 import AuthModal from '@/components/AuthModal'
+import AILoadingSkeleton from '@/components/screens/AILoadingSkeleton'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, BookOpen, User, LogOut, Camera, Crown, Sparkles, Zap, Trash2, RotateCcw, Pencil } from 'lucide-react'
 import CropModal from '@/components/CropModal'
@@ -42,6 +43,7 @@ export default function HomeScreen() {
     remaining,
     usedToday,
     isPremium,
+    loading,
     inputText: text,
     setInputText: setText,
     inputImage: image,
@@ -55,7 +57,6 @@ export default function HomeScreen() {
   const fileRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
   const [dragging, setDragging] = useState(false)
 
   const [history, setHistory] = useState<string[]>([])
@@ -384,7 +385,11 @@ export default function HomeScreen() {
           </motion.div>
         )}
 
-        <motion.div 
+        {loading ? (
+          <AILoadingSkeleton />
+        ) : (
+          <>
+            <motion.div 
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           onClick={() => !image && fileRef.current?.click()}
           onDragOver={e => { e.preventDefault(); setDragging(true) }}
@@ -491,20 +496,18 @@ export default function HomeScreen() {
 
         <motion.button
           layout
-          onClick={async () => {
-            if (submitting || (!text.trim() && !image)) return
-            setSubmitting(true)
-            await storeHandleSubmit(router, showToast)
-            setSubmitting(false)
+          onClick={() => {
+            if (loading || (!text.trim() && !image)) return
+            storeHandleSubmit(router, showToast)
           }}
           disabled={!text.trim() && !image}
           whileHover={
-            (!text.trim() && !image) || submitting
+            (!text.trim() && !image) || loading
               ? {}
               : { scale: 1.035 }
           }
           whileTap={
-            (!text.trim() && !image) || submitting
+            (!text.trim() && !image) || loading
               ? {}
               : { scale: 0.97 }
           }
@@ -515,13 +518,13 @@ export default function HomeScreen() {
           className={`w-full rounded-[22px] flex justify-center items-center gap-2.5 transition-colors overflow-hidden ${
             (!text.trim() && !image)
               ? 'py-4 px-6 bg-surface-active text-foreground-subtle shadow-none cursor-default'
-              : submitting
+              : loading
                 ? 'py-5 px-8 bg-background border-2 border-primary/40 cursor-default shadow-[0_0_40px_rgba(255,214,0,0.2)]'
                 : 'py-5 px-6 bg-primary text-background cursor-pointer shadow-[0_8px_32px_rgba(255,214,0,0.28)] border border-primary-hover/60 hover:bg-primary-hover hover:shadow-[0_12px_40px_rgba(255,214,0,0.38)]'
           }`}
         >
           <AnimatePresence mode="wait">
-            {submitting ? (
+            {loading ? (
               <motion.span
                 key="shimmer-logo"
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -575,6 +578,8 @@ export default function HomeScreen() {
               </motion.div>
             </div>
           </motion.div>
+        )}
+          </>
         )}
       </main>
 

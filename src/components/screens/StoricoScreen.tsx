@@ -22,7 +22,7 @@ const SUBJECT_STYLES: Record<string, { color: string, icon: ComponentType<{ size
 }
 
 interface StoricoExercise {
-  id: number
+  id: string
   question?: string
   explanation: string
   created_at: string
@@ -38,7 +38,7 @@ export default function StoricoScreen() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedSubject, setSelectedSubject] = useState<string>('Tutti')
-  const [sharingId, setSharingId] = useState<number | null>(null)
+  const [sharingId, setSharingId] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/exercises')
@@ -100,7 +100,7 @@ export default function StoricoScreen() {
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b))
   }, [filteredExercises])
 
-  async function toggleFavorite(e: React.MouseEvent, id: number, currentFav: boolean) {
+  async function toggleFavorite(e: React.MouseEvent, id: string, currentFav: boolean) {
     e.stopPropagation()
     const newFav = !currentFav
 

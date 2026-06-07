@@ -521,8 +521,50 @@ export function healLaTeX(text: string): string {
   result += fixed.slice(lastIdx)
   fixed = result
 
-  // 4. Clean up any accidental triple dollar delimiters or spaces between dollars
+  // 4. Clean up any accidental triple dollar delimiters
   fixed = fixed.replace(/\${3,}/g, '$$$$')
+
+  // 5. Detect orphaned \end{env}$$ without matching \begin{env}
+  // AI sometimes produces aligned/cases blocks missing the opening \begin{env}
+  // Must run AFTER cleanup to avoid newly-inserted $$ being stripped
+  {
+    const blockEnvs = ['aligned', 'cases', 'gathered', 'split', 'gather', 'matrix', 'pmatrix', 'vmatrix', 'bmatrix', 'Bmatrix', 'Vmatrix']
+    type Fix = { pos: number; env: string }
+    const fixes: Fix[] = []
+
+    for (const env of blockEnvs) {
+      const endRegex = new RegExp('\\\\end\\{' + env + '\\}\\s*\\$\\$', 'g')
+      let endMatch
+
+      while ((endMatch = endRegex.exec(fixed)) !== null) {
+        const endPos = endMatch.index
+
+        // Find boundary: nearest preceding $$ (close of another block) or start of text
+        const lastDollar = fixed.lastIndexOf('$$', endPos - 1)
+        let boundary: number
+        let region: string
+        if (lastDollar !== -1) {
+          boundary = lastDollar + 2
+          region = fixed.slice(boundary, endPos)
+        } else {
+          boundary = 0
+          region = fixed.slice(0, endPos)
+        }
+
+        // Only orphaned if no matching \begin{env} in the region
+        const beginRegex = new RegExp('\\\\begin\\{' + env + '\\}')
+        if (!beginRegex.test(region)) {
+          fixes.push({ pos: boundary, env })
+        }
+      }
+    }
+
+    // Apply fixes in reverse order so earlier positions stay valid
+    for (let i = fixes.length - 1; i >= 0; i--) {
+      const { pos, env } = fixes[i]
+      fixed = fixed.slice(0, pos) + '$$\\begin{' + env + '}\n' + fixed.slice(pos)
+    }
+  }
 
   return fixed
 }

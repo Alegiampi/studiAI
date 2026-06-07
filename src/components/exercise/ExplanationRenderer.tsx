@@ -98,7 +98,7 @@ function ExplanationRenderer({
                 type: "spring",
                 stiffness: 260,
                 damping: 25,
-                delay: i < parsed.passi.length ? 0.15 + (i * 0.05) : 0,
+                delay: i < parsed.passi.length ? 0.05 + (i * 0.03) : 0,
               }}
               onClick={() => setFocusedIndex(isFocused ? null : i)}
               className={`flex gap-4 p-3.5 rounded-2xl border cursor-pointer transition-all duration-300 ${isFocused ? 'z-10' : 'z-0'} scroll-mt-24 ${
@@ -143,7 +143,7 @@ function ExplanationRenderer({
                       className="mt-6 flex justify-center relative z-20"
                     >
                       <motion.div 
-                        layoutId={`action-bar-${i}`}
+                        layoutId={`explanation-action-bar-${i}`}
                         onClick={(e) => e.stopPropagation()}
                         className="bg-zinc-900/90 backdrop-blur-xl border border-white/10 p-1.5 px-2 rounded-full shadow-2xl flex items-center gap-1"
                       >

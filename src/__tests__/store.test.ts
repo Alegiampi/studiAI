@@ -115,7 +115,7 @@ describe('useStore', () => {
         graficoLoading: true,
         shareUrl: 'http://example.com',
         shareLoading: true,
-        currentExerciseId: 42,
+        currentExerciseId: '42',
         chatMessages: [{ role: 'user', text: 'ciao' }],
         chatLoading: true,
         isFavorite: true,

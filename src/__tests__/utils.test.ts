@@ -576,6 +576,30 @@ describe('parseExplanation', () => {
       expect(healLaTeX('begin{split} x + y end{split}')).toBe('\\begin{split} x + y \\end{split}')
     })
 
+    it('heals orphaned \\end{env}$$ when \\begin{env} is completely missing', () => {
+      // User's case: aligned content without opening
+      expect(healLaTeX('&= a \\\\ &= b \\end{aligned}$$'))
+        .toBe('$$\\begin{aligned}\n&= a \\\\ &= b \\end{aligned}$$')
+      // cases environment
+      expect(healLaTeX('x = 0 \\\\ x = 1 \\end{cases}$$'))
+        .toBe('$$\\begin{cases}\nx = 0 \\\\ x = 1 \\end{cases}$$')
+      // After another math block
+      expect(healLaTeX('$$x^2$$ &= c \\\\ &= d \\end{aligned}$$'))
+        .toBe('$$x^2$$$$\\begin{aligned}\n &= c \\\\ &= d \\end{aligned}$$')
+      // gather environment
+      expect(healLaTeX('a + b \\\\ c - d \\end{gather}$$'))
+        .toBe('$$\\begin{gather}\na + b \\\\ c - d \\end{gather}$$')
+      // bmatrix environment
+      expect(healLaTeX('1 & 2 \\\\ 3 & 4 \\end{bmatrix}$$'))
+        .toBe('$$\\begin{bmatrix}\n1 & 2 \\\\ 3 & 4 \\end{bmatrix}$$')
+      // NOT orphaned: has matching \begin{aligned}
+      expect(healLaTeX('$$\\begin{aligned} a &= b \\\\ c &= d \\end{aligned}$$'))
+        .toBe('$$\\begin{aligned} a &= b \\\\ c &= d \\end{aligned}$$')
+      // NOT orphaned: cases with matching begin
+      expect(healLaTeX('$$\\begin{cases} x > 0 \\\\ x < 0 \\end{cases}$$'))
+        .toBe('$$\\begin{cases} x > 0 \\\\ x < 0 \\end{cases}$$')
+    })
+
     it('heals complex un-delimited LaTeX commands and parameters', () => {
       expect(healLaTeX('la derivata è \\frac{d}{dx}x^2 = 2x')).toBe('la derivata è $\\frac{d}{dx}$x^2 = 2x')
       expect(healLaTeX('il limite è \\lim_{x \\to 0} f(x)')).toBe('il limite è $\\lim_{x \\to 0}$ f(x)')

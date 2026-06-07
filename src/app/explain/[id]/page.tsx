@@ -14,12 +14,12 @@ export default function ExplainDetailPage() {
   const { showToast } = useToast()
 
   useEffect(() => {
-    if (id) {
+    if (id && String(currentExerciseId) !== String(id)) {
       loadExerciseById(id as string, showToast)
     }
-  }, [id, loadExerciseById, showToast])
+  }, [id, loadExerciseById, showToast, currentExerciseId])
 
-  if (loading && currentExerciseId !== Number(id)) {
+  if (loading && currentExerciseId !== id) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background">
         <Loader2 size={40} className="text-primary animate-spin mb-4" />

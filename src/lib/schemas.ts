@@ -51,7 +51,7 @@ export const ExerciseCreateSchema = z.object({
 })
 
 export const ExerciseUpdateSchema = z.object({
-  id: z.coerce.number().positive(),
+  id: z.string(),
   is_favorite: z.boolean().optional(),
   shared_id: z.string().max(50).optional(),
 })

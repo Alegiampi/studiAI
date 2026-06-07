@@ -43,7 +43,7 @@ export interface ExerciseSlice {
   graficoLoading: boolean
   shareUrl: string | null
   shareLoading: boolean
-  currentExerciseId: number | null
+  currentExerciseId: string | null
   chatMessages: ChatMessage[]
   chatLoading: boolean
   quoteIndex: number
@@ -55,7 +55,7 @@ export interface ExerciseSlice {
   handleGrafico: (showToast: (msg: string, type: ToastType) => void) => Promise<void>
   handleChatSubmit: (messageText: string, showToast: (msg: string, type: ToastType) => void) => Promise<void>
   resetExercise: () => void
-  loadExerciseById: (id: string | number, showToast: (msg: string, type: ToastType) => void) => Promise<void>
+  loadExerciseById: (id: string, showToast: (msg: string, type: ToastType) => void) => Promise<void>
   toggleFavorite: (showToast: (msg: string, type: ToastType) => void) => Promise<void>
 }
 
@@ -120,8 +120,12 @@ export const createExerciseSlice: StateCreator<StoreApi, [], [], ExerciseSlice> 
 
     if (!inputText.trim() && !inputImage) return
 
+    const imagePreview = inputImageBase64
+      ? `data:image/png;base64,${inputImageBase64}`
+      : (inputImage || undefined)
+
     set({
-      exercise: { text: inputText, imageBase64: inputImageBase64 || undefined, imagePreview: inputImage || undefined },
+      exercise: { text: inputText, imageBase64: inputImageBase64 || undefined, imagePreview },
       explanation: '',
       loading: true,
       graficoUtile: null,
@@ -134,32 +138,42 @@ export const createExerciseSlice: StateCreator<StoreApi, [], [], ExerciseSlice> 
       chatLoading: false,
     })
 
-    router.push('/explain')
+    const TIMEOUT_MS = 60000
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
 
     try {
-      const [explainRes, classifyRes] = await Promise.all([
-        fetch('/api/explain', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            text: inputText,
-            imageBase64: inputImageBase64 || undefined,
-            tipo: 'esercizio',
-            scuola: profilo.scuola || undefined,
-            classe: profilo.classe || undefined,
-            materie: profilo.materie || undefined
-          })
-        }),
-        inputText.trim() ? fetch('/api/classify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            text: inputText,
-            scuola: profilo.scuola || undefined,
-            classe: profilo.classe || undefined
-          })
-        }) : Promise.resolve(null)
-      ])
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error('timeout')), TIMEOUT_MS)
+      })
+
+      const [explainRes, classifyRes] = await Promise.race([
+        Promise.all([
+          fetch('/api/explain', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              text: inputText,
+              imageBase64: inputImageBase64 || undefined,
+              tipo: 'esercizio',
+              scuola: profilo.scuola || undefined,
+              classe: profilo.classe || undefined,
+              materie: profilo.materie || undefined
+            })
+          }),
+          inputText.trim() ? fetch('/api/classify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              text: inputText,
+              scuola: profilo.scuola || undefined,
+              classe: profilo.classe || undefined
+            })
+          }) : Promise.resolve(null)
+        ]),
+        timeoutPromise
+      ]) as [Response, Response | null]
+
+      clearTimeout(timeoutId!)
 
       if (!explainRes.ok) {
         set({ loading: false })
@@ -175,7 +189,6 @@ export const createExerciseSlice: StateCreator<StoreApi, [], [], ExerciseSlice> 
           // Fallback a errore generico se non è JSON valido
         }
         showToast(errMsg, 'error')
-        router.push('/home')
         return
       }
 
@@ -205,15 +218,15 @@ export const createExerciseSlice: StateCreator<StoreApi, [], [], ExerciseSlice> 
         if (explainData.explanation?.startsWith('Errore')) {
           set({ loading: false })
           showToast(explainData.explanation.slice(0, 100), 'error')
-          router.push('/home')
           return
         }
         accumulatedText = explainData.explanation
         set({
           explanation: accumulatedText,
-          loading: false,
           chatMessages: [welcomeChatMsg]
         })
+        router.push('/explain')
+        set({ loading: false })
       } else {
         const reader = explainRes.body?.getReader()
         if (!reader) {
@@ -233,6 +246,7 @@ export const createExerciseSlice: StateCreator<StoreApi, [], [], ExerciseSlice> 
             const parsed = parseExplanation(accumulatedText, true)
             if (parsed.titolo || parsed.passi.length > 0) {
               hasContent = true
+              router.push('/explain')
               set({ loading: false, chatMessages: [welcomeChatMsg] })
             }
           }
@@ -288,8 +302,11 @@ export const createExerciseSlice: StateCreator<StoreApi, [], [], ExerciseSlice> 
     } catch (error) {
       console.error(error)
       set({ loading: false })
-      showToast('Si è verificato un errore inaspettato.', 'error')
-      router.push('/home')
+      if (error instanceof Error && error.message === 'timeout') {
+        showToast('Il server sta impiegando troppo tempo. Riprova tra pochi secondi.', 'error')
+      } else {
+        showToast('Si è verificato un errore inaspettato.', 'error')
+      }
     }
   },
 
@@ -431,7 +448,11 @@ export const createExerciseSlice: StateCreator<StoreApi, [], [], ExerciseSlice> 
   }),
 
   loadExerciseById: async (id, showToast) => {
-    set({ loading: true, graficoLoading: false, chatLoading: false, grafico: null, chatMessages: [] })
+    if (!id || typeof id !== 'string' || id.trim() === '') {
+      showToast('Esercizio non trovato o non autorizzato.', 'error')
+      return
+    }
+    set({ loading: true, explanation: '', graficoLoading: false, chatLoading: false, grafico: null, chatMessages: [] })
     try {
       const { data, error } = await supabase
         .from('exercises')
@@ -471,7 +492,7 @@ export const createExerciseSlice: StateCreator<StoreApi, [], [], ExerciseSlice> 
       set({
         exercise: { text: data.question },
         explanation: data.explanation,
-        currentExerciseId: Number(id),
+        currentExerciseId: id,
         loading: false,
         isFavorite: data.is_favorite ?? false,
         graficoUtile: isGraphUseful,

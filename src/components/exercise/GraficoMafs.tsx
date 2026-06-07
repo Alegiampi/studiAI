@@ -76,17 +76,19 @@ export default function GraficoMafs({
   if (!data || !data.espressioni) return null
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col h-[520px] md:h-[480px] border border-surface-border rounded-2xl overflow-hidden bg-surface/25 backdrop-blur-md shadow-xl relative z-10 transition-all duration-300">
       {/* Graph Header */}
-      <div className="flex items-center px-4 py-3 border-b border-[#2A2A2A] shrink-0">
+      <div className="flex items-center justify-between px-4 py-3.5 border-b border-surface-border/60 bg-surface/10 shrink-0">
         <div className="flex items-center gap-3 min-w-0">
-          <TrendingUp size={16} className="text-primary/70 shrink-0" />
+          <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+            <TrendingUp size={15} />
+          </div>
           <div className="min-w-0">
-            <div className="text-[11px] font-semibold text-[#888] uppercase tracking-wider leading-tight">
+            <div className="text-[10px] font-black text-foreground-muted uppercase tracking-widest leading-none">
               Grafico Interattivo
             </div>
             {mainFnLabel && (
-              <div className="text-[12px] font-mono text-[#AAA] truncate leading-tight mt-0.5">
+              <div className="text-[12px] font-mono text-foreground/80 truncate leading-none mt-1.5 bg-background/50 px-2 py-0.5 rounded border border-surface-border/30 inline-block">
                 {mainFnLabel}
               </div>
             )}
@@ -95,7 +97,7 @@ export default function GraficoMafs({
       </div>
 
       {/* Graph + Sidebar row */}
-      <div className="flex-1 flex flex-col md:flex-row min-h-0">
+      <div className="flex-1 flex flex-col-reverse md:flex-row min-h-0 relative">
         <GraphSidebar
           allEspressioni={allEspressioni}
           userFunctions={userFunctions}
@@ -114,7 +116,7 @@ export default function GraficoMafs({
 
         <div
           ref={containerRef}
-          className="flex-1 min-w-0 h-[350px] md:h-[400px] lg:h-full lg:min-h-0 rounded-2xl overflow-hidden border border-[#3A3A3A] bg-[#0F0F11]"
+          className="flex-1 min-w-0 h-full bg-[#08080A]/60 relative"
         >
           {mounted && (
             <Mafs 
